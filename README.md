@@ -1,66 +1,138 @@
 # ADK Progress Bridge
 
-A technical implementation pattern for Google ADK (Agent Development Kit) to bring real-time tool execution progress to Vue.js frontends, inspired by LangGraph's `run_writer`.
+A technical implementation pattern for Google ADK (Agent Development Kit) to bring real-time tool execution progress to Vue.js frontends.
 
-## Overview
+## ❓ The Problem: The "Black Box" Tool
+In the standard ADK (and most GenAI) architecture, tools are treated as atomic "black boxes":
+1.  Agent calls Tool.
+2.  **... Silence (User sees a generic spinner) ...**
+3.  Tool returns Output.
 
-Traditional ADK tools follow a request-response pattern. For long-running agents (e.g., complex data analysis, sub-agent orchestration, or multi-step physical audits), this results in poor UX. 
+For complex tasks—like database migrations, multi-step audits, or deep research—this "silence" can last 30+ seconds. Users lose trust, wondering if the system has hung.
 
-The **ADK Progress Bridge** transforms standard tools into **Async Generators** that stream intermediate status updates to the UI via Server-Sent Events (SSE).
+## 💡 The Solution: Async Generator Bridge
+We transform standard tools into **Async Generators**. instead of just returning a value, the tool `yield`s intermediate status updates ("breadcrumbs") which are immediately streamed to the frontend via Server-Sent Events (SSE).
 
-## Backend Implementation (Python / ADK)
+### Architectural Decision: Why "Pure" Generators?
+We explicitly chose **Native Python Async Generators** over frameworks like LangChain's `dispatch_custom_event`.
 
-Tools are wrapped in an `AsyncGenerator` that yields structured progress packets before the final result.
+| Feature | 🐍 Pure Generators (This Project) | 🦜 LangChain Events |
+| :--- | :--- | :--- |
+| **Philosophy** | "Pythonic" Native | Framework Specific |
+| **Dependencies** | Zero (Standard Lib) | Heavy (LangChain Core) |
+| **Control Flow** | Direct `yield` control | Indirect Callbacks/Managers |
+| **Debugging** | Standard Stack Trace | Complex Handler Chains |
 
-### The Protocol
+**Verdict:** By using native `yield`, we keep the implementation lightweight, easy to test, and universally compatible with any Python-based ADK agent, without forcing a heavy dependency on the project.
+
+## 🛠️ The Architecture
+
+### 1. The Protocol (SSE)
+We define a strict JSON schema for the events streamed over the wire.
 ```json
+// Event: "progress"
 {
-  "type": "progress" | "result",
-  "call_id": "uuid",
+  "call_id": "550e8400-e29b...",
+  "type": "progress",
   "payload": {
-    "step": "Analyzing masonry contracts",
-    "pct": 60,
-    "metadata": {}
+    "step": "Scanning Index",
+    "pct": 45,
+    "log": "Found 1500 records..."
+  }
+}
+
+// Event: "result"
+{
+  "call_id": "550e8400-e29b...",
+  "type": "result",
+  "payload": {
+    "summary": "Scan complete. 12 issues found."
   }
 }
 ```
 
-### Example Pattern
+### 2. Backend (Python)
+*   **`@progress_tool` Decorator:** Transforms a standard function into a tracked generator.
+*   **`BridgeServer`:** A lightweight FastAPI wrapper that handles the SSE connection and manages the generator lifecycle.
+
+### 3. Frontend (Vue.js)
+*   **`useAgentStream`:** A Vue composable that connects to the SSE stream.
+*   **Reactive State:** Automatically updates a `currentTask` object with the latest progress bar percentage and logs.
+
+## 🚀 Production Integration Guide
+
+Integrating this bridge into your existing ADK agent service is straightforward.
+
+### Step 1: Install Core Files
+Copy `backend/app/bridge.py` into your project (e.g., `src/utils/adk_bridge.py`).
+
+### Step 2: Decorate Your Tools
+Convert your long-running functions into async generators using `@progress_tool`.
+
 ```python
-async def my_long_running_tool(input_data):
-    yield {"type": "progress", "step": "Phase 1: Extraction", "pct": 25}
-    # ... logic ...
-    yield {"type": "progress", "step": "Phase 2: Analysis", "pct": 75}
-    # ... logic ...
-    yield {"type": "result", "data": "Final analysis summary."}
+# BEFORE
+def analyze_contracts(folder_path: str):
+    data = load_files(folder_path)
+    report = generate_report(data)
+    return report
+
+# AFTER
+from src.utils.adk_bridge import progress_tool, ProgressPayload
+
+@progress_tool(name="analyze_contracts")
+async def analyze_contracts(folder_path: str):
+    yield ProgressPayload(step="Loading Files", pct=10, log="Reading 50 files...")
+    data = await load_files_async(folder_path)
+    
+    yield ProgressPayload(step="Generating Report", pct=80, log="Running AI analysis...")
+    report = await generate_report_async(data)
+    
+    # The final yield is the return value
+    yield report 
 ```
 
-## Frontend Implementation (Vue.js / Composition API)
+### Step 3: Mount the Endpoints
+In your main FastAPI app, mount the bridge endpoints or import them directly.
 
-A reactive composable manages a "Tool Registry" that tracks active tool calls and their current state.
+```python
+from fastapi import FastAPI
+from src.utils.adk_bridge import registry, ProgressEvent, format_sse, ProgressPayload
 
-### `useAgentStream.ts`
+app = FastAPI()
+
+# ... existing routes ...
+
+# Add the Bridge Endpoints
+@app.post("/start_task/{tool_name}")
+async def start_task(tool_name: str, args: dict = {}):
+    # ... copy logic from backend/app/main.py ...
+    pass
+
+@app.get("/stream/{call_id}")
+async def stream_task(call_id: str):
+    # ... copy logic from backend/app/main.py ...
+    pass
+```
+
+### Step 4: Frontend Hook
+Use the composable in your Vue application.
+
 ```typescript
-import { reactive, ref } from 'vue';
+import { useAgentStream } from '@/composables/useAgentStream'
 
-export function useAgentStream() {
-  const activeTools = reactive(new Map());
-  const finalResponse = ref("");
+const { state, runTool } = useAgentStream()
 
-  const handleStream = async (response) => {
-    const reader = response.body.getReader();
-    // Logic to parse SSE and update activeTools map
-  };
-
-  return { activeTools, finalResponse, handleStream };
+// Trigger the tool
+const handleAnalyze = () => {
+    runTool('analyze_contracts', { folder_path: '/docs/legal' })
 }
+
+// Template
+<div v-if="state.isStreaming">
+    Progress: {{ state.progressPct }}%
+    Current Step: {{ state.currentStep }}
+</div>
 ```
-
-## Benefits
-
-- **Reduced Perceived Latency**: Users see activity immediately.
-- **Granular Error Handling**: Identify exactly which step in a tool failed.
-- **Framework Native**: Designed specifically for the Google ADK and Vue ecosystem.
 
 ## License
 MIT
