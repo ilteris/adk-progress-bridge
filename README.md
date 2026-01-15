@@ -134,5 +134,19 @@ const handleAnalyze = () => {
 </div>
 ```
 
+## 🤖 AI Agent Skill
+
+This project includes an AI agent skill at `.agent/skills/progress-bridge/SKILL.md`.
+
+**What's in the skill:**
+- **When to use** — Identifies scenarios where this pattern applies
+- **Core pattern** — Quick-reference code for backend and frontend
+- **Key files reference** — Table linking to all important files
+- **SSE event schema** — The JSON contract
+- **New tool checklist** — Step-by-step for adding tools
+- **Common mistakes** — Gotchas to avoid
+
+When an AI agent with this skill encounters a task involving real-time progress streaming, it will automatically reference this skill for the correct implementation pattern.
+
 ## License
 MIT
