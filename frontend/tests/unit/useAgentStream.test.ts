@@ -61,7 +61,9 @@ class MockWebSocket {
   send = vi.fn()
   close = vi.fn(() => {
     this.readyState = 3 // CLOSED
-    if (this.onclose) this.onclose({} as any)
+    if (this.onclose) {
+      this.onclose({} as any)
+    }
   })
 
   triggerMessage(data: any) {
@@ -148,6 +150,34 @@ describe('useAgentStream', () => {
       expect(state.progressPct).toBe(50)
       expect(state.logs).toContain('Halfway there')
     })
+
+    it('provides input via REST fallback', async () => {
+      const { state, runTool, sendInput } = useAgentStream()
+      state.useWS = false
+      
+      runTool('test_tool')
+      await vi.waitFor(() => expect(state.status).toBe('connected'))
+      
+      lastEventSource?.triggerMessage({
+        call_id: 'test-call-id',
+        type: 'input_request',
+        payload: { prompt: 'Continue?' }
+      })
+
+      expect(state.status).toBe('waiting_for_input')
+      expect(state.inputPrompt).toBe('Continue?')
+
+      await sendInput('yes')
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        'http://localhost:8000/provide_input',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ call_id: 'test-call-id', value: 'yes' })
+        })
+      )
+      expect(state.status).toBe('connected')
+    })
   })
 
   describe('WebSocket path', () => {
@@ -203,6 +233,32 @@ describe('useAgentStream', () => {
       }))
       expect(state.status).toBe('cancelled')
       expect(state.isStreaming).toBe(false)
+    })
+
+    it('handles interactive input via WS', async () => {
+        const { state, runTool, sendInput } = useAgentStream()
+        state.useWS = true
+        
+        runTool('test_tool')
+        await vi.waitFor(() => expect(state.status).toBe('connected'))
+        
+        lastWebSocket?.triggerMessage({
+          call_id: 'ws-call-id',
+          type: 'input_request',
+          payload: { prompt: 'Approval?' }
+        })
+  
+        expect(state.status).toBe('waiting_for_input')
+        expect(state.inputPrompt).toBe('Approval?')
+  
+        await sendInput('confirmed')
+  
+        expect(lastWebSocket?.send).toHaveBeenCalledWith(JSON.stringify({
+          type: 'input',
+          call_id: 'ws-call-id',
+          value: 'confirmed'
+        }))
+        expect(state.status).toBe('connected')
     })
 
     it('handles WS completion', async () => {

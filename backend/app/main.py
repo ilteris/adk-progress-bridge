@@ -3,6 +3,7 @@ import json
 import uuid
 import time
 from typing import Dict, List, Optional, Any
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,10 +15,30 @@ from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
 from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Start stale task cleanup in the background
+    cleanup_task = asyncio.create_task(cleanup_background_task())
+    logger.info("Background cleanup task started")
+    yield
+    # Shutdown: Clean up tasks
+    cleanup_task.cancel()
+    await registry.cleanup_tasks()
+    logger.info("Server shutdown: Cleaned up active tasks")
+
+async def cleanup_background_task():
+    try:
+        while True:
+            await asyncio.sleep(60)
+            await registry.cleanup_stale_tasks(max_age_seconds=300)
+    except asyncio.CancelledError:
+        logger.info("Background cleanup task cancelled")
+
 app = FastAPI(
     title="ADK Progress Bridge",
     description="A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS configuration
@@ -39,20 +60,6 @@ class TaskStartResponse(BaseModel):
 class InputProvideRequest(BaseModel):
     call_id: str
     value: Any
-
-@app.on_event("startup")
-async def startup_event():
-    # Start stale task cleanup in the background
-    asyncio.create_task(cleanup_background_task())
-
-async def cleanup_background_task():
-    while True:
-        await asyncio.sleep(60)
-        await registry.cleanup_stale_tasks(max_age_seconds=300)
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await registry.cleanup_tasks()
 
 @app.post("/start_task/{tool_name}", response_model=TaskStartResponse)
 async def start_task(
@@ -89,7 +96,7 @@ async def start_task(
 async def stream_task(
     call_id: Optional[str] = None,
     cid: Optional[str] = Query(None, alias="call_id"),
-    api_key: Optional[str] = Query(None)
+    authenticated: bool = Depends(verify_api_key)
 ):
     """
     SSE endpoint to stream progress and results for a task.
@@ -98,9 +105,6 @@ async def stream_task(
     actual_call_id = call_id or cid
     if not actual_call_id:
         raise HTTPException(status_code=400, detail="call_id is required")
-
-    # Verify API key from query param if not in header
-    await verify_api_key(api_key if api_key else "")
 
     task_data = registry.get_task(actual_call_id)
     if not task_data:
@@ -187,6 +191,12 @@ async def stop_task(
         raise HTTPException(status_code=404, detail="Task not found or already finished")
     
     await task_data["gen"].aclose()
+    
+    # If the task was not yet consumed, it won't be removed by the stream generator's finally block
+    # because the stream generator was never started. So we remove it here.
+    if not task_data["consumed"]:
+        registry.remove_task(actual_call_id)
+        
     return {"status": "stop signal sent"}
 
 @app.get("/metrics")

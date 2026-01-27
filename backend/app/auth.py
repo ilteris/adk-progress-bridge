@@ -8,33 +8,26 @@ from .logger import logger
 API_KEY_NAME = "X-API-Key"
 BRIDGE_API_KEY = os.getenv("BRIDGE_API_KEY")
 
-api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+api_key_header_scheme = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 async def verify_api_key(
-    api_key_or_header: Union[str, Request, None] = Security(api_key_header),
+    request: Request,
+    api_key_header: Optional[str] = Security(api_key_header_scheme),
 ):
     """
-    Universal dependency that validates the API Key.
-    Can be used as a Depends() or called directly.
+    Validates the API Key from either the header or a query parameter.
     """
     if not BRIDGE_API_KEY:
         return True
 
-    # Case 1: Called from Depends(verify_api_key) with header
-    if isinstance(api_key_or_header, str):
-        if api_key_or_header == BRIDGE_API_KEY:
-            return True
-    
-    # Case 2: Called from within a function with a direct string
-    # (e.g. await verify_api_key(api_key_from_query))
-    if isinstance(api_key_or_header, str) and api_key_or_header == BRIDGE_API_KEY:
+    # 1. Check header
+    if api_key_header == BRIDGE_API_KEY:
         return True
-
-    # Case 3: If called with a Request object (unlikely here but for robustness)
-    if isinstance(api_key_or_header, Request):
-        api_key = api_key_or_header.query_params.get("api_key") or api_key_or_header.headers.get(API_KEY_NAME)
-        if api_key == BRIDGE_API_KEY:
-            return True
+    
+    # 2. Check query param (fallback for SSE)
+    api_key_query = request.query_params.get("api_key")
+    if api_key_query == BRIDGE_API_KEY:
+        return True
 
     logger.warning("Invalid API Key provided")
     raise HTTPException(
