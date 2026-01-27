@@ -125,7 +125,7 @@ describe('useAgentStream', () => {
         'http://localhost:8000/start_task/test_tool',
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({ arg1: 'val1' })
+          body: JSON.stringify({ args: { arg1: "val1" } })
         })
       )
     })
