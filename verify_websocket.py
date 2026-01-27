@@ -4,7 +4,7 @@ import json
 import os
 import sys
 
-async def test_ws_full():
+async def run_ws_full():
     api_key = os.getenv("BRIDGE_API_KEY", "")
     url = "ws://localhost:8000/ws"
     if api_key:
@@ -51,7 +51,7 @@ async def test_ws_full():
     except Exception as e:
         print(f"WS Error in test_ws_full: {e}")
 
-async def test_ws_interactive():
+async def run_ws_interactive():
     api_key = os.getenv("BRIDGE_API_KEY", "")
     url = "ws://localhost:8000/ws"
     if api_key:
@@ -107,8 +107,8 @@ async def test_ws_interactive():
 async def main():
     # We need the server running. Assuming it's already running or we start it.
     # For this script, we assume it's running on localhost:8000
-    await test_ws_full()
-    await test_ws_interactive()
+    await run_ws_full()
+    await run_ws_interactive()
 
 if __name__ == "__main__":
     asyncio.run(main())

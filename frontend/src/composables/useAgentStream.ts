@@ -1,4 +1,4 @@
-import { reactive, onUnmounted } from 'vue'
+import { reactive, onUnmounted, getCurrentInstance } from 'vue'
 
 interface ProgressPayload {
   step: string
@@ -333,10 +333,12 @@ export function useAgentStream() {
     }
   }
 
-  onUnmounted(() => {
-    if (ws) ws.close()
-    if (eventSource) eventSource.close()
-  })
+  if (getCurrentInstance()) {
+    onUnmounted(() => {
+      if (ws) ws.close()
+      if (eventSource) eventSource.close()
+    })
+  }
   
   return { state, runTool, stopTool, sendInput, reset }
 }
