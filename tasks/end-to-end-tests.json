@@ -1,0 +1,10 @@
+{
+  "id": "end-to-end-tests",
+  "status": "completed",
+  "description": "Implement Playwright tests for the full flow from clicking 'Start' to seeing the result.",
+  "governance": {
+    "plan_approved": false
+  },
+  "blocked_by": ["frontend-component-tests"],
+  "contract": "worker"
+}
