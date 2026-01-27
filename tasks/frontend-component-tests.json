@@ -1,0 +1,10 @@
+{
+  "id": "frontend-component-tests",
+  "status": "completed",
+  "description": "Add Vitest tests for TaskMonitor.vue and useAgentStream composable.",
+  "governance": {
+    "plan_approved": true
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}
