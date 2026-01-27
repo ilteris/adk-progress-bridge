@@ -1,6 +1,6 @@
 {
   "title": "WebSocket Integration",
-  "status": "in_progress",
+  "status": "completed",
   "role": "Architect",
   "description": "Implement a bi-directional WebSocket layer for the bridge."
 }
