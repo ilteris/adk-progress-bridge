@@ -35,3 +35,6 @@ This list tracks the remaining tasks and planned improvements for the ADK Progre
 - [x] **Stream Test:** Verify that this task appears instantly in the TUI.
 ## 🏁 Final Dashboard Verification
 - [x] **TUI Fidelity Check:** Verify that the layout, labels, and anti-pulse logic are working perfectly.
+
+## 🚀 Phase 2: High-Performance Communication
+- [ ] **WebSocket Integration:** Implement a bi-directional WebSocket layer for sub-millisecond task state synchronization between workers and the TUI.

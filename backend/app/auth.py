@@ -1,6 +1,6 @@
 import os
 from typing import Optional
-from fastapi import Request, HTTPException, Security, status
+from fastapi import Request, HTTPException, Security, status, WebSocket
 from fastapi.security import APIKeyHeader
 from .logger import logger
 
@@ -54,3 +54,19 @@ async def verify_api_key_sse(request: Request):
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or missing API Key",
     )
+
+async def verify_api_key_ws(websocket: WebSocket):
+    """
+    Validates API key for WebSocket connections.
+    Similar to SSE, we allow passing via query param 'api_key'.
+    """
+    if not BRIDGE_API_KEY:
+        return
+    
+    api_key = websocket.query_params.get("api_key")
+    if api_key == BRIDGE_API_KEY:
+        return
+    
+    logger.warning("Invalid API Key provided for WebSocket")
+    await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API Key")

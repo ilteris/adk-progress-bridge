@@ -2,9 +2,10 @@ import asyncio
 import uuid
 import time
 import os
+import json
 from typing import Dict, Any, Optional
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException, Body, Path as FastAPIPath, Depends
+from fastapi import FastAPI, Request, HTTPException, Body, Path as FastAPIPath, Depends, WebSocket, WebSocketDisconnect, status as http_status
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError
@@ -12,7 +13,7 @@ from .bridge import registry, ProgressEvent, format_sse, ProgressPayload
 from .context import call_id_var, tool_name_var
 from .logger import logger
 from .metrics import get_metrics, TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
-from .auth import get_api_key, verify_api_key_sse
+from .auth import get_api_key, verify_api_key_sse, verify_api_key_ws
 
 # Configuration from environment variables
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -209,6 +210,93 @@ async def stream_task(
             registry.remove_task(call_id)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """
+    Bi-directional WebSocket endpoint for executing tools and receiving progress.
+    Message format:
+    {
+        "type": "start",
+        "tool_name": "...",
+        "args": {...}
+    }
+    """
+    await websocket.accept()
+    
+    try:
+        await verify_api_key_ws(websocket)
+    except HTTPException:
+        return
+
+    logger.info("WebSocket connection established")
+    
+    active_generators = {}
+
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message = json.loads(data)
+            
+            if message.get("type") == "start":
+                tool_name = message.get("tool_name")
+                args = message.get("args", {})
+                
+                tool = registry.get_tool(tool_name)
+                if not tool:
+                    await websocket.send_json({
+                        "type": "error",
+                        "payload": {"detail": f"Tool not found: {tool_name}"}
+                    })
+                    continue
+                
+                call_id = str(uuid.uuid4())
+                
+                try:
+                    gen = tool(**args)
+                    # We run the generator in a background task
+                    asyncio.create_task(run_ws_generator(websocket, call_id, tool_name, gen))
+                except Exception as e:
+                    await websocket.send_json({
+                        "type": "error",
+                        "call_id": call_id,
+                        "payload": {"detail": str(e)}
+                    })
+
+    except WebSocketDisconnect:
+        logger.info("WebSocket disconnected")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+
+async def run_ws_generator(websocket: WebSocket, call_id: str, tool_name: str, gen):
+    # Set context vars
+    call_id_var.set(call_id)
+    tool_name_var.set(tool_name)
+    
+    start_time = time.perf_counter()
+    status = "success"
+    
+    logger.info(f"Starting WS execution for task: {call_id}")
+    try:
+        async for item in gen:
+            if isinstance(item, ProgressPayload):
+                TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
+                event = ProgressEvent(call_id=call_id, type="progress", payload=item)
+            else:
+                event = ProgressEvent(call_id=call_id, type="result", payload=item)
+            
+            await websocket.send_json(event.model_dump())
+            
+    except Exception as e:
+        status = "error"
+        logger.error(f"Error during WS task {call_id}: {e}")
+        event = ProgressEvent(call_id=call_id, type="error", payload={"detail": str(e)})
+        await websocket.send_json(event.model_dump())
+    finally:
+        duration = time.perf_counter() - start_time
+        TASK_DURATION.labels(tool_name=tool_name).observe(duration)
+        TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
+        logger.info(f"WS task finished: {call_id} (duration: {duration:.2f}s, status: {status})")
 
 # Import tools to register them
 from . import dummy_tool

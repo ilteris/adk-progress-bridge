@@ -16,7 +16,7 @@ const startAudit = () => {
       <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <h4 class="mb-0">Task Monitor</h4>
         <div>
-          <span v-if="state.status === 'connected'" class="badge bg-success">Live</span>
+          <span v-if="state.status === 'connected'" class="badge bg-success">Live ({{ state.useWS ? 'WS' : 'SSE' }})</span>
           <span v-else-if="state.status === 'reconnecting'" class="badge bg-warning text-dark">
             <span class="spinner-border spinner-border-sm me-1" role="status"></span>
             Reconnecting...
@@ -47,9 +47,10 @@ const startAudit = () => {
               >
             </div>
             <div class="col-auto">
-              <span id="durationHelpInline" class="form-text">
-                How long the simulated audit should take.
-              </span>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="useWS" v-model="state.useWS" :disabled="state.isStreaming">
+                <label class="form-check-label" for="useWS">Use WebSockets</label>
+              </div>
             </div>
           </div>
         </div>
