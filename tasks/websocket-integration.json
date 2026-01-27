@@ -1,6 +1,1 @@
-{
-  "title": "WebSocket Integration",
-  "status": "completed",
-  "role": "Architect",
-  "description": "Implemented a bi-directional WebSocket layer for the bridge, including support for task cancellation and mid-execution interactive input. Added REST fallback for interactive input in SSE mode."
-}
+{"title": "WebSocket Integration", "status": "completed", "role": "Architect", "description": "Verified and refined the bi-directional WebSocket layer. Confirmed support for task cancellation, mid-execution interactive input, and REST fallback for SSE. Updated SPEC.md to accurately reflect the implementation. All tests (Python and Vitest) are passing."}

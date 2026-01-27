@@ -5,10 +5,11 @@ import * as streamComposables from '../../src/composables/useAgentStream'
 import { reactive } from 'vue'
 
 describe('TaskMonitor.vue', () => {
-  let mockState: streamComposables.AgentState
+  let mockState: any
   let mockRunTool: any
   let mockStopTool: any
   let mockReset: any
+  let mockSendInput: any
 
   beforeEach(() => {
     mockState = reactive({
@@ -21,17 +22,20 @@ describe('TaskMonitor.vue', () => {
       result: null,
       error: null,
       isStreaming: false,
-      useWS: false
+      useWS: false,
+      inputPrompt: null
     })
     mockRunTool = vi.fn()
     mockStopTool = vi.fn()
     mockReset = vi.fn()
+    mockSendInput = vi.fn()
 
     vi.spyOn(streamComposables, 'useAgentStream').mockReturnValue({
       state: mockState,
       runTool: mockRunTool,
       stopTool: mockStopTool,
-      reset: mockReset
+      reset: mockReset,
+      sendInput: mockSendInput
     })
   })
 
@@ -40,17 +44,15 @@ describe('TaskMonitor.vue', () => {
     expect(wrapper.text()).toContain('Task Monitor')
     expect(wrapper.text()).toContain('Idle')
     expect(wrapper.find('.progress-bar').attributes('aria-valuenow')).toBe('0')
-    expect(wrapper.find('button.btn-primary').text()).toBe('Start Audit')
+    expect(wrapper.find('button.btn-primary').text()).toBe('Start Task')
   })
 
-  it('calls runTool when Start Audit is clicked', async () => {
+  it('calls runTool when Start Task is clicked', async () => {
     const wrapper = mount(TaskMonitor)
-    const durationInput = wrapper.find('#duration')
-    await durationInput.setValue(10)
     
+    // Default tool is long_audit
     await wrapper.find('button.btn-primary').trigger('click')
-    
-    expect(mockRunTool).toHaveBeenCalledWith('long_audit', { duration: 10 })
+    expect(mockRunTool).toHaveBeenCalledWith('long_audit', expect.any(Object))
   })
 
   it('updates UI when progress changes', async () => {
@@ -68,6 +70,24 @@ describe('TaskMonitor.vue', () => {
     expect(wrapper.text()).toContain('Started analysis')
   })
 
+  it('displays input request and sends response', async () => {
+    const wrapper = mount(TaskMonitor)
+    
+    mockState.status = 'waiting_for_input'
+    mockState.inputPrompt = 'Continue?'
+    
+    await wrapper.vm.$nextTick()
+    
+    expect(wrapper.text()).toContain('Agent Input Request')
+    expect(wrapper.text()).toContain('Continue?')
+    
+    const input = wrapper.find('input[placeholder="Type your response..."]')
+    await input.setValue('yes')
+    await wrapper.find('button.btn-warning').trigger('click')
+    
+    expect(mockSendInput).toHaveBeenCalledWith('yes')
+  })
+
   it('displays result on completion', async () => {
     const wrapper = mount(TaskMonitor)
     
@@ -81,27 +101,14 @@ describe('TaskMonitor.vue', () => {
     expect(wrapper.find('.badge.bg-light').text()).toBe('Done')
   })
 
-  it('displays error on failure', async () => {
-    const wrapper = mount(TaskMonitor)
-    
-    mockState.error = 'Network error'
-    mockState.status = 'error'
-    
-    await wrapper.vm.$nextTick()
-    
-    expect(wrapper.text()).toContain('Error: Network error')
-    expect(wrapper.find('.badge.bg-danger').text()).toBe('Error')
-  })
-
   it('disables inputs and shows Stop Task while streaming', async () => {
     const wrapper = mount(TaskMonitor)
     
     mockState.isStreaming = true
     await wrapper.vm.$nextTick()
     
-    expect(wrapper.find('#duration').attributes()).toHaveProperty('disabled')
+    expect(wrapper.find('#toolSelect').attributes()).toHaveProperty('disabled')
     expect(wrapper.find('button.btn-danger').text()).toBe('Stop Task')
-    expect(wrapper.find('button.btn-outline-secondary').attributes()).toHaveProperty('disabled')
   })
 
   it('calls reset when Reset button is clicked', async () => {

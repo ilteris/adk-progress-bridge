@@ -10,8 +10,8 @@ The system consists of a Python backend (FastAPI) acting as the ADK Agent host a
 #### `ProgressEvent` (Pydantic Model)
 A structured container for event data.
 *   `call_id`: UUID string.
-*   `type`: Literal ["progress", "result", "error"].
-*   `payload`: Union[ProgressPayload, Dict].
+*   `type`: Literal ["progress", "result", "error", "input_request"].
+*   `payload`: Any event-specific data.
 
 #### `ToolRegistry`
 Manages tool registration and active task sessions.
@@ -19,16 +19,22 @@ Manages tool registration and active task sessions.
 *   `store_task(call_id, gen, tool_name)`: Persists an active generator.
 *   `cleanup_tasks()`: Graceful shutdown handler.
 
+#### `InputManager`
+Manages bi-directional input for tasks that require user interaction.
+*   `provide_input(call_id, value)`: Signals a waiting generator with user input.
+
 ### 2.2 API Endpoints (`backend/main.py`)
 
 *   **REST Flow (SSE):**
     *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id`.
     *   `GET /stream/{call_id}`: SSE stream for progress.
-    *   `DELETE /stop_task/{call_id}`: Manual termination of SSE task.
+    *   `POST /stop_task/{call_id}`: Manual termination of SSE task.
+    *   `POST /provide_input`: REST fallback to provide input for SSE tasks.
 *   **WebSocket Flow:**
     *   `WS /ws`: Bi-directional connection for task control and streaming.
     *   Message `{"type": "start", "tool_name": "...", "args": {...}}` starts a task.
     *   Message `{"type": "stop", "call_id": "..."}` stops a task.
+    *   Message `{"type": "input", "call_id": "...", "value": "..."}` provides interactive input.
 
 ## 3. Frontend Specification (Vue.js)
 
@@ -38,7 +44,7 @@ Reactive state manager for the bridge.
 **State:**
 ```typescript
 interface AgentState {
-  status: ConnectionStatus; // idle, connecting, connected, error, etc.
+  status: ConnectionStatus; // idle, connecting, connected, error, waiting_for_input, etc.
   isConnected: boolean;
   callId: string | null;
   currentStep: string;
@@ -48,18 +54,21 @@ interface AgentState {
   error: string | null;
   isStreaming: boolean;
   useWS: boolean; // Toggle between SSE and WS
+  inputPrompt: string | null; // Prompt text when waiting for input
 }
 ```
 
 **Actions:**
 *   `runTool(name, args)`: Orchestrates the connection based on `useWS` setting.
-*   `stopTool()`: Sends a stop signal via WS or DELETE request via HTTP.
+*   `stopTool()`: Sends a stop signal via WS or POST request via HTTP.
+*   `sendInput(value)`: Sends interactive input via WS or REST fallback.
 *   `reset()`: Cleans up connections and state.
 
 ### 3.2 Component: `TaskMonitor.vue`
 *   **Configuration:** UI to set tool parameters and toggle WebSocket mode.
+*   **Interactive UI:** Dynamic input field appears when the agent requests input.
 *   **Progress:** Animated progress bar and status labels.
-*   **Console:** Real-time log output.
+*   **Console:** Real-time log output with timestamps.
 
 ## 4. Implementation Details
 
@@ -68,6 +77,7 @@ The WebSocket layer allows for:
 1.  **Lower Latency:** No HTTP handshake overhead for starting/stopping tasks once connected.
 2.  **Explicit Cancellation:** Direct `stop` messages over the socket are handled instantly.
 3.  **Connection Awareness:** The server automatically closes generators if the client disconnects.
+4.  **Native Interaction:** Interactive input is sent directly back over the same socket.
 
 ### 4.2 Security
 All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` header or `api_key` query parameter.

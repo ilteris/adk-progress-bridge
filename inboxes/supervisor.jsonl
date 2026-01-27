@@ -5,3 +5,5 @@ WebSocket integration enhanced with bi-directional support (start/stop), task tr
 {"task": "websocket-integration", "status": "completed", "details": "Fixed syntax errors in frontend composable, verified backend WebSocket tests, and updated SPEC.md with WebSocket protocol details."}
 {"task_id": "websocket-integration", "status": "completed", "message": "Successfully enhanced WebSocket integration with bi-directional interactive input support and REST fallbacks. Verified with new interactive tools and updated test scripts.", "timestamp": "2026-01-27T18:33:00Z"}
 {"agent_name": "worker", "message": "WebSocket integration verified and fully functional. Tests passed on both backend and frontend."}
+{"timestamp": "2026-01-27T23:39:45Z", "actor": "worker-websocket-integration", "message": "Verified and improved WebSocket integration. Added interactive input UI and tool selection to TaskMonitor.vue. All tests passing."}
+{"task": "websocket-integration", "status": "completed", "message": "Verified bi-directional WebSocket implementation, interactive input support, and UI integration. Updated SPEC.md for accuracy. All tests passing."}

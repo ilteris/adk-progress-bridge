@@ -2,11 +2,32 @@
 import { ref } from 'vue'
 import { useAgentStream } from '../composables/useAgentStream'
 
-const { state, runTool, stopTool, reset } = useAgentStream()
+const { state, runTool, stopTool, sendInput, reset } = useAgentStream()
 const auditDuration = ref(5)
+const selectedTool = ref('long_audit')
+const userInput = ref('')
 
-const startAudit = () => {
-  runTool('long_audit', { duration: auditDuration.value })
+const tools = [
+  { id: 'long_audit', name: 'Audit Task' },
+  { id: 'interactive_task', name: 'Interactive Task' },
+  { id: 'security_scan', name: 'Security Scan' },
+  { id: 'parallel_report_generation', name: 'Parallel Reports' }
+]
+
+const startTask = () => {
+  const args = selectedTool.value === 'long_audit' ? { duration: auditDuration.value } : {}
+  runTool(selectedTool.value, args)
+}
+
+const submitInput = () => {
+  if (userInput.value.trim()) {
+    sendInput(userInput.value)
+    userInput.value = ''
+  }
+}
+
+const handleReset = () => {
+  reset()
 }
 </script>
 
@@ -17,6 +38,7 @@ const startAudit = () => {
         <h4 class="mb-0">Task Monitor</h4>
         <div>
           <span v-if="state.status === 'connected'" class="badge bg-success">Live ({{ state.useWS ? 'WS' : 'SSE' }})</span>
+          <span v-else-if="state.status === 'waiting_for_input'" class="badge bg-warning text-dark">Awaiting Input</span>
           <span v-else-if="state.status === 'reconnecting'" class="badge bg-warning text-dark">
             <span class="spinner-border spinner-border-sm me-1" role="status"></span>
             Reconnecting...
@@ -31,12 +53,19 @@ const startAudit = () => {
       <div class="card-body">
         <!-- Configuration Section -->
         <div class="mb-4 p-3 border rounded bg-body-tertiary">
-          <h6>Audit Configuration</h6>
+          <h6>Task Configuration</h6>
           <div class="row g-3 align-items-center">
-            <div class="col-auto">
-              <label for="duration" class="col-form-label">Duration (seconds):</label>
+            <div class="col-md-4">
+              <label for="toolSelect" class="form-label">Select Tool:</label>
+              <select id="toolSelect" v-model="selectedTool" class="form-select" :disabled="state.isStreaming">
+                <option v-for="tool in tools" :key="tool.id" :value="tool.id">
+                  {{ tool.name }}
+                </option>
+              </select>
             </div>
-            <div class="col-auto">
+            
+            <div class="col-md-4" v-if="selectedTool === 'long_audit'">
+              <label for="duration" class="form-label">Duration (seconds):</label>
               <input 
                 type="number" 
                 id="duration" 
@@ -47,12 +76,30 @@ const startAudit = () => {
                 :disabled="state.isStreaming"
               >
             </div>
-            <div class="col-auto">
-              <div class="form-check form-switch">
+
+            <div class="col-md-4 d-flex align-items-end">
+              <div class="form-check form-switch mb-2">
                 <input class="form-check-input" type="checkbox" id="useWS" v-model="state.useWS" :disabled="state.isStreaming">
                 <label class="form-check-label" for="useWS">Use WebSockets</label>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Interactive Input Section -->
+        <div v-if="state.status === 'waiting_for_input'" class="mb-4 p-3 border border-warning rounded bg-warning-subtle animate-pulse">
+          <h6>Agent Input Request</h6>
+          <p class="mb-2"><strong>{{ state.inputPrompt }}</strong></p>
+          <div class="input-group">
+            <input 
+              type="text" 
+              v-model="userInput" 
+              class="form-control" 
+              placeholder="Type your response..."
+              @keyup.enter="submitInput"
+              autoFocus
+            >
+            <button class="btn btn-warning" @click="submitInput">Send Response</button>
           </div>
         </div>
 
@@ -102,10 +149,10 @@ const startAudit = () => {
       <div class="card-footer d-flex gap-2">
         <button 
           v-if="!state.isStreaming"
-          @click="startAudit" 
+          @click="startTask" 
           class="btn btn-primary"
         >
-          Start Audit
+          Start Task
         </button>
         <button 
           v-if="state.isStreaming"
@@ -114,7 +161,7 @@ const startAudit = () => {
         >
           Stop Task
         </button>
-        <button @click="reset" class="btn btn-outline-secondary" :disabled="state.isStreaming">
+        <button @click="handleReset" class="btn btn-outline-secondary" :disabled="state.isStreaming">
           Reset
         </button>
       </div>
@@ -126,5 +173,18 @@ const startAudit = () => {
 pre {
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 </style>
