@@ -1,20 +1,20 @@
 ---
 name: ADK Progress Bridge
-description: Transform long-running AI tools into real-time SSE progress streams
+description: Transform long-running AI tools into real-time SSE/WebSocket progress streams
 ---
 
 # ADK Progress Bridge Skill
 
-This skill teaches how to implement real-time progress streaming for GenAI/ADK tools using async generators and Server-Sent Events.
+This skill teaches how to implement real-time progress streaming for GenAI/ADK tools using async generators, Server-Sent Events (SSE), and WebSockets.
 
 ## When to Use This Skill
 
-- Building long-running AI tools (>5 seconds) that need user feedback
-- Implementing multi-step workflows with progress tracking
-- Creating audit, analysis, or data processing tools
-- Any tool where "silence" during execution is a UX problem
+- Building long-running AI tools (>5 seconds) that need user feedback.
+- Implementing multi-step workflows with progress tracking.
+- Requiring **bi-directional** interaction (e.g., stopping/cancelling a task in-flight).
+- Needing sub-millisecond task state synchronization.
 
-## Core Pattern
+## Core Patterns
 
 ### 1. Backend: Async Generator Tool
 
@@ -30,15 +30,22 @@ async def my_tool(args):
     yield {"status": "complete", "data": result}
 ```
 
-### 2. Frontend: SSE Composable
+### 2. Frontend: Streaming Composable
 
 ```typescript
 import { useAgentStream } from '@/composables/useAgentStream'
 
-const { state, runTool } = useAgentStream()
+const { state, runTool, stopTool } = useAgentStream()
+
+// Option A: Server-Sent Events (Default)
+state.useWS = false
 await runTool('my_tool', { arg: 'value' })
 
-// Reactive state: state.progressPct, state.currentStep, state.logs
+// Option B: WebSockets (Bi-directional)
+state.useWS = true
+await runTool('my_tool', { arg: 'value' })
+// Later...
+stopTool() // Sends 'stop' message to backend
 ```
 
 ## Key Files Reference
@@ -46,30 +53,25 @@ await runTool('my_tool', { arg: 'value' })
 | File | Purpose |
 |------|---------|
 | `backend/app/bridge.py` | Core: `ProgressPayload`, `@progress_tool`, `ToolRegistry` |
-| `backend/app/main.py` | API: `/start_task`, `/stream` endpoints |
-| `frontend/src/composables/useAgentStream.ts` | Vue composable for SSE |
+| `backend/app/main.py` | API: `/stream` (SSE) and `/ws` (WebSocket) endpoints |
+| `frontend/src/composables/useAgentStream.ts` | Vue composable for SSE/WS |
 | `frontend/src/components/TaskMonitor.vue` | UI component example |
 
-## SSE Event Schema
+## Communication Protocols
 
-```json
-{
-  "call_id": "uuid",
-  "type": "progress|result|error",
-  "payload": { "step": "...", "pct": 0-100, "log": "..." }
-}
-```
+### SSE (One-Way)
+- `POST /start_task` -> returns `call_id`
+- `GET /stream/{call_id}` -> streams `ProgressEvent`
 
-## Adding a New Tool Checklist
-
-1. [ ] Create `backend/app/my_tool.py` with `@progress_tool` decorator
-2. [ ] Implement async generator yielding `ProgressPayload` + final `dict`
-3. [ ] Import in `backend/app/main.py` to register
-4. [ ] Test via `/verify-stream` workflow or `verify_stream.py`
+### WebSocket (Bi-directional)
+- `WS /ws` -> Upgrade
+- Message `{"type": "start", "tool_name": "...", "args": {...}}` -> starts task
+- Message `{"type": "stop", "call_id": "..."}` -> cancels task
+- Server sends `ProgressEvent` JSON objects.
 
 ## Common Mistakes
 
-- ❌ Forgetting to yield a final `dict` (tool hangs)
-- ❌ Not importing tool in `main.py` (404 on `/start_task`)
-- ❌ Using sync functions instead of async generators
-- ❌ Not closing EventSource on result/error in frontend
+- ❌ Forgetting to yield a final `dict` (tool hangs).
+- ❌ Not importing tool in `main.py` (404 on `/start_task`).
+- ❌ WebSocket: Forgetting that `run_ws_generator` must be an `asyncio.Task` to be cancellable.
+- ❌ Not closing generators via `.aclose()` on cancellation (leads to memory leaks/stale tasks).

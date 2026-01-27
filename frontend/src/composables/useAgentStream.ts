@@ -13,7 +13,7 @@ interface AgentEvent {
   payload: any
 }
 
-export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error' | 'completed'
+export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error' | 'completed' | 'cancelled'
 
 export interface AgentState {
   status: ConnectionStatus
@@ -49,6 +49,7 @@ export function useAgentStream() {
   })
 
   let ws: WebSocket | null = null
+  let eventSource: EventSource | null = null
 
   const reset = () => {
     state.status = 'idle'
@@ -60,9 +61,15 @@ export function useAgentStream() {
     state.result = null
     state.error = null
     state.isStreaming = false
+    
     if (ws) {
       ws.close()
       ws = null
+    }
+    
+    if (eventSource) {
+      eventSource.close()
+      eventSource = null
     }
   }
 
@@ -94,7 +101,7 @@ export function useAgentStream() {
         streamUrl.searchParams.append('api_key', BRIDGE_API_KEY)
       }
 
-      const eventSource = new EventSource(streamUrl.toString())
+      eventSource = new EventSource(streamUrl.toString())
 
       eventSource.onopen = () => {
         state.isConnected = true
@@ -105,19 +112,19 @@ export function useAgentStream() {
 
       eventSource.onmessage = (event) => {
         const data: AgentEvent = JSON.parse(event.data)
-        handleEvent(data, () => eventSource.close())
+        handleEvent(data, () => eventSource?.close())
       }
 
       eventSource.onerror = (err) => {
         console.error('EventSource failed:', err)
-        if (eventSource.readyState === EventSource.CONNECTING) {
+        if (eventSource?.readyState === EventSource.CONNECTING) {
           state.status = 'reconnecting'
           state.isConnected = false
           state.logs.push('Connection lost. Reconnecting SSE...')
         } else {
           state.error = 'Connection failed'
           state.status = 'error'
-          eventSource.close()
+          eventSource?.close()
           state.isStreaming = false
         }
       }
@@ -150,6 +157,10 @@ export function useAgentStream() {
 
     ws.onmessage = (event) => {
       const data: AgentEvent = JSON.parse(event.data)
+      // Capture call_id from start if not set
+      if (!state.callId && data.call_id) {
+          state.callId = data.call_id
+      }
       handleEvent(data, () => {
           // WS stays open, but we might want to mark as not streaming
           state.isStreaming = false
@@ -165,10 +176,47 @@ export function useAgentStream() {
 
     ws.onclose = () => {
       state.isConnected = false
-      if (state.status !== 'completed' && state.status !== 'error') {
+      if (state.status !== 'completed' && state.status !== 'error' && state.status !== 'cancelled') {
           state.status = 'idle'
       }
       state.logs.push('WebSocket closed.')
+    }
+  }
+
+  const stopTool = async () => {
+    if (state.useWS && ws && state.callId && state.isStreaming) {
+      ws.send(JSON.stringify({
+        type: 'stop',
+        call_id: state.callId
+      }))
+      state.status = 'cancelled'
+      state.isStreaming = false
+    } else if (state.callId && state.isStreaming) {
+      // 1. Call DELETE endpoint to stop the task on backend
+      try {
+        const headers: Record<string, string> = {}
+        if (BRIDGE_API_KEY) {
+          headers['X-API-Key'] = BRIDGE_API_KEY
+        }
+        await fetch(`${API_BASE_URL}/stop_task/${state.callId}`, {
+          method: 'DELETE',
+          headers
+        })
+      } catch (err) {
+        console.error('Failed to stop SSE task on backend:', err)
+      }
+      
+      // 2. Close local event source
+      if (eventSource) {
+        eventSource.close()
+        eventSource = null
+      }
+      
+      state.status = 'cancelled'
+      state.logs.push('Task stopped by user.')
+      state.isStreaming = false
+    } else {
+      reset()
     }
   }
 
@@ -211,7 +259,8 @@ export function useAgentStream() {
 
   onUnmounted(() => {
     if (ws) ws.close()
+    if (eventSource) eventSource.close()
   })
-
-  return { state, runTool, reset }
+  
+  return { state, runTool, stopTool, reset }
 }

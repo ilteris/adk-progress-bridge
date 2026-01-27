@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useAgentStream } from '../composables/useAgentStream'
 
-const { state, runTool, reset } = useAgentStream()
+const { state, runTool, stopTool, reset } = useAgentStream()
 const auditDuration = ref(5)
 
 const startAudit = () => {
@@ -24,6 +24,7 @@ const startAudit = () => {
           <span v-else-if="state.status === 'connecting'" class="badge bg-info text-dark">Connecting...</span>
           <span v-else-if="state.status === 'error'" class="badge bg-danger">Error</span>
           <span v-else-if="state.status === 'completed'" class="badge bg-light text-dark">Done</span>
+          <span v-else-if="state.status === 'cancelled'" class="badge bg-secondary">Cancelled</span>
         </div>
       </div>
       
@@ -67,7 +68,7 @@ const startAudit = () => {
               role="progressbar" 
               :style="{ 
                 width: state.progressPct + '%',
-                backgroundColor: state.status === 'reconnecting' ? '#ffc107' : '' 
+                backgroundColor: state.status === 'reconnecting' ? '#ffc107' : (state.status === 'cancelled' ? '#6c757d' : '') 
               }"
               :aria-valuenow="state.progressPct" 
               aria-valuemin="0" 
@@ -100,11 +101,18 @@ const startAudit = () => {
 
       <div class="card-footer d-flex gap-2">
         <button 
+          v-if="!state.isStreaming"
           @click="startAudit" 
-          class="btn btn-primary" 
-          :disabled="state.isStreaming"
+          class="btn btn-primary"
         >
-          {{ state.isStreaming ? (state.status === 'reconnecting' ? 'Reconnecting...' : 'Running...') : 'Start Audit' }}
+          Start Audit
+        </button>
+        <button 
+          v-if="state.isStreaming"
+          @click="stopTool" 
+          class="btn btn-danger"
+        >
+          Stop Task
         </button>
         <button @click="reset" class="btn btn-outline-secondary" :disabled="state.isStreaming">
           Reset

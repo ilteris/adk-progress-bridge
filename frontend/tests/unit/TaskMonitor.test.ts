@@ -7,6 +7,7 @@ import { reactive } from 'vue'
 describe('TaskMonitor.vue', () => {
   let mockState: streamComposables.AgentState
   let mockRunTool: any
+  let mockStopTool: any
   let mockReset: any
 
   beforeEach(() => {
@@ -19,14 +20,17 @@ describe('TaskMonitor.vue', () => {
       logs: [],
       result: null,
       error: null,
-      isStreaming: false
+      isStreaming: false,
+      useWS: false
     })
     mockRunTool = vi.fn()
+    mockStopTool = vi.fn()
     mockReset = vi.fn()
 
     vi.spyOn(streamComposables, 'useAgentStream').mockReturnValue({
       state: mockState,
       runTool: mockRunTool,
+      stopTool: mockStopTool,
       reset: mockReset
     })
   })
@@ -89,14 +93,15 @@ describe('TaskMonitor.vue', () => {
     expect(wrapper.find('.badge.bg-danger').text()).toBe('Error')
   })
 
-  it('disables inputs while streaming', async () => {
+  it('disables inputs and shows Stop Task while streaming', async () => {
     const wrapper = mount(TaskMonitor)
     
     mockState.isStreaming = true
     await wrapper.vm.$nextTick()
     
     expect(wrapper.find('#duration').attributes()).toHaveProperty('disabled')
-    expect(wrapper.find('button.btn-primary').attributes()).toHaveProperty('disabled')
+    expect(wrapper.find('button.btn-danger').text()).toBe('Stop Task')
+    expect(wrapper.find('button.btn-outline-secondary').attributes()).toHaveProperty('disabled')
   })
 
   it('calls reset when Reset button is clicked', async () => {

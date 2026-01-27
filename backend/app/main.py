@@ -211,6 +211,36 @@ async def stream_task(
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
+@app.delete(
+    "/stop_task/{call_id}",
+    summary="Stop a Running Task",
+    description="Terminates a running task identified by the provided call_id. This is primarily used for SSE-based tasks.",
+    tags=["Execution"],
+    dependencies=[Depends(get_api_key)],
+    responses={
+        200: {"description": "Task stopped successfully"},
+        404: {"description": "Task not found or not currently active"}
+    }
+)
+async def stop_task_http(
+    call_id: str = FastAPIPath(..., description="The unique session ID of the task to stop.")
+):
+    task_data = registry.get_task_no_consume(call_id)
+    if not task_data:
+        logger.warning(f"Stop request for unknown task: {call_id}")
+        raise HTTPException(status_code=404, detail="Task not found or not active")
+    
+    gen = task_data["gen"]
+    try:
+        await gen.aclose()
+        registry.remove_task(call_id)
+        logger.info(f"Task {call_id} stopped via HTTP DELETE")
+        return {"status": "stopped", "call_id": call_id}
+    except Exception as e:
+        logger.error(f"Error stopping task {call_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """
@@ -220,6 +250,11 @@ async def websocket_endpoint(websocket: WebSocket):
         "type": "start",
         "tool_name": "...",
         "args": {...}
+    }
+    OR
+    {
+        "type": "stop",
+        "call_id": "..."
     }
     """
     await websocket.accept()
@@ -231,14 +266,16 @@ async def websocket_endpoint(websocket: WebSocket):
 
     logger.info("WebSocket connection established")
     
-    active_generators = {}
+    active_tasks: Dict[str, asyncio.Task] = {}
 
     try:
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
             
-            if message.get("type") == "start":
+            msg_type = message.get("type")
+            
+            if msg_type == "start":
                 tool_name = message.get("tool_name")
                 args = message.get("args", {})
                 
@@ -254,21 +291,46 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 try:
                     gen = tool(**args)
-                    # We run the generator in a background task
-                    asyncio.create_task(run_ws_generator(websocket, call_id, tool_name, gen))
+                    # Register task globally
+                    registry.store_task(call_id, gen, tool_name)
+                    # Run the generator in a background task tracked locally
+                    task = asyncio.create_task(run_ws_generator(websocket, call_id, tool_name, gen, active_tasks))
+                    active_tasks[call_id] = task
                 except Exception as e:
                     await websocket.send_json({
                         "type": "error",
                         "call_id": call_id,
                         "payload": {"detail": str(e)}
                     })
+            
+            elif msg_type == "stop":
+                call_id = message.get("call_id")
+                if call_id in active_tasks:
+                    logger.info(f"Stopping task {call_id} via WebSocket request")
+                    active_tasks[call_id].cancel()
+                    await websocket.send_json({
+                        "call_id": call_id,
+                        "type": "progress",
+                        "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}
+                    })
+                else:
+                    await websocket.send_json({
+                        "type": "error",
+                        "payload": {"detail": f"No active task found with call_id: {call_id}"}
+                    })
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected")
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
+    finally:
+        # Cleanup all tasks associated with this connection
+        if active_tasks:
+            logger.info(f"Cleaning up {len(active_tasks)} WebSocket tasks due to disconnect")
+            for task in active_tasks.values():
+                task.cancel()
 
-async def run_ws_generator(websocket: WebSocket, call_id: str, tool_name: str, gen):
+async def run_ws_generator(websocket: WebSocket, call_id: str, tool_name: str, gen, active_tasks: Dict[str, asyncio.Task]):
     # Set context vars
     call_id_var.set(call_id)
     tool_name_var.set(tool_name)
@@ -287,15 +349,27 @@ async def run_ws_generator(websocket: WebSocket, call_id: str, tool_name: str, g
             
             await websocket.send_json(event.model_dump())
             
+    except asyncio.CancelledError:
+        status = "cancelled"
+        logger.info(f"WS task {call_id} cancelled")
+        await gen.aclose()
     except Exception as e:
         status = "error"
         logger.error(f"Error during WS task {call_id}: {e}")
         event = ProgressEvent(call_id=call_id, type="error", payload={"detail": str(e)})
-        await websocket.send_json(event.model_dump())
+        try:
+            await websocket.send_json(event.model_dump())
+        except:
+            pass # Socket might be closed
     finally:
         duration = time.perf_counter() - start_time
         TASK_DURATION.labels(tool_name=tool_name).observe(duration)
         TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
+        
+        # Cleanup
+        registry.remove_task(call_id)
+        active_tasks.pop(call_id, None)
+        
         logger.info(f"WS task finished: {call_id} (duration: {duration:.2f}s, status: {status})")
 
 # Import tools to register them

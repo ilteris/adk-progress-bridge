@@ -96,6 +96,11 @@ class ToolRegistry:
                 return task_data
             return None
     
+    
+    def get_task_no_consume(self, call_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieves the task data without marking it as consumed."""
+        with self._lock:
+            return self._active_tasks.get(call_id)
     def remove_task(self, call_id: str):
         """Removes the task from the registry if it exists."""
         with self._lock:

@@ -1,3 +1,5 @@
 {"from": "worker", "to": "supervisor", "content": "Task deployment-guide completed. Created backend/Dockerfile, frontend/Dockerfile, and deployment_guide.md. Refactored backend and frontend to support environment variables for production."}
 {"timestamp": "2026-01-27T21:25:31Z", "sender": "worker", "message": "Task scalability-strategy completed. Created SCALABILITY.md and updated SPEC.md and README.md with scalability considerations.", "task_id": "scalability-strategy"}
 {"task_id": "auth-authz", "status": "verified", "message": "Authentication and Authorization verified with new unit tests in tests/test_auth.py. All 6 tests passed. Updated TODO.md."}
+WebSocket integration enhanced with bi-directional support (start/stop), task tracking in registry, and graceful cleanup on disconnect. Frontend updated with Stop functionality.
+{"task": "websocket-integration", "status": "completed", "details": "Fixed syntax errors in frontend composable, verified backend WebSocket tests, and updated SPEC.md with WebSocket protocol details."}

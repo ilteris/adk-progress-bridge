@@ -17,7 +17,8 @@ test('full audit flow', async ({ page }) => {
   await startBtn.click();
 
   // Verify running state
-  await expect(page.getByRole('button', { name: 'Running...' })).toBeDisabled();
+  const stopBtn = page.getByRole('button', { name: 'Stop Task' });
+  await expect(stopBtn).toBeVisible();
   await expect(page.locator('.badge')).toContainText('Live');
 
   // Wait for completion (look for the "Done" badge or the result alert)
