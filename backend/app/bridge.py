@@ -6,22 +6,58 @@ import time
 from typing import Any, Dict, AsyncGenerator, Callable, Literal, Union, Optional
 from pydantic import BaseModel, Field, validate_call
 from .logger import logger
+from .metrics import ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL
 
 class ProgressPayload(BaseModel):
-    step: str
-    pct: int = Field(ge=0, le=100)
-    log: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    """
+    Standard schema for progress updates yielded by tools.
+    """
+    step: str = Field(
+        ..., 
+        description="A human-readable label for the current task phase.",
+        examples=["Analyzing documents", "Uploading results", "Scanning ports"]
+    )
+    pct: int = Field(
+        ..., 
+        ge=0, 
+        le=100, 
+        description="The completion percentage of the overall task (0-100).",
+        examples=[45]
+    )
+    log: Optional[str] = Field(
+        None, 
+        description="Detailed log message, breadcrumb, or status update for the current step.",
+        examples=["Found 12 matching records in batch 3...", "Port 80 is open", "Processed document 5 of 10"]
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, 
+        description="Structured key-value pairs providing additional context for this update.",
+        examples=[{"batch_size": 100, "retry_count": 0, "doc_id": "doc_123"}]
+    )
 
 class ProgressEvent(BaseModel):
-    call_id: str
-    type: Literal["progress", "result", "error"]
-    payload: Union[ProgressPayload, Dict[str, Any]]
+    """
+    The event envelope sent over the Server-Sent Events (SSE) stream.
+    """
+    call_id: str = Field(
+        ..., 
+        description="The unique identifier for this specific task execution session.",
+        examples=["550e8400-e29b-41d4-a716-446655440000"]
+    )
+    type: Literal["progress", "result", "error"] = Field(
+        ..., 
+        description="The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, and 'error' signifies a failure.",
+        examples=["progress", "result", "error"]
+    )
+    payload: Union[ProgressPayload, Dict[str, Any]] = Field(
+        ..., 
+        description="The actual data payload. Contains a ProgressPayload object for 'progress' types, or the final result/error details.",
+    )
 
 class ToolRegistry:
     def __init__(self):
         self._tools: Dict[str, Callable] = {}
-        # Stores call_id -> {"gen": gen, "created_at": timestamp, "consumed": bool}
+        # Stores call_id -> {"gen": gen, "tool_name": str, "created_at": timestamp, "consumed": bool}
         self._active_tasks: Dict[str, Dict[str, Any]] = {}
         self._lock = threading.Lock()
 
@@ -40,28 +76,33 @@ class ToolRegistry:
         with self._lock:
             return self._tools.get(name)
 
-    def store_task(self, call_id: str, gen: AsyncGenerator):
+    def store_task(self, call_id: str, gen: AsyncGenerator, tool_name: str):
         with self._lock:
             self._active_tasks[call_id] = {
                 "gen": gen,
+                "tool_name": tool_name,
                 "created_at": time.time(),
                 "consumed": False
             }
-        logger.debug(f"Task stored in registry: {call_id}", extra={"call_id": call_id})
+            ACTIVE_TASKS.labels(tool_name=tool_name).inc()
+        logger.debug(f"Task stored in registry: {call_id}", extra={"call_id": call_id, "tool_name": tool_name})
 
-    def get_task(self, call_id: str) -> Optional[AsyncGenerator]:
-        """Retrieves the task and marks it as consumed."""
+    def get_task(self, call_id: str) -> Optional[Dict[str, Any]]:
+        """Retrieves the task data and marks it as consumed."""
         with self._lock:
             task_data = self._active_tasks.get(call_id)
             if task_data and not task_data["consumed"]:
                 task_data["consumed"] = True
-                return task_data["gen"]
+                return task_data
             return None
     
     def remove_task(self, call_id: str):
         """Removes the task from the registry if it exists."""
         with self._lock:
-            if call_id in self._active_tasks:
+            task_data = self._active_tasks.get(call_id)
+            if task_data:
+                tool_name = task_data["tool_name"]
+                ACTIVE_TASKS.labels(tool_name=tool_name).dec()
                 del self._active_tasks[call_id]
                 logger.debug(f"Task removed from registry: {call_id}", extra={"call_id": call_id})
 
@@ -75,10 +116,11 @@ class ToolRegistry:
         
         for call_id, task_data in tasks:
             gen = task_data["gen"]
+            tool_name = task_data["tool_name"]
             try:
                 await gen.aclose()
             except Exception as e:
-                logger.error(f"Error closing generator {call_id}: {e}", extra={"call_id": call_id})
+                logger.error(f"Error closing generator {call_id}: {e}", extra={"call_id": call_id, "tool_name": tool_name})
             finally:
                 self.remove_task(call_id)
 
@@ -90,19 +132,20 @@ class ToolRegistry:
         with self._lock:
             for call_id, task_data in self._active_tasks.items():
                 if not task_data["consumed"] and now - task_data["created_at"] > max_age_seconds:
-                    stale_tasks.append((call_id, task_data["gen"]))
+                    stale_tasks.append((call_id, task_data["gen"], task_data["tool_name"]))
         
         if not stale_tasks:
             return
 
         logger.info(f"Cleaning up {len(stale_tasks)} stale tasks")
-        for call_id, gen in stale_tasks:
+        for call_id, gen, tool_name in stale_tasks:
             try:
                 await gen.aclose()
             except Exception as e:
-                logger.error(f"Error closing stale generator {call_id}: {e}", extra={"call_id": call_id})
+                logger.error(f"Error closing stale generator {call_id}: {e}", extra={"call_id": call_id, "tool_name": tool_name})
             finally:
                 self.remove_task(call_id)
+                STALE_TASKS_CLEANED_TOTAL.inc()
 
 registry = ToolRegistry()
 

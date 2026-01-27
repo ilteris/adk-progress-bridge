@@ -1,0 +1,10 @@
+{
+  "id": "api-documentation",
+  "status": "completed",
+  "description": "Ensure FastAPI's Swagger UI correctly documents the bridge endpoints, adding descriptions and examples to models.",
+  "governance": {
+    "plan_approved": true
+  },
+  "blocked_by": ["backend-structured-logging-integration"],
+  "contract": "worker"
+}
