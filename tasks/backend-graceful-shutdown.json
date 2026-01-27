@@ -1,0 +1,10 @@
+{
+  "id": "backend-graceful-shutdown",
+  "status": "completed",
+  "description": "Ensure active generators are closed when the server shuts down in backend/app/main.py.",
+  "governance": {
+    "plan_approved": false
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}

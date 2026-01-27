@@ -1,0 +1,11 @@
+{
+  "id": "backend-thread-safety",
+  "status": "completed",
+  "description": "Ensure ToolRegistry is thread-safe for concurrent task storage and retrieval in backend/app/bridge.py.",
+  "governance": {
+    "plan_approved": false,
+    "evaluated": true
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}

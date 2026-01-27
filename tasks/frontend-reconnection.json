@@ -1,0 +1,11 @@
+{
+  "id": "frontend-reconnection",
+  "status": "completed",
+  "description": "Implement automatic reconnection in useAgentStream.ts if the SSE connection drops.",
+  "governance": {
+    "plan_approved": true,
+    "evaluated": true
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}

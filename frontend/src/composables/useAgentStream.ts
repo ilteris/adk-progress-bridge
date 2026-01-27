@@ -1,4 +1,4 @@
-import { ref, reactive } from 'vue'
+import { reactive } from 'vue'
 
 interface ProgressPayload {
   step: string
@@ -13,7 +13,10 @@ interface AgentEvent {
   payload: any
 }
 
+export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error' | 'completed'
+
 export interface AgentState {
+  status: ConnectionStatus
   isConnected: boolean
   callId: string | null
   currentStep: string
@@ -26,6 +29,7 @@ export interface AgentState {
 
 export function useAgentStream() {
   const state = reactive<AgentState>({
+    status: 'idle',
     isConnected: false,
     callId: null,
     currentStep: 'Idle',
@@ -37,6 +41,7 @@ export function useAgentStream() {
   })
 
   const reset = () => {
+    state.status = 'idle'
     state.isConnected = false
     state.callId = null
     state.currentStep = 'Idle'
@@ -50,6 +55,7 @@ export function useAgentStream() {
   const runTool = async (toolName: string, args: Record<string, any> = {}) => {
     reset()
     state.isStreaming = true
+    state.status = 'connecting'
 
     try {
       // 1. Start Task
@@ -69,6 +75,8 @@ export function useAgentStream() {
 
       eventSource.onopen = () => {
         state.isConnected = true
+        state.status = 'connected'
+        state.error = null // Clear any previous transient errors
         state.logs.push('Connected to stream...')
       }
 
@@ -84,11 +92,13 @@ export function useAgentStream() {
           state.result = data.payload
           state.currentStep = 'Completed'
           state.progressPct = 100
+          state.status = 'completed'
           state.logs.push('Task completed successfully.')
           eventSource.close()
           state.isStreaming = false
         } else if (data.type === 'error') {
           state.error = data.payload.detail || 'Unknown error'
+          state.status = 'error'
           state.logs.push(`Error: ${state.error}`)
           eventSource.close()
           state.isStreaming = false
@@ -97,13 +107,25 @@ export function useAgentStream() {
 
       eventSource.onerror = (err) => {
         console.error('EventSource failed:', err)
-        state.error = 'Connection lost'
-        eventSource.close()
-        state.isStreaming = false
+        
+        // EventSource.readyState:
+        // 0: CONNECTING - it is attempting to reconnect
+        // 2: CLOSED - it has given up or was closed
+        if (eventSource.readyState === EventSource.CONNECTING) {
+          state.status = 'reconnecting'
+          state.isConnected = false
+          state.logs.push('Connection lost. Reconnecting...')
+        } else {
+          state.error = 'Connection failed'
+          state.status = 'error'
+          eventSource.close()
+          state.isStreaming = false
+        }
       }
 
     } catch (err: any) {
       state.error = err.message
+      state.status = 'error'
       state.isStreaming = false
     }
   }

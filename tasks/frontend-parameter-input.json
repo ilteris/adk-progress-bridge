@@ -1,0 +1,10 @@
+{
+  "id": "frontend-parameter-input",
+  "status": "completed",
+  "description": "Allow users to input tool parameters (e.g., duration for dummy_tool) directly from the UI in App.vue and pass them to runTool.",
+  "governance": {
+    "plan_approved": false
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}

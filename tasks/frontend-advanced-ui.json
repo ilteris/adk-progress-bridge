@@ -1,0 +1,10 @@
+{
+  "id": "frontend-advanced-ui",
+  "status": "completed",
+  "description": "Add more visualization options for different types of tool results in TaskMonitor.vue and other components.",
+  "governance": {
+    "plan_approved": true
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}

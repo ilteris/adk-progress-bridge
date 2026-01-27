@@ -1,0 +1,10 @@
+{
+  "id": "backend-timeout-cleanup",
+  "status": "completed",
+  "description": "Implement a background task to clean up abandoned tasks in ToolRegistry that were never streamed.",
+  "governance": {
+    "plan_approved": false
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "backend-input-validation",
+  "status": "in_progress",
+  "description": "Enhance validation for args passed to start_task in backend/app/main.py. Ensure args match the expected parameters of the tool being called.",
+  "governance": {
+    "plan_approved": false
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}
