@@ -2,5 +2,5 @@
   "title": "WebSocket Integration",
   "status": "completed",
   "role": "Architect",
-  "description": "Implement a bi-directional WebSocket layer for the bridge."
+  "description": "Implemented a bi-directional WebSocket layer for the bridge, including support for task cancellation and mid-execution interactive input. Added REST fallback for interactive input in SSE mode."
 }

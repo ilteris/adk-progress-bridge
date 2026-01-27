@@ -1,7 +1,8 @@
 import asyncio
 import random
-from .bridge import progress_tool, ProgressPayload
+from .bridge import progress_tool, ProgressPayload, input_manager
 from .logger import logger
+from .context import call_id_var
 
 @progress_tool(name="long_audit")
 async def long_audit(duration: int = 10):
@@ -163,3 +164,32 @@ async def brittle_process(fail_at: int = 50):
         await asyncio.sleep(0.1)
     
     yield {"status": "miraculously_succeeded"}
+
+@progress_tool(name="interactive_task")
+async def interactive_task():
+    """
+    Demonstrates bi-directional WebSocket communication by requesting input.
+    """
+    call_id = call_id_var.get()
+    
+    yield ProgressPayload(step="Analyzing situation", pct=30, log="Thinking if I need help...")
+    await asyncio.sleep(1)
+    
+    # Request input
+    prompt = "I need your approval to proceed with the final phase. Should I continue? (yes/no)"
+    yield {
+        "type": "input_request",
+        "payload": {"prompt": prompt}
+    }
+    
+    # Wait for input
+    user_response = await input_manager.wait_for_input(call_id, prompt)
+    
+    if user_response.lower() == "yes":
+        yield ProgressPayload(step="Finalizing", pct=100, log=f"User said {user_response}, proceeding!")
+        await asyncio.sleep(0.5)
+        yield {"status": "complete", "message": "Task finished with user approval."}
+    else:
+        yield ProgressPayload(step="Aborting", pct=100, log=f"User said {user_response}, stopping.")
+        await asyncio.sleep(0.5)
+        yield {"status": "aborted", "message": "Task aborted by user."}

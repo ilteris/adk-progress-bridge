@@ -41,6 +41,15 @@ We define a strict JSON schema for the events streamed over the wire.
   }
 }
 
+// Event: "input_request" (WebSocket Only)
+{
+  "call_id": "550e8400-e29b...",
+  "type": "input_request",
+  "payload": {
+    "prompt": "Continue to phase 2? (yes/no)"
+  }
+}
+
 // Event: "result"
 {
   "call_id": "550e8400-e29b...",
@@ -54,10 +63,11 @@ We define a strict JSON schema for the events streamed over the wire.
 ### 2. Backend (Python)
 *   **`@progress_tool` Decorator:** Transforms a standard function into a tracked generator.
 *   **`ToolRegistry`:** Manages available tools and active sessions.
+*   **`InputManager`:** Handles bi-directional futures for mid-execution user input.
 *   **FastAPI Endpoints:** 
     *   `/start_task`: Traditional REST for SSE flow.
     *   `/stream`: SSE output stream.
-    *   `/ws`: Bi-directional WebSocket for sub-millisecond sync and task cancellation.
+    *   `/ws`: Bi-directional WebSocket for sub-millisecond sync, task cancellation, and **interactive input**.
 
 ### 3. Frontend (Vue.js)
 *   **`useAgentStream`:** A Vue composable that connects via SSE or WebSocket.
@@ -73,12 +83,17 @@ Copy `backend/app/bridge.py` into your project.
 
 ### Step 2: Decorate Your Tools
 ```python
-from src.utils.adk_bridge import progress_tool, ProgressPayload
+from src.utils.adk_bridge import progress_tool, ProgressPayload, input_manager
 
 @progress_tool(name="analyze_contracts")
 async def analyze_contracts(folder_path: str):
     yield ProgressPayload(step="Loading Files", pct=10, log="Reading 50 files...")
-    # ... work ...
+    
+    # Optional: Request input mid-execution (WS Only)
+    yield {"type": "input_request", "payload": {"prompt": "Confirm scan?"}}
+    response = await input_manager.wait_for_input(call_id, "Confirm scan?")
+    
+    yield ProgressPayload(step="Processing", pct=100, log=f"User said {response}")
     yield {"status": "complete"}
 ```
 
@@ -86,16 +101,16 @@ async def analyze_contracts(folder_path: str):
 ```typescript
 import { useAgentStream } from '@/composables/useAgentStream'
 
-const { state, runTool, stopTool } = useAgentStream()
+const { state, runTool, stopTool, sendInput } = useAgentStream()
 
 // Trigger the tool (default is SSE, set state.useWS = true for WebSocket)
 const handleAnalyze = () => {
     runTool('analyze_contracts', { folder_path: '/docs/legal' })
 }
 
-// Cancel a running tool (WebSocket only)
-const handleStop = () => {
-    stopTool()
+// Handle an input request from the agent
+const handleUserResponse = (val: string) => {
+    sendInput(val)
 }
 ```
 
@@ -104,4 +119,4 @@ const handleStop = () => {
 This project includes an AI agent skill at `.agent/skills/progress-bridge/SKILL.md`.
 
 ## License
-MIT
+License: MIT

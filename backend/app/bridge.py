@@ -44,15 +44,44 @@ class ProgressEvent(BaseModel):
         description="The unique identifier for this specific task execution session.",
         examples=["550e8400-e29b-41d4-a716-446655440000"]
     )
-    type: Literal["progress", "result", "error"] = Field(
+    type: Literal["progress", "result", "error", "input_request"] = Field(
         ..., 
-        description="The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, and 'error' signifies a failure.",
-        examples=["progress", "result", "error"]
+        description="The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, 'error' signifies a failure, and 'input_request' prompts the user for information.",
+        examples=["progress", "result", "error", "input_request"]
     )
     payload: Union[ProgressPayload, Dict[str, Any]] = Field(
         ..., 
         description="The actual data payload. Contains a ProgressPayload object for 'progress' types, or the final result/error details.",
     )
+
+class InputManager:
+    def __init__(self):
+        self._pending_inputs: Dict[str, asyncio.Future] = {}
+        self._lock = threading.Lock()
+
+    async def wait_for_input(self, call_id: str, prompt: str) -> Any:
+        future = asyncio.get_running_loop().create_future()
+        with self._lock:
+            self._pending_inputs[call_id] = future
+        
+        logger.info(f"Task {call_id} waiting for input: {prompt}", extra={"call_id": call_id, "prompt": prompt})
+        
+        # This will be handled by the WebSocket endpoint sending an 'input_request' event
+        # The caller of this function (the tool) should yield the request before calling this, 
+        # or we could integrate it here. Let's make it a helper that yields.
+        return await future
+
+    def provide_input(self, call_id: str, value: Any):
+        with self._lock:
+            future = self._pending_inputs.pop(call_id, None)
+        
+        if future and not future.done():
+            future.set_result(value)
+            logger.info(f"Provided input for task {call_id}", extra={"call_id": call_id})
+            return True
+        return False
+
+input_manager = InputManager()
 
 class ToolRegistry:
     def __init__(self):

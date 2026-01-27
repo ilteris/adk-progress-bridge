@@ -9,11 +9,11 @@ interface ProgressPayload {
 
 interface AgentEvent {
   call_id: string
-  type: 'progress' | 'result' | 'error'
+  type: 'progress' | 'result' | 'error' | 'input_request'
   payload: any
 }
 
-export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error' | 'completed' | 'cancelled'
+export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error' | 'completed' | 'cancelled' | 'waiting_for_input'
 
 export interface AgentState {
   status: ConnectionStatus
@@ -26,6 +26,7 @@ export interface AgentState {
   error: string | null
   isStreaming: boolean
   useWS: boolean
+  inputPrompt: string | null
 }
 
 // Support VITE_API_URL environment variable, defaulting to localhost for dev
@@ -45,13 +46,14 @@ export function useAgentStream() {
     result: null,
     error: null,
     isStreaming: false,
-    useWS: false
+    useWS: false,
+    inputPrompt: null
   })
 
   let ws: WebSocket | null = null
   let eventSource: EventSource | null = null
 
-  const reset = () => {
+  const reset = (closeWS = true) => {
     state.status = 'idle'
     state.isConnected = false
     state.callId = null
@@ -61,8 +63,9 @@ export function useAgentStream() {
     state.result = null
     state.error = null
     state.isStreaming = false
+    state.inputPrompt = null
     
-    if (ws) {
+    if (closeWS && ws) {
       ws.close()
       ws = null
     }
@@ -84,7 +87,9 @@ export function useAgentStream() {
       const response = await fetch(`${API_BASE_URL}/start_task/${toolName}`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(args)
+        body: JSON.stringify({
+            args: args
+        })
       })
 
       if (!response.ok) {
@@ -96,7 +101,8 @@ export function useAgentStream() {
       state.callId = call_id
 
       // 2. Connect to SSE
-      const streamUrl = new URL(`${API_BASE_URL}/stream/${call_id}`)
+      const streamUrl = new URL(`${API_BASE_URL}/stream`)
+      streamUrl.searchParams.append('call_id', call_id)
       if (BRIDGE_API_KEY) {
         streamUrl.searchParams.append('api_key', BRIDGE_API_KEY)
       }
@@ -112,7 +118,10 @@ export function useAgentStream() {
 
       eventSource.onmessage = (event) => {
         const data: AgentEvent = JSON.parse(event.data)
-        handleEvent(data, () => eventSource?.close())
+        // Ensure we only process events for the current call_id
+        if (data.call_id === state.callId) {
+            handleEvent(data, () => eventSource?.close())
+        }
       }
 
       eventSource.onerror = (err) => {
@@ -135,51 +144,78 @@ export function useAgentStream() {
     }
   }
 
-  const runToolWS = (toolName: string, args: Record<string, any>) => {
-    const wsUrl = new URL(`${WS_BASE_URL}/ws`)
-    if (BRIDGE_API_KEY) {
-      wsUrl.searchParams.append('api_key', BRIDGE_API_KEY)
-    }
+  const connectWS = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        resolve()
+        return
+      }
 
-    ws = new WebSocket(wsUrl.toString())
+      const wsUrl = new URL(`${WS_BASE_URL}/ws`)
+      if (BRIDGE_API_KEY) {
+        wsUrl.searchParams.append('api_key', BRIDGE_API_KEY)
+      }
 
-    ws.onopen = () => {
-      state.isConnected = true
+      ws = new WebSocket(wsUrl.toString())
+
+      ws.onopen = () => {
+        state.isConnected = true
+        state.logs.push('Connected to WebSocket...')
+        resolve()
+      }
+
+      ws.onmessage = (event) => {
+        const data: AgentEvent = JSON.parse(event.data)
+        
+        // If we don't have a callId yet, this might be the start of our new task
+        if (!state.callId && data.call_id) {
+            state.callId = data.call_id
+        }
+        
+        // Only handle events matching our current callId to avoid ghost tasks
+        if (data.call_id === state.callId) {
+            handleEvent(data, () => {
+                state.isStreaming = false
+            })
+        }
+      }
+
+      ws.onerror = (err) => {
+        console.error('WebSocket error:', err)
+        state.error = 'WebSocket connection failed'
+        state.status = 'error'
+        state.isStreaming = false
+        reject(err)
+      }
+
+      ws.onclose = () => {
+        state.isConnected = false
+        if (state.isStreaming) {
+          state.error = 'WebSocket connection closed unexpectedly'
+          state.status = 'error'
+          state.isStreaming = false
+          state.logs.push('Error: WebSocket closed unexpectedly during streaming.')
+        } else if (state.status !== 'completed' && state.status !== 'error' && state.status !== 'cancelled') {
+          state.status = 'idle'
+        }
+        state.logs.push('WebSocket closed.')
+        ws = null
+      }
+    })
+  }
+
+  const runToolWS = async (toolName: string, args: Record<string, any>) => {
+    try {
+      await connectWS()
       state.status = 'connected'
-      state.logs.push('Connected to WebSocket...')
       
       ws?.send(JSON.stringify({
         type: 'start',
         tool_name: toolName,
         args: args
       }))
-    }
-
-    ws.onmessage = (event) => {
-      const data: AgentEvent = JSON.parse(event.data)
-      // Capture call_id from start if not set
-      if (!state.callId && data.call_id) {
-          state.callId = data.call_id
-      }
-      handleEvent(data, () => {
-          // WS stays open, but we might want to mark as not streaming
-          state.isStreaming = false
-      })
-    }
-
-    ws.onerror = (err) => {
-      console.error('WebSocket error:', err)
-      state.error = 'WebSocket connection failed'
-      state.status = 'error'
-      state.isStreaming = false
-    }
-
-    ws.onclose = () => {
-      state.isConnected = false
-      if (state.status !== 'completed' && state.status !== 'error' && state.status !== 'cancelled') {
-          state.status = 'idle'
-      }
-      state.logs.push('WebSocket closed.')
+    } catch (err) {
+      // Error handled in connectWS
     }
   }
 
@@ -192,21 +228,19 @@ export function useAgentStream() {
       state.status = 'cancelled'
       state.isStreaming = false
     } else if (state.callId && state.isStreaming) {
-      // 1. Call DELETE endpoint to stop the task on backend
       try {
         const headers: Record<string, string> = {}
         if (BRIDGE_API_KEY) {
           headers['X-API-Key'] = BRIDGE_API_KEY
         }
         await fetch(`${API_BASE_URL}/stop_task/${state.callId}`, {
-          method: 'DELETE',
+          method: 'POST',
           headers
         })
       } catch (err) {
         console.error('Failed to stop SSE task on backend:', err)
       }
       
-      // 2. Close local event source
       if (eventSource) {
         eventSource.close()
         eventSource = null
@@ -220,12 +254,48 @@ export function useAgentStream() {
     }
   }
 
+  const sendInput = async (value: string) => {
+    if (state.callId && state.status === 'waiting_for_input') {
+        if (state.useWS && ws) {
+            ws.send(JSON.stringify({
+                type: 'input',
+                call_id: state.callId,
+                value: value
+            }))
+        } else {
+            try {
+                const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+                if (BRIDGE_API_KEY) {
+                    headers['X-API-Key'] = BRIDGE_API_KEY
+                }
+                await fetch(`${API_BASE_URL}/provide_input`, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        call_id: state.callId,
+                        value: value
+                    })
+                })
+            } catch (err) {
+                console.error('Failed to send input via POST:', err)
+            }
+        }
+        state.status = 'connected'
+        state.inputPrompt = null
+        state.logs.push(`Sent input: ${value}`)
+    }
+  }
+
   const handleEvent = (data: AgentEvent, closeFn: () => void) => {
     if (data.type === 'progress') {
       const payload = data.payload as ProgressPayload
       state.currentStep = payload.step
       state.progressPct = payload.pct
       if (payload.log) state.logs.push(payload.log)
+    } else if (data.type === 'input_request') {
+        state.status = 'waiting_for_input'
+        state.inputPrompt = data.payload.prompt
+        state.logs.push(`AGENT REQUESTED INPUT: ${state.inputPrompt}`)
     } else if (data.type === 'result') {
       state.result = data.payload
       state.currentStep = 'Completed'
@@ -244,14 +314,20 @@ export function useAgentStream() {
   }
 
   const runTool = async (toolName: string, args: Record<string, any> = {}) => {
+    // 1. If already streaming, stop it first
+    if (state.isStreaming) {
+      await stopTool()
+    }
+
     const useWS = state.useWS
-    reset()
-    state.useWS = useWS // preserve the setting
+    // 2. Reset state (but keep WS open if using WS)
+    reset(!useWS)
+    state.useWS = useWS 
     state.isStreaming = true
     state.status = 'connecting'
 
     if (state.useWS) {
-      runToolWS(toolName, args)
+      await runToolWS(toolName, args)
     } else {
       await runToolSSE(toolName, args)
     }
@@ -262,5 +338,5 @@ export function useAgentStream() {
     if (eventSource) eventSource.close()
   })
   
-  return { state, runTool, stopTool, reset }
+  return { state, runTool, stopTool, sendInput, reset }
 }
