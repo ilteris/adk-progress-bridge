@@ -1,4 +1,5 @@
 import asyncio
+import random
 from .bridge import progress_tool, ProgressPayload
 from .logger import logger
 
@@ -20,7 +21,8 @@ async def long_audit(duration: int = 10):
         # Calculate percentage
         pct = int(((i + 1) / n_steps) * 100)
         
-        logger.debug(f"Step {i+1}/{n_steps}: {step}", extra={"step": step, "pct": pct})
+        # Use info to ensure visibility in default log level
+        logger.info(f"Step {i+1}/{n_steps}: {step}", extra={"step": step, "pct": pct})
         
         # Yield progress
         yield ProgressPayload(
@@ -47,3 +49,117 @@ async def security_scan(target: str = "all"):
     await asyncio.sleep(1)
     yield ProgressPayload(step="Checking vulnerabilities", pct=100)
     yield {"status": "secure"}
+
+@progress_tool(name="multi_stage_analysis")
+async def multi_stage_analysis(documents: int = 3):
+    """
+    Simulates a complex multi-stage analysis on multiple documents.
+    Shows sub-progress within the log.
+    """
+    stages = ["Loading", "Extracting", "Analyzing", "Summarizing"]
+    total_work = documents * len(stages)
+    completed_work = 0
+
+    for doc_idx in range(documents):
+        doc_name = f"Doc_{doc_idx + 1}.pdf"
+        for stage in stages:
+            # Sub-task logic
+            pct = int((completed_work / total_work) * 100)
+            logger.info(f"Processing {doc_name} - Stage: {stage}", extra={"doc": doc_name, "stage": stage})
+            yield ProgressPayload(
+                step=f"Processing {doc_name}",
+                pct=pct,
+                log=f"Stage: {stage} for {doc_name}",
+                metadata={"doc": doc_name, "stage": stage}
+            )
+            
+            # Simulate variable work time
+            await asyncio.sleep(random.uniform(0.1, 0.2))
+            completed_work += 1
+
+    yield ProgressPayload(step="Finalizing", pct=100, log="Consolidating all document analyses...")
+    await asyncio.sleep(0.3)
+
+    yield {
+        "status": "success",
+        "documents_processed": documents,
+        "total_stages": len(stages),
+        "summary": f"Successfully analyzed {documents} documents across {len(stages)} stages."
+    }
+
+@progress_tool(name="parallel_report_generation")
+async def parallel_report_generation(reports: int = 4):
+    """
+    Simulates parallel report generation.
+    Since this is a generator, we 'yield' as sub-tasks report progress.
+    """
+    logger.info(f"Starting parallel jobs for {reports} reports")
+    yield ProgressPayload(step="Starting parallel jobs", pct=0, log=f"Spinning up {reports} report workers...")
+    
+    # We use a queue to collect progress from sub-tasks and yield them in order
+    queue = asyncio.Queue()
+
+    async def worker(report_id: int):
+        report_name = f"Report-{report_id}"
+        # Start
+        logger.info(f"Worker {report_name} started")
+        await queue.put(ProgressPayload(
+            step="Parallel Work", 
+            pct=0, 
+            log=f"Worker {report_name} started",
+            metadata={"worker": report_name, "status": "started"}
+        ))
+        
+        # Simulate work
+        work_time = random.uniform(0.3, 0.8)
+        await asyncio.sleep(work_time)
+        
+        # Finish
+        logger.info(f"Worker {report_name} finished")
+        await queue.put(ProgressPayload(
+            step="Parallel Work", 
+            pct=0, 
+            log=f"Worker {report_name} finished in {work_time:.2f}s",
+            metadata={"worker": report_name, "status": "finished"}
+        ))
+
+    # Start all workers
+    worker_tasks = [asyncio.create_task(worker(i)) for i in range(reports)]
+    
+    finished_count = 0
+    while finished_count < reports:
+        payload = await queue.get()
+        if payload.metadata.get("status") == "finished":
+            finished_count += 1
+        
+        # Calculate overall percentage based on finished workers
+        global_pct = int((finished_count / reports) * 100)
+        payload.pct = global_pct
+        
+        yield payload
+
+    yield {
+        "status": "complete",
+        "reports_generated": reports,
+        "parallel": True
+    }
+
+@progress_tool(name="brittle_process")
+async def brittle_process(fail_at: int = 50):
+    """
+    Simulates a process that might fail when it reaches a certain percentage.
+    """
+    for pct in range(0, 101, 10):
+        if pct >= fail_at:
+            logger.error(f"Brittle process failed at {pct}%", extra={"pct": pct})
+            raise Exception(f"Simulated failure at {pct}% as requested (fail_at={fail_at})")
+        
+        logger.info(f"Brittle process progress: {pct}%")
+        yield ProgressPayload(
+            step="Running brittle process",
+            pct=pct,
+            log=f"Progress: {pct}%"
+        )
+        await asyncio.sleep(0.1)
+    
+    yield {"status": "miraculously_succeeded"}

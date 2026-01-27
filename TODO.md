@@ -7,7 +7,7 @@ This list tracks the remaining tasks and planned improvements for the ADK Progre
 - [x] **Thread Safety:** Ensure `ToolRegistry` is thread-safe for concurrent task storage and retrieval.
 - [x] **Graceful Shutdown:** Ensure active generators are closed when the server shuts down.
 - [x] **Input Validation:** Enhance validation for `args` passed to `start_task`.
-- [/] **Structured Logging:** Integrate structured logging using contextvars as specified in tmp/task_logging.md (Integration in progress).
+- [x] **Structured Logging:** Integrate structured logging using contextvars as specified in tmp/task_logging.md.
 
 ## 🎨 Frontend Refinement
 - [x] **Reconnection Logic:** Implement automatic reconnection in `useAgentStream` if the SSE connection drops.
@@ -22,11 +22,16 @@ This list tracks the remaining tasks and planned improvements for the ADK Progre
 - [x] **End-to-End Tests:** Implement Playwright tests for the full flow from clicking "Start" to seeing the result.
 
 ## 📚 Documentation & Developer Experience
-- [ ] **API Documentation:** Use FastAPI's Swagger UI to document the bridge endpoints.
-- [ ] **Deployment Guide:** Add instructions for deploying the bridge in a production environment (e.g., GKE, Cloud Run).
-- [/] **Advanced Examples:** Create more complex dummy tools showing parallel work or sub-task progress. (In progress).
+- [x] **API Documentation:** Use FastAPI's Swagger UI to document the bridge endpoints.
+- [x] **Deployment Guide:** Add instructions for deploying the bridge in a production environment (e.g., GKE, Cloud Run).
+- [x] **Advanced Examples:** Create more complex dummy tools showing parallel work or sub-task progress.
 
 ## 🚀 Production Readiness
-- [ ] **Authentication/Authorization:** Add middleware to secure the bridge endpoints.
-- [ ] **Scalability Strategy:** Document how to handle tasks across multiple server instances (e.g., using Redis for state management).
-- [ ] **Monitoring & Metrics:** Integrate with Prometheus/Grafana to track task duration and success rates.
+- [x] **Authentication/Authorization:** Add middleware to secure the bridge endpoints.
+- [x] **Scalability Strategy:** Document how to handle tasks across multiple server instances (e.g., using Redis for state management).
+- [x] **Monitoring & Metrics:** Integrate with Prometheus/Grafana to track task duration and success rates.
+
+## 🧪 Live Swarm Verification
+- [x] **Stream Test:** Verify that this task appears instantly in the TUI.
+## 🏁 Final Dashboard Verification
+- [x] **TUI Fidelity Check:** Verify that the layout, labels, and anti-pulse logic are working perfectly.

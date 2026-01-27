@@ -27,6 +27,11 @@ export interface AgentState {
   isStreaming: boolean
 }
 
+// Support VITE_API_URL environment variable, defaulting to localhost for dev
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+// Support VITE_BRIDGE_API_KEY for authenticated requests
+const BRIDGE_API_KEY = import.meta.env.VITE_BRIDGE_API_KEY || ''
+
 export function useAgentStream() {
   const state = reactive<AgentState>({
     status: 'idle',
@@ -59,19 +64,33 @@ export function useAgentStream() {
 
     try {
       // 1. Start Task
-      const response = await fetch(`http://localhost:8000/start_task/${toolName}`, {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (BRIDGE_API_KEY) {
+        headers['X-API-Key'] = BRIDGE_API_KEY
+      }
+
+      const response = await fetch(`${API_BASE_URL}/start_task/${toolName}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(args)
       })
 
-      if (!response.ok) throw new Error(`Failed to start task: ${response.statusText}`)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.detail || `Failed to start task: ${response.statusText}`)
+      }
       
       const { call_id } = await response.json()
       state.callId = call_id
 
       // 2. Connect to SSE
-      const eventSource = new EventSource(`http://localhost:8000/stream/${call_id}`)
+      // Add api_key to query params if available
+      const streamUrl = new URL(`${API_BASE_URL}/stream/${call_id}`)
+      if (BRIDGE_API_KEY) {
+        streamUrl.searchParams.append('api_key', BRIDGE_API_KEY)
+      }
+
+      const eventSource = new EventSource(streamUrl.toString())
 
       eventSource.onopen = () => {
         state.isConnected = true

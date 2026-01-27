@@ -1,0 +1,11 @@
+{
+  "id": "deployment-guide",
+  "status": "completed",
+  "description": "Add instructions for deploying the bridge in a production environment (GKE, Cloud Run) including environment variables and scaling considerations.",
+  "governance": {
+    "plan_approved": true,
+    "evaluated": true
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}

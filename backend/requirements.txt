@@ -3,3 +3,4 @@ uvicorn
 pydantic
 uuid
 python-multipart
+prometheus-client

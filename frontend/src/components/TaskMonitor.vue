@@ -11,10 +11,10 @@ const startAudit = () => {
 </script>
 
 <template>
-  <div class="container mt-5">
+  <div class="container mt-2">
     <div class="card shadow-sm">
       <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-        <h4 class="mb-0">ADK Progress Bridge</h4>
+        <h4 class="mb-0">Task Monitor</h4>
         <div>
           <span v-if="state.status === 'connected'" class="badge bg-success">Live</span>
           <span v-else-if="state.status === 'reconnecting'" class="badge bg-warning text-dark">
@@ -29,7 +29,7 @@ const startAudit = () => {
       
       <div class="card-body">
         <!-- Configuration Section -->
-        <div class="mb-4 p-3 border rounded bg-light">
+        <div class="mb-4 p-3 border rounded bg-body-tertiary">
           <h6>Audit Configuration</h6>
           <div class="row g-3 align-items-center">
             <div class="col-auto">
@@ -89,7 +89,7 @@ const startAudit = () => {
         <!-- Result/Error Section -->
         <div v-if="state.result" class="alert alert-success mt-3">
           <h6>Final Result:</h6>
-          <pre class="mb-0">{{ JSON.stringify(state.result, null, 2) }}</pre>
+          <pre class="mb-0 text-dark-emphasis">{{ JSON.stringify(state.result, null, 2) }}</pre>
         </div>
 
         <div v-if="state.error" class="alert alert-danger mt-3">

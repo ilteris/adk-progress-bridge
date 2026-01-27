@@ -1,0 +1,11 @@
+{
+  "id": "auth-authz",
+  "status": "completed",
+  "description": "Add middleware or dependency injection to secure the bridge endpoints (start_task and stream).",
+  "governance": {
+    "plan_approved": true,
+    "evaluated": true
+  },
+  "blocked_by": ["api-documentation"],
+  "contract": "worker"
+}

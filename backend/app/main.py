@@ -1,9 +1,10 @@
 import asyncio
 import uuid
 import time
+import os
 from typing import Dict, Any, Optional
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, HTTPException, Body, Path as FastAPIPath
+from fastapi import FastAPI, Request, HTTPException, Body, Path as FastAPIPath, Depends
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ValidationError
@@ -11,6 +12,12 @@ from .bridge import registry, ProgressEvent, format_sse, ProgressPayload
 from .context import call_id_var, tool_name_var
 from .logger import logger
 from .metrics import get_metrics, TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
+from .auth import get_api_key, verify_api_key_sse
+
+# Configuration from environment variables
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
+TASK_CLEANUP_MAX_AGE = int(os.getenv("TASK_CLEANUP_MAX_AGE", "300"))
+TASK_CLEANUP_INTERVAL = int(os.getenv("TASK_CLEANUP_INTERVAL", "60"))
 
 class StartTaskResponse(BaseModel):
     """
@@ -22,7 +29,7 @@ class StartTaskResponse(BaseModel):
         examples=["550e8400-e29b-41d4-a716-446655440000"]
     )
 
-async def cleanup_loop(max_age: int = 300, interval: int = 60):
+async def cleanup_loop(max_age: int = TASK_CLEANUP_MAX_AGE, interval: int = TASK_CLEANUP_INTERVAL):
     """Background loop to clean up stale tasks."""
     logger.info(f"Starting stale task cleanup loop (interval: {interval}s, max_age: {max_age}s)")
     while True:
@@ -75,10 +82,10 @@ to provide immediate feedback to the frontend.
     lifespan=lifespan
 )
 
-# Enable CORS for Vue.js development
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -99,9 +106,11 @@ async def metrics():
     summary="Start a Tool Task",
     description="Initializes a registered tool with the provided arguments and returns a session call_id.",
     tags=["Execution"],
+    dependencies=[Depends(get_api_key)],
     responses={
         404: {"description": "Tool not found in registry"},
-        400: {"description": "Invalid arguments provided for the tool"}
+        400: {"description": "Invalid arguments provided for the tool"},
+        401: {"description": "Invalid or missing API Key"}
     }
 )
 async def start_task(
@@ -141,12 +150,14 @@ Connect to this endpoint via EventSource (SSE) to receive progress updates for a
 The stream yields events of type 'progress', 'result', or 'error'.
 """,
     tags=["Execution"],
+    dependencies=[Depends(verify_api_key_sse)],
     responses={
         200: {
             "description": "SSE Stream of ProgressEvent objects.",
             "model": ProgressEvent
         },
-        404: {"description": "Task not found or already consumed."}
+        404: {"description": "Task not found or already consumed."},
+        401: {"description": "Invalid or missing API Key"}
     }
 )
 async def stream_task(

@@ -1,0 +1,11 @@
+{
+  "id": "frontend-dark-mode",
+  "status": "completed",
+  "description": "Implement dark mode support in the frontend. Use system preferences (prefers-color-scheme) and Bootstrap's color modes. Ensure TaskMonitor.vue components are visually coherent in both modes.",
+  "governance": {
+    "plan_approved": true,
+    "evaluated": true
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}

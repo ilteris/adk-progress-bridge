@@ -3,7 +3,8 @@
   "status": "completed",
   "description": "Add Vitest tests for TaskMonitor.vue and useAgentStream composable.",
   "governance": {
-    "plan_approved": true
+    "plan_approved": true,
+    "evaluated": true
   },
   "blocked_by": [],
   "contract": "worker"

@@ -3,7 +3,8 @@
   "status": "completed",
   "description": "Implement Playwright tests for the full flow from clicking 'Start' to seeing the result.",
   "governance": {
-    "plan_approved": false
+    "plan_approved": false,
+    "evaluated": true
   },
   "blocked_by": ["frontend-component-tests"],
   "contract": "worker"

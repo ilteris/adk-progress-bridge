@@ -1,0 +1,11 @@
+{
+  "id": "advanced-examples",
+  "status": "completed",
+  "description": "Create more complex dummy tools showing parallel work or sub-task progress in bridge.py.",
+  "governance": {
+    "plan_approved": false,
+    "evaluated": true
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}

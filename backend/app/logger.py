@@ -2,6 +2,7 @@ import logging
 import json
 from datetime import datetime
 from typing import Any
+from .context import call_id_var, tool_name_var
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
@@ -13,10 +14,14 @@ class JsonFormatter(logging.Formatter):
             "func": record.funcName,
         }
         
-        if hasattr(record, "call_id"):
-            log_record["call_id"] = record.call_id
-        if hasattr(record, "tool_name"):
-            log_record["tool_name"] = record.tool_name
+        # Get context from extra or contextvars
+        call_id = getattr(record, "call_id", call_id_var.get())
+        tool_name = getattr(record, "tool_name", tool_name_var.get())
+        
+        if call_id:
+            log_record["call_id"] = call_id
+        if tool_name:
+            log_record["tool_name"] = tool_name
         
         if record.exc_info:
             log_record["exception"] = self.formatException(record.exc_info)
@@ -36,7 +41,7 @@ def setup_logging():
         handler = logging.StreamHandler()
         handler.setFormatter(JsonFormatter())
         logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging.INFO)
     return logger
 
 logger = setup_logging()

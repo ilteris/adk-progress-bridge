@@ -76,3 +76,13 @@ A visual representation of the `AgentState`.
 1.  Connect Frontend to Backend.
 2.  Verify the "Stream" flow (Progress Bar moves in real-time).
 3.  Handle edge cases (errors during tool execution).
+
+## 5. Scalability Specification
+
+### 5.1 Horizontal Scaling
+To support multiple API instances, the system requires:
+*   **Session Affinity**: Ensuring `/start_task` and `/stream` hit the same pod.
+*   **External State**: Moving `ToolRegistry` metadata to Redis to allow any pod to "own" the task state, though generators remain process-bound.
+*   **Distributed Workers**: (Optional) Moving tool execution to Celery/Redis for full statelessness.
+
+See [SCALABILITY.md](SCALABILITY.md) for a detailed strategy.

@@ -40,10 +40,11 @@ async def my_tool(arg1: str, arg2: int = 10):
 from . import my_tool
 ```
 
-3. Test the tool:
+3. Test the tool (requires `X-API-Key` header if `BRIDGE_API_KEY` is set):
 ```bash
 curl -X POST http://localhost:8000/start_task/my_tool_name \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: ${BRIDGE_API_KEY}" \
   -d '{"arg1": "test"}'
 ```
 

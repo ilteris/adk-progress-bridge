@@ -1,0 +1,10 @@
+{
+  "id": "monitoring-metrics",
+  "status": "completed",
+  "description": "Integrate with Prometheus/Grafana or Cloud Monitoring to track task duration and success rates.",
+  "governance": {
+    "plan_approved": true
+  },
+  "blocked_by": ["backend-structured-logging-integration"],
+  "contract": "worker"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "scalability-strategy",
+  "status": "completed",
+  "description": "Document how to handle tasks across multiple server instances, potentially using Redis for ToolRegistry state.",
+  "governance": {
+    "plan_approved": true,
+    "evaluated": true
+  },
+  "blocked_by": [
+    "deployment-guide"
+  ],
+  "contract": "worker"
+}

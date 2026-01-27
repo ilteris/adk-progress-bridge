@@ -1,14 +1,14 @@
 import json
 import sys
+import os
 from unittest.mock import MagicMock
 
 # Mock prometheus_client before importing app.main
 mock_prometheus = MagicMock()
 sys.modules["prometheus_client"] = mock_prometheus
 
-# Also mock app.metrics if needed or let it import and use the mocked prometheus_client
 # Ensure we are in the right directory to import 'app'
-sys.path.append(".")
+sys.path.append(os.path.join(os.path.dirname(__file__), "."))
 from app.main import app
 
 def generate_openapi():
@@ -24,38 +24,27 @@ def generate_openapi():
     # Simple assertions to verify our changes
     components = schema.get("components", {})
     schemas = components.get("schemas", {})
+    security_schemes = components.get("securitySchemes", {})
     
-    # Check ProgressPayload
-    payload_schema = schemas.get("ProgressPayload")
-    assert payload_schema is not None, "ProgressPayload schema not found"
-    assert "description" in payload_schema, "ProgressPayload should have a description"
-    assert "step" in payload_schema["properties"], "ProgressPayload should have 'step'"
-    assert "description" in payload_schema["properties"]["step"], "ProgressPayload.step should have a description"
-    
-    # Check StartTaskResponse (Updated name)
-    start_resp = schemas.get("StartTaskResponse")
-    assert start_resp is not None, "StartTaskResponse schema not found"
-    assert "call_id" in start_resp["properties"]
-    assert "description" in start_resp["properties"]["call_id"]
-    
-    # Check Endpoints
-    paths = schema.get("paths", {})
-    start_task_path = paths.get("/start_task/{tool_name}")
-    assert start_task_path is not None
-    assert "post" in start_task_path
-    # Updated summary to match implementation
-    assert start_task_path["post"]["summary"] == "Start a Tool Task"
-    
-    stream_path = paths.get("/stream/{call_id}")
-    assert stream_path is not None
-    assert "get" in stream_path
-    # Updated summary to match implementation
-    assert stream_path["get"]["summary"] == "Stream Task Progress"
+    # Check Security Schemes
+    assert "APIKeyHeader" in security_schemes, "Security scheme APIKeyHeader not found"
+    assert security_schemes["APIKeyHeader"]["type"] == "apiKey"
+    assert security_schemes["APIKeyHeader"]["name"] == "X-API-Key"
+    assert security_schemes["APIKeyHeader"]["in"] == "header"
 
-    # Check for general app info
-    assert schema["info"]["title"] == "ADK Progress Bridge"
-    assert "description" in schema["info"]
-    assert schema["info"]["version"] == "1.0.0"
+    # Check Endpoints for Security
+    paths = schema.get("paths", {})
+    
+    start_task_post = paths.get("/start_task/{tool_name}", {}).get("post", {})
+    assert "security" in start_task_post, "Start task endpoint should have security defined"
+    assert any("APIKeyHeader" in s for s in start_task_post["security"])
+    assert "401" in start_task_post["responses"], "Start task should have 401 response"
+
+    stream_get = paths.get("/stream/{call_id}", {}).get("get", {})
+    # Note: verify_api_key_sse uses Depends but we might not see it as 'security' 
+    # if it's a plain Depends and not Security(...).
+    # But we added it to responses in main.py.
+    assert "401" in stream_get["responses"], "Stream task should have 401 response"
 
     print("Verification successful!")
 

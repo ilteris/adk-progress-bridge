@@ -1,25 +1,26 @@
-# Plan: Backend Input Validation
+# Deployment Guide Plan
 
-## Objective
-Enhance validation for `args` passed to `start_task` in `backend/app/main.py`. Ensure `args` match the expected parameters of the tool being called.
+## 1. Containerization
+- Create `backend/Dockerfile`: Optimized Python 3.11-slim image.
+- Create `frontend/Dockerfile`: Multi-stage build (Node -> Nginx) to serve the Vue.js app.
 
-## Proposed Changes
+## 2. Environment Variables
+- Refactor `backend/app/main.py` to use `os.getenv` for:
+    - `CORS_ALLOWED_ORIGINS`
+    - `TASK_CLEANUP_MAX_AGE`
+    - `TASK_CLEANUP_INTERVAL`
+    - `PORT` (for Cloud Run compatibility)
 
-### 1. Backend Bridge (`backend/app/bridge.py`)
-- Implement a helper function `validate_tool_args(tool_func, args)` that uses `inspect.signature` to:
-    - Identify required arguments.
-    - Identify optional arguments.
-    - Check for unexpected arguments (unless `**kwargs` is present).
-    - Return a list of error messages or `None` if valid.
+## 3. Documentation (deployment_guide.md)
+- **Cloud Run**:
+    - Build and Push commands.
+    - Deploy command with environment variables.
+    - Scaling (concurrency settings).
+- **GKE**:
+    - Kubernetes manifests (Deployment, Service, HPA).
+    - Horizontal Scaling Caveat: **Sticky Sessions** requirement due to in-memory task registry.
+- **Monitoring Integration**:
+    - Instructions for scraping the `/metrics` endpoint in a production K8s cluster.
 
-### 2. Backend Main (`backend/app/main.py`)
-- Update `start_task` endpoint to:
-    - Call `validate_tool_args`.
-    - Raise `HTTPException(status_code=400)` with detailed error messages if validation fails.
-
-## Verification
-- Create a test script or use `curl` to test:
-    - Valid arguments.
-    - Missing required arguments.
-    - Unexpected arguments.
-    - Incorrect type of `args` (e.g., not a dict).
+## 4. Verification
+- Verify Docker builds locally.

@@ -1,0 +1,11 @@
+{
+  "id": "backend-structured-logging-integration",
+  "status": "completed",
+  "description": "Integrate structured logging using contextvars as specified in tmp/task_logging.md",
+  "governance": {
+    "plan_approved": true,
+    "evaluated": true
+  },
+  "blocked_by": [],
+  "contract": "worker"
+}

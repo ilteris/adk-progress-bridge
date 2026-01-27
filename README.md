@@ -59,6 +59,9 @@ We define a strict JSON schema for the events streamed over the wire.
 *   **`useAgentStream`:** A Vue composable that connects to the SSE stream.
 *   **Reactive State:** Automatically updates a `currentTask` object with the latest progress bar percentage and logs.
 
+### 4. Scalability
+For information on horizontal scaling, distributed workers, and Redis integration, see [SCALABILITY.md](SCALABILITY.md).
+
 ## 🚀 Production Integration Guide
 
 Integrating this bridge into your existing ADK agent service is straightforward.
