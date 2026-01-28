@@ -3,7 +3,7 @@ import json
 import uuid
 import threading
 import time
-from typing import Any, Dict, AsyncGenerator, Callable, Literal, Union, Optional
+from typing import Any, Dict, List, AsyncGenerator, Callable, Literal, Union, Optional
 from pydantic import BaseModel, Field, validate_call
 from .logger import logger
 from .metrics import ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL
@@ -100,6 +100,10 @@ class ToolRegistry:
             logger.info(f"Tool registered: {tool_name}", extra={"tool_name": tool_name})
             return func
         return decorator
+
+    def list_tools(self) -> List[str]:
+        with self._lock:
+            return list(self._tools.keys())
 
     def get_tool(self, name: str):
         with self._lock:
