@@ -1,33 +1,22 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useAgentStream } from '../composables/useAgentStream'
 
-const { state, runTool, stopTool, sendInput, reset } = useAgentStream()
+const { state, runTool, stopTool, sendInput, reset, fetchTools: fetchToolsFromComposable } = useAgentStream()
 const auditDuration = ref(5)
 const selectedTool = ref('long_audit')
 const userInput = ref('')
 const availableTools = ref<{ id: string, name: string }[]>([])
 
-// Support VITE_API_URL environment variable, defaulting to localhost for dev
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-const BRIDGE_API_KEY = import.meta.env.VITE_BRIDGE_API_KEY || ''
-
 const fetchTools = async () => {
   try {
-    const headers: Record<string, string> = {}
-    if (BRIDGE_API_KEY) {
-      headers['X-API-Key'] = BRIDGE_API_KEY
-    }
-    const response = await fetch(`${API_BASE_URL}/tools`, { headers })
-    if (response.ok) {
-      const toolsList = await response.json()
-      availableTools.value = toolsList.map((id: string) => ({
-        id,
-        name: id.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
-      }))
-      if (availableTools.value.length > 0 && !availableTools.value.find(t => t.id === selectedTool.value)) {
-        selectedTool.value = availableTools.value[0].id
-      }
+    const toolsList = await fetchToolsFromComposable()
+    availableTools.value = toolsList.map((id: string) => ({
+      id,
+      name: id.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+    }))
+    if (availableTools.value.length > 0 && !availableTools.value.find(t => t.id === selectedTool.value)) {
+      selectedTool.value = availableTools.value[0].id
     }
   } catch (err) {
     console.error('Failed to fetch tools:', err)
@@ -38,6 +27,13 @@ const fetchTools = async () => {
     ]
   }
 }
+
+// Re-fetch tools when switching between SSE and WS to demonstrate bi-directional protocol
+watch(() => state.useWS, () => {
+  if (!state.isStreaming) {
+    fetchTools()
+  }
+})
 
 onMounted(() => {
   fetchTools()

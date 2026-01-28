@@ -249,6 +249,41 @@ export class WebSocketManager {
         })
     })
   }
+
+  async getTools(): Promise<string[]> {
+    await this.connect()
+    
+    const requestId = Math.random().toString(36).substring(2, 11)
+
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            this.ws?.removeEventListener('message', tempListener)
+            reject(new Error('Timeout waiting for tools list'))
+        }, 5000)
+
+        const tempListener = (event: MessageEvent) => {
+            try {
+                const data = JSON.parse(event.data)
+                if (data.type === 'tools_list' && data.request_id === requestId) {
+                    clearTimeout(timeout)
+                    this.ws?.removeEventListener('message', tempListener)
+                    resolve(data.tools)
+                } else if (data.type === 'error' && data.request_id === requestId) {
+                    clearTimeout(timeout)
+                    this.ws?.removeEventListener('message', tempListener)
+                    reject(new Error(data.payload?.detail || 'Failed to fetch tools'))
+                }
+            } catch (e) {}
+        }
+        
+        this.ws?.addEventListener('message', tempListener)
+        
+        this.send({
+            type: 'list_tools',
+            request_id: requestId
+        })
+    })
+  }
 }
 
 export const wsManager = new WebSocketManager()
@@ -285,6 +320,20 @@ export function useAgentStream() {
     if (eventSource) {
       eventSource.close()
       eventSource = null
+    }
+  }
+
+  const fetchTools = async (): Promise<string[]> => {
+    if (state.useWS) {
+        return await wsManager.getTools()
+    } else {
+        const headers: Record<string, string> = {}
+        if (BRIDGE_API_KEY) {
+            headers['X-API-Key'] = BRIDGE_API_KEY
+        }
+        const response = await fetch(`${API_BASE_URL}/tools`, { headers })
+        if (!response.ok) throw new Error('Failed to fetch tools via REST')
+        return await response.json()
     }
   }
 
@@ -493,5 +542,5 @@ export function useAgentStream() {
     })
   }
   
-  return { state, runTool, stopTool, sendInput, reset }
+  return { state, runTool, stopTool, sendInput, reset, fetchTools }
 }

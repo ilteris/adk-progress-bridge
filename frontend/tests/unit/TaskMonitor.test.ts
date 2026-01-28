@@ -10,6 +10,7 @@ describe('TaskMonitor.vue', () => {
   let mockStopTool: any
   let mockReset: any
   let mockSendInput: any
+  let mockFetchTools: any
 
   beforeEach(() => {
     mockState = reactive({
@@ -29,13 +30,15 @@ describe('TaskMonitor.vue', () => {
     mockStopTool = vi.fn()
     mockReset = vi.fn()
     mockSendInput = vi.fn()
+    mockFetchTools = vi.fn().mockResolvedValue(['long_audit', 'interactive_task'])
 
     vi.spyOn(streamComposables, 'useAgentStream').mockReturnValue({
       state: mockState,
       runTool: mockRunTool,
       stopTool: mockStopTool,
       reset: mockReset,
-      sendInput: mockSendInput
+      sendInput: mockSendInput,
+      fetchTools: mockFetchTools
     })
   })
 
