@@ -38,6 +38,11 @@ async def test_websocket_malformed_json():
         # Send invalid JSON
         websocket.send_text("not a json")
         
+        # We now send an error message back for malformed JSON
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert "Invalid JSON" in data["payload"]["detail"]
+        
         # Send a valid ping to ensure connection is still alive
         websocket.send_json({"type": "ping"})
         data = websocket.receive_json()

@@ -9,7 +9,7 @@ interface ProgressPayload {
 
 interface AgentEvent {
   call_id: string
-  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started'
+  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting'
   payload: any
   request_id?: string
 }
@@ -38,22 +38,30 @@ const BRIDGE_API_KEY = import.meta.env.VITE_BRIDGE_API_KEY || ''
 
 /**
  * Shared WebSocket Manager to support multiple concurrent tasks over a single connection.
+ * Enhanced with automatic reconnection and heartbeat support.
  */
 export class WebSocketManager {
   private ws: WebSocket | null = null
   private subscribers: Map<string, (event: AgentEvent) => void> = new Map()
   private connectionPromise: Promise<void> | null = null
   private heartbeatInterval: any = null
+  private reconnectTimeout: any = null
+  private reconnectAttempts: number = 0
+  private maxReconnectAttempts: number = 10
+  private isManuallyClosed: boolean = false
 
   // For testing
   public reset() {
+    this.isManuallyClosed = true
     this.stopHeartbeat()
+    this.clearReconnect()
     if (this.ws) {
       this.ws.close()
       this.ws = null
     }
     this.subscribers.clear()
     this.connectionPromise = null
+    this.reconnectAttempts = 0
   }
 
   async connect(): Promise<void> {
@@ -64,16 +72,20 @@ export class WebSocketManager {
     
     if (this.connectionPromise) return this.connectionPromise
 
+    this.isManuallyClosed = false
     this.connectionPromise = new Promise((resolve, reject) => {
       const wsUrl = new URL(`${WS_BASE_URL}/ws`)
       if (BRIDGE_API_KEY) {
         wsUrl.searchParams.append('api_key', BRIDGE_API_KEY)
       }
 
+      console.log(`[WS] Connecting to ${wsUrl.toString()}...`)
       this.ws = new WebSocket(wsUrl.toString())
 
       this.ws.onopen = () => {
+        console.log('[WS] Connection established')
         this.startHeartbeat()
+        this.reconnectAttempts = 0
         this.connectionPromise = null
         resolve()
       }
@@ -81,6 +93,9 @@ export class WebSocketManager {
       this.ws.onmessage = (event) => {
         try {
             const data: AgentEvent = JSON.parse(event.data)
+            // Handle pong for heartbeat
+            if ((data as any).type === 'pong') return
+
             const callback = this.subscribers.get(data.call_id)
             if (callback) {
                 callback(data)
@@ -91,27 +106,77 @@ export class WebSocketManager {
       }
 
       this.ws.onerror = (err) => {
+        console.error('[WS] Connection error', err)
         this.connectionPromise = null
         reject(err)
       }
 
-      this.ws.onclose = () => {
+      this.ws.onclose = (event) => {
+        console.warn(`[WS] Connection closed: ${event.code} ${event.reason}`)
         this.stopHeartbeat()
         this.ws = null
         this.connectionPromise = null
-        // Error out all active subscribers
-        for (const [callId, callback] of this.subscribers.entries()) {
-            callback({
-                call_id: callId,
-                type: 'error',
-                payload: { detail: 'WebSocket connection closed' }
-            })
+
+        if (!this.isManuallyClosed) {
+            this.notifyStatusToAll('reconnecting')
+            this.scheduleReconnect()
+        } else {
+            // Error out all active subscribers if manually closed or failed permanently
+            this.notifyErrorToAll('WebSocket connection closed')
+            this.subscribers.clear()
         }
-        this.subscribers.clear()
       }
     })
 
     return this.connectionPromise
+  }
+
+  private notifyStatusToAll(type: 'reconnecting') {
+    for (const [callId, callback] of this.subscribers.entries()) {
+        callback({
+            call_id: callId,
+            type: type,
+            payload: {}
+        })
+    }
+  }
+
+  private notifyErrorToAll(detail: string) {
+    for (const [callId, callback] of this.subscribers.entries()) {
+        callback({
+            call_id: callId,
+            type: 'error',
+            payload: { detail }
+        })
+    }
+  }
+
+  private scheduleReconnect() {
+    this.clearReconnect()
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        console.error('[WS] Max reconnect attempts reached')
+        this.notifyErrorToAll('WebSocket connection failed permanently')
+        this.subscribers.clear()
+        return
+    }
+
+    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000)
+    console.log(`[WS] Scheduling reconnect in ${delay}ms (Attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`)
+    
+    this.reconnectTimeout = setTimeout(() => {
+        this.reconnectAttempts++
+        this.connect().catch(err => {
+            console.error('[WS] Reconnect failed', err)
+            // onclose will be triggered again if connection fails during handshake
+        })
+    }, delay)
+  }
+
+  private clearReconnect() {
+    if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout)
+        this.reconnectTimeout = null
+    }
   }
 
   private startHeartbeat() {
@@ -141,6 +206,8 @@ export class WebSocketManager {
   send(data: any) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data))
+    } else {
+        console.warn('[WS] Cannot send message, WebSocket not open')
     }
   }
 
@@ -375,6 +442,10 @@ export function useAgentStream() {
         state.status = 'waiting_for_input'
         state.inputPrompt = data.payload.prompt
         state.logs.push(`AGENT REQUESTED INPUT: ${state.inputPrompt}`)
+    } else if (data.type === 'reconnecting') {
+        state.status = 'reconnecting'
+        state.isConnected = false
+        state.logs.push('WebSocket connection lost. Reconnecting...')
     } else if (data.type === 'result') {
       state.result = data.payload
       state.currentStep = 'Completed'

@@ -45,7 +45,7 @@ class MockWebSocket extends EventTarget {
   close = vi.fn(() => {
     this.readyState = 3 // CLOSED
     if (this.onclose) {
-      this.onclose({} as any)
+      this.onclose({ code: 1000, reason: 'Normal Closure' } as any)
     }
     const event = new Event('close')
     this.dispatchEvent(event)
@@ -68,7 +68,7 @@ class MockWebSocket extends EventTarget {
   triggerClose() {
     this.readyState = 3 // CLOSED
     if (this.onclose) {
-      this.onclose({} as any)
+      this.onclose({ code: 1006, reason: 'Abnormal Closure' } as any)
     }
     const event = new Event('close')
     this.dispatchEvent(event)
@@ -156,7 +156,7 @@ describe('useAgentStream', () => {
       expect(state.status).toBe('completed')
     })
 
-    it('handles unexpected WS closure during streaming', async () => {
+    it('handles unexpected WS closure during streaming by reconnecting', async () => {
       const { state, runTool } = useAgentStream()
       state.useWS = true
       
@@ -168,12 +168,11 @@ describe('useAgentStream', () => {
       
       lastWebSocket?.triggerClose()
       
-      try {
-        await runPromise
-      } catch (e) {}
+      await new Promise(r => setTimeout(r, 50))
       
-      expect(state.status).toBe('error')
-      expect(state.error).toContain('WebSocket connection closed')
+      expect(state.status).toBe('reconnecting')
+      expect(state.isConnected).toBe(false)
+      expect(state.logs[state.logs.length - 1]).toContain('Reconnecting')
     })
   })
 })

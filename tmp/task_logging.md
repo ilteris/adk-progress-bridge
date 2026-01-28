@@ -21,3 +21,4 @@ Integrate the structured logger from `backend/app/logger.py` into the backend co
 - Run the backend.
 - Trigger a tool via `curl` or the frontend.
 - Check the console output to verify logs are structured JSON and contain `call_id` and `tool_name`.
+Verified websocket-integration: all tests passed, reconnection logic validated, and bi-directional communication confirmed.

@@ -225,9 +225,23 @@ async def websocket_endpoint(websocket: WebSocket):
             try:
                 data = await websocket.receive_text()
                 message = json.loads(data)
+                if not isinstance(message, dict):
+                    logger.warning(f"Received non-dictionary message over WebSocket: {type(message)}")
+                    await safe_send_json({
+                        "type": "error",
+                        "payload": {"detail": "Message must be a JSON object (dictionary)"}
+                    })
+                    continue
             except json.JSONDecodeError:
                 logger.warning("Received invalid JSON over WebSocket")
+                await safe_send_json({
+                    "type": "error",
+                    "payload": {"detail": "Invalid JSON received"}
+                })
                 continue
+            except WebSocketDisconnect:
+                # Re-raise to be caught by the outer except block
+                raise
             except Exception as e:
                 logger.error(f"Error receiving WS message: {e}")
                 break
