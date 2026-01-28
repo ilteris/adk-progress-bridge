@@ -73,3 +73,31 @@ def test_websocket_unknown_type_with_request_id():
         assert data["type"] == "error"
         assert data.get("request_id") == "robust_unknown"
         assert "Unknown message type" in data["payload"]["detail"]
+
+def test_websocket_simple_string_result():
+    """
+    Tests that a tool yielding a simple string as a result (instead of a dict) works.
+    Strengthens the ProgressEvent schema support for Any payload.
+    """
+    from backend.app.bridge import registry
+    
+    @registry.register(name="simple_string_tool")
+    async def simple_string_tool():
+        yield "Final String Result"
+
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "type": "start",
+            "tool_name": "simple_string_tool",
+            "request_id": "simple_str_req"
+        })
+        
+        # 1. task_started
+        data = websocket.receive_json()
+        assert data["type"] == "task_started"
+        
+        # 2. result (since it only yields once)
+        data = websocket.receive_json()
+        assert data["type"] == "result"
+        assert data["payload"] == "Final String Result"
