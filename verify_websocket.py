@@ -19,7 +19,8 @@ async def run_ws_full():
             start_msg = {
                 "type": "start",
                 "tool_name": "long_audit",
-                "args": {"duration": 10}
+                "args": {"duration": 10},
+                "request_id": "test-start-1"
             }
             await websocket.send(json.dumps(start_msg))
             print("Start message sent for long_audit")
@@ -27,25 +28,32 @@ async def run_ws_full():
             call_id = None
             async for message in websocket:
                 data = json.loads(message)
-                print(f"WS Event: {data['type']} | {data.get('payload', {}).get('step') or data.get('payload')}")
+                mtype = data['type']
+                payload = data.get('payload', {})
+                
+                print(f"WS Event: {mtype} | {payload.get('step') if isinstance(payload, dict) else payload}")
                 
                 if not call_id and data.get('call_id'):
                     call_id = data['call_id']
                 
                 # After a few steps, try to stop it
-                if data['type'] == 'progress' and data['payload'].get('pct', 0) >= 20:
+                if mtype == 'progress' and isinstance(payload, dict) and payload.get('pct', 0) >= 20:
                     print(f"Reaching 20%, sending STOP for {call_id}")
                     stop_msg = {
                         "type": "stop",
-                        "call_id": call_id
+                        "call_id": call_id,
+                        "request_id": "test-stop-1"
                     }
                     await websocket.send(json.dumps(stop_msg))
                 
-                if data['type'] == 'progress' and data['payload'].get('step') == 'Cancelled':
+                if mtype == 'stop_success' and data.get('request_id') == 'test-stop-1':
+                    print("Received stop_success acknowledgement")
+                
+                if mtype == 'progress' and isinstance(payload, dict) and payload.get('step') == 'Cancelled':
                     print("Received Cancelled confirmation from server")
                     break
                 
-                if data['type'] == 'result' or data['type'] == 'error':
+                if mtype == 'result' or mtype == 'error':
                     break
                     
     except Exception as e:
@@ -65,7 +73,8 @@ async def run_ws_interactive():
             start_msg = {
                 "type": "start",
                 "tool_name": "interactive_task",
-                "args": {}
+                "args": {},
+                "request_id": "test-interactive-1"
             }
             await websocket.send(json.dumps(start_msg))
             print("Start message sent for interactive_task")
@@ -76,7 +85,7 @@ async def run_ws_interactive():
                 mtype = data['type']
                 payload = data.get('payload', {})
                 
-                print(f"WS Event: {mtype} | {payload.get('step') or payload}")
+                print(f"WS Event: {mtype} | {payload.get('step') if isinstance(payload, dict) else payload}")
                 
                 if not call_id and data.get('call_id'):
                     call_id = data['call_id']
@@ -88,11 +97,15 @@ async def run_ws_interactive():
                     input_msg = {
                         "type": "input",
                         "call_id": call_id,
-                        "value": "yes"
+                        "value": "yes",
+                        "request_id": "test-input-1"
                     }
                     await websocket.send(json.dumps(input_msg))
                     print("Sent input response: yes")
                 
+                if mtype == 'input_success' and data.get('request_id') == 'test-input-1':
+                    print("Received input_success acknowledgement")
+
                 if mtype == 'result':
                     print(f"FINAL RESULT: {payload}")
                     break
@@ -104,11 +117,35 @@ async def run_ws_interactive():
     except Exception as e:
         print(f"WS Error in test_ws_interactive: {e}")
 
+async def run_ws_list_tools():
+    api_key = os.getenv("BRIDGE_API_KEY", "")
+    url = "ws://localhost:8000/ws"
+    if api_key:
+        url += f"?api_key={api_key}"
+
+    try:
+        async with websockets.connect(url) as websocket:
+            print("\n--- Testing list_tools flow ---")
+            list_msg = {
+                "type": "list_tools",
+                "request_id": "list-tools-test"
+            }
+            await websocket.send(json.dumps(list_msg))
+            
+            message = await websocket.recv()
+            data = json.loads(message)
+            print(f"WS Event: {data['type']} | Tools: {data.get('tools')}")
+            if data['type'] == 'tools_list' and 'long_audit' in data['tools']:
+                print("list_tools verification SUCCESS")
+            else:
+                print("list_tools verification FAILED")
+    except Exception as e:
+        print(f"WS Error in run_ws_list_tools: {e}")
+
 async def main():
-    # We need the server running. Assuming it's already running or we start it.
-    # For this script, we assume it's running on localhost:8000
     await run_ws_full()
     await run_ws_interactive()
+    await run_ws_list_tools()
 
 if __name__ == "__main__":
     asyncio.run(main())

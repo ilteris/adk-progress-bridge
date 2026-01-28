@@ -61,3 +61,44 @@ test('websocket interactive flow', async ({ page }) => {
   await expect(page.locator('pre')).toContainText('"status": "complete"');
   await expect(page.locator('pre')).toContainText('user approval');
 });
+
+test('websocket stop flow', async ({ page }) => {
+  await page.goto('http://localhost:5173');
+  
+  // Enable WebSockets
+  await page.locator('#useWS').check();
+  
+  // Set duration to 10 seconds to allow time to stop
+  await page.locator('#duration').fill('10');
+  
+  // Start the task
+  await page.getByRole('button', { name: 'Start Task' }).click();
+  
+  // Verify running state
+  await expect(page.locator('.badge')).toContainText('WS');
+  const stopBtn = page.getByRole('button', { name: 'Stop Task' });
+  await expect(stopBtn).toBeVisible();
+  
+  // Stop the task
+  await stopBtn.click();
+  
+  // Verify cancelled state
+  await expect(page.locator('.badge')).toContainText('Cancelled');
+  await expect(page.locator('.progress-bar')).toHaveCSS('background-color', 'rgb(108, 117, 125)'); // #6c757d
+});
+
+test('websocket dynamic tool fetching', async ({ page }) => {
+  await page.goto('http://localhost:5173');
+  
+  // Initially on SSE (REST fetch)
+  const toolSelect = page.locator('#toolSelect');
+  // Real backend has 6 tools
+  await expect(toolSelect.locator('option')).toHaveCount(6);
+  
+  // Toggle to WS
+  await page.locator('#useWS').check();
+  
+  // Should still have options (re-fetched via WS)
+  await expect(toolSelect.locator('option')).toHaveCount(6);
+  await expect(toolSelect).toContainText('Long Audit');
+});

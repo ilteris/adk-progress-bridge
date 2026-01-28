@@ -9,7 +9,7 @@ interface ProgressPayload {
 
 interface AgentEvent {
   call_id: string
-  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting'
+  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success'
   payload: any
   request_id?: string
 }
@@ -28,6 +28,7 @@ export interface AgentState {
   isStreaming: boolean
   useWS: boolean
   inputPrompt: string | null
+  tools: string[]
 }
 
 // Support VITE_API_URL environment variable, defaulting to localhost for dev
@@ -249,6 +250,41 @@ export class WebSocketManager {
         })
     })
   }
+
+  async getTools(): Promise<string[]> {
+    await this.connect()
+    
+    const requestId = Math.random().toString(36).substring(2, 11)
+
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            this.ws?.removeEventListener('message', tempListener)
+            reject(new Error('Timeout waiting for tools list'))
+        }, 5000)
+
+        const tempListener = (event: MessageEvent) => {
+            try {
+                const data = JSON.parse(event.data)
+                if (data.type === 'tools_list' && data.request_id === requestId) {
+                    clearTimeout(timeout)
+                    this.ws?.removeEventListener('message', tempListener)
+                    resolve(data.tools)
+                } else if (data.type === 'error' && data.request_id === requestId) {
+                    clearTimeout(timeout)
+                    this.ws?.removeEventListener('message', tempListener)
+                    reject(new Error(data.payload?.detail || 'Failed to fetch tools'))
+                }
+            } catch (e) {}
+        }
+        
+        this.ws?.addEventListener('message', tempListener)
+        
+        this.send({
+            type: 'list_tools',
+            request_id: requestId
+        })
+    })
+  }
 }
 
 export const wsManager = new WebSocketManager()
@@ -265,12 +301,17 @@ export function useAgentStream() {
     error: null,
     isStreaming: false,
     useWS: false,
-    inputPrompt: null
+    inputPrompt: null,
+    tools: []
   })
 
   let eventSource: EventSource | null = null
 
   const reset = () => {
+    if (state.useWS && state.callId) {
+        wsManager.unsubscribe(state.callId)
+    }
+
     state.status = 'idle'
     state.isConnected = false
     state.callId = null
@@ -285,6 +326,28 @@ export function useAgentStream() {
     if (eventSource) {
       eventSource.close()
       eventSource = null
+    }
+  }
+
+  const fetchTools = async (): Promise<string[]> => {
+    try {
+      let tools: string[] = []
+      if (state.useWS) {
+          tools = await wsManager.getTools()
+      } else {
+          const headers: Record<string, string> = {}
+          if (BRIDGE_API_KEY) {
+              headers['X-API-Key'] = BRIDGE_API_KEY
+          }
+          const response = await fetch(`${API_BASE_URL}/tools`, { headers })
+          if (!response.ok) throw new Error('Failed to fetch tools via REST')
+          tools = await response.json()
+      }
+      state.tools = tools
+      return tools
+    } catch (err: any) {
+      console.error('Failed to fetch tools:', err)
+      return []
     }
   }
 
@@ -370,13 +433,16 @@ export function useAgentStream() {
 
   const stopTool = async () => {
     if (state.useWS && state.callId && state.isStreaming) {
+      const requestId = Math.random().toString(36).substring(2, 11)
       wsManager.send({
         type: 'stop',
-        call_id: state.callId
+        call_id: state.callId,
+        request_id: requestId
       })
       state.status = 'cancelled'
       state.isStreaming = false
-      wsManager.unsubscribe(state.callId)
+      // We do NOT unsubscribe here, so we can receive stop_success and the final "Cancelled" progress event.
+      // handleEvent or reset will eventually unsubscribe.
     } else if (state.callId && state.isStreaming) {
       try {
         const headers: Record<string, string> = {}
@@ -405,10 +471,12 @@ export function useAgentStream() {
   const sendInput = async (value: string) => {
     if (state.callId && state.status === 'waiting_for_input') {
         if (state.useWS) {
+            const requestId = Math.random().toString(36).substring(2, 11)
             wsManager.send({
                 type: 'input',
                 call_id: state.callId,
-                value: value
+                value: value,
+                request_id: requestId
             })
         } else {
             try {
@@ -446,6 +514,12 @@ export function useAgentStream() {
         state.status = 'reconnecting'
         state.isConnected = false
         state.logs.push('WebSocket connection lost. Reconnecting...')
+    } else if (data.type === 'stop_success') {
+        state.logs.push('Stop command acknowledged by server.')
+        // stop_success is the final acknowledgement for a stop command
+        closeFn()
+    } else if (data.type === 'input_success') {
+        state.logs.push('Input command acknowledged by server.')
     } else if (data.type === 'result') {
       state.result = data.payload
       state.currentStep = 'Completed'
@@ -489,5 +563,5 @@ export function useAgentStream() {
     })
   }
   
-  return { state, runTool, stopTool, sendInput, reset }
+  return { state, runTool, stopTool, sendInput, reset, fetchTools }
 }

@@ -60,3 +60,16 @@ def test_websocket_ping_pong():
         
         data = websocket.receive_json()
         assert data["type"] == "pong"
+
+def test_websocket_unknown_type_with_request_id():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "type": "unknown_command",
+            "request_id": "robust_unknown"
+        })
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert data.get("request_id") == "robust_unknown"
+        assert "Unknown message type" in data["payload"]["detail"]

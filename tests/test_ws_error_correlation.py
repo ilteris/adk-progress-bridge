@@ -47,3 +47,46 @@ async def test_websocket_malformed_json():
         websocket.send_json({"type": "ping"})
         data = websocket.receive_json()
         assert data["type"] == "pong"
+
+@pytest.mark.asyncio
+async def test_websocket_stop_error_correlation():
+    """
+    Tests that an error stopping a non-existent task includes the request_id and call_id.
+    """
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        req_id = "stop_error_req_456"
+        c_id = "non_existent_call_id"
+        websocket.send_json({
+            "type": "stop",
+            "call_id": c_id,
+            "request_id": req_id
+        })
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert data.get("request_id") == req_id
+        assert data.get("call_id") == c_id
+        assert "No active task found" in data["payload"]["detail"]
+
+@pytest.mark.asyncio
+async def test_websocket_input_error_correlation():
+    """
+    Tests that an error providing input for a non-existent task includes the request_id and call_id.
+    """
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        req_id = "input_error_req_789"
+        c_id = "non_existent_call_id"
+        websocket.send_json({
+            "type": "input",
+            "call_id": c_id,
+            "value": "some value",
+            "request_id": req_id
+        })
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert data.get("request_id") == req_id
+        assert data.get("call_id") == c_id
+        assert "No task waiting for input" in data["payload"]["detail"]

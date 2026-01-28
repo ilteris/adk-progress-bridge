@@ -1,18 +1,43 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useAgentStream } from '../composables/useAgentStream'
 
-const { state, runTool, stopTool, sendInput, reset } = useAgentStream()
+const { state, runTool, stopTool, sendInput, reset, fetchTools: fetchToolsFromComposable } = useAgentStream()
 const auditDuration = ref(5)
 const selectedTool = ref('long_audit')
 const userInput = ref('')
+const availableTools = ref<{ id: string, name: string }[]>([])
 
-const tools = [
-  { id: 'long_audit', name: 'Audit Task' },
-  { id: 'interactive_task', name: 'Interactive Task' },
-  { id: 'security_scan', name: 'Security Scan' },
-  { id: 'parallel_report_generation', name: 'Parallel Reports' }
-]
+const fetchTools = async () => {
+  try {
+    const toolsList = await fetchToolsFromComposable()
+    availableTools.value = toolsList.map((id: string) => ({
+      id,
+      name: id.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+    }))
+    if (availableTools.value.length > 0 && !availableTools.value.find(t => t.id === selectedTool.value)) {
+      selectedTool.value = availableTools.value[0].id
+    }
+  } catch (err) {
+    console.error('Failed to fetch tools:', err)
+    // Fallback to minimal set if fetch fails
+    availableTools.value = [
+      { id: 'long_audit', name: 'Audit Task' },
+      { id: 'interactive_task', name: 'Interactive Task' }
+    ]
+  }
+}
+
+// Re-fetch tools when switching between SSE and WS to demonstrate bi-directional protocol
+watch(() => state.useWS, () => {
+  if (!state.isStreaming) {
+    fetchTools()
+  }
+})
+
+onMounted(() => {
+  fetchTools()
+})
 
 const startTask = () => {
   const args = selectedTool.value === 'long_audit' ? { duration: auditDuration.value } : {}
@@ -58,7 +83,7 @@ const handleReset = () => {
             <div class="col-md-4">
               <label for="toolSelect" class="form-label">Select Tool:</label>
               <select id="toolSelect" v-model="selectedTool" class="form-select" :disabled="state.isStreaming">
-                <option v-for="tool in tools" :key="tool.id" :value="tool.id">
+                <option v-for="tool in availableTools" :key="tool.id" :value="tool.id">
                   {{ tool.name }}
                 </option>
               </select>

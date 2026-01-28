@@ -25,6 +25,8 @@ class MockWebSocket extends EventTarget {
     // Use a slightly longer timeout to ensure the listener can be attached
     setTimeout(() => {
       if (this.onopen) this.onopen({} as any)
+      const event = new Event('open')
+      this.dispatchEvent(event)
     }, 10)
   }
 
@@ -36,6 +38,15 @@ class MockWebSocket extends EventTarget {
             this.triggerMessage({
                 type: 'task_started',
                 call_id: 'ws-call-id-' + parsed.tool_name,
+                request_id: parsed.request_id
+            })
+        }, 10)
+    } else if (parsed.type === 'list_tools') {
+        // Automatically respond with tools_list
+        setTimeout(() => {
+            this.triggerMessage({
+                type: 'tools_list',
+                tools: ['tool1', 'tool2'],
                 request_id: parsed.request_id
             })
         }, 10)
@@ -97,18 +108,43 @@ describe('useAgentStream', () => {
     expect(state.isStreaming).toBe(false)
   })
 
+  it('fetches tools via REST when useWS is false', async () => {
+    const { fetchTools } = useAgentStream()
+    vi.stubGlobal('fetch', vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(['rest_tool1', 'rest_tool2']),
+      })
+    ))
+    
+    const tools = await fetchTools()
+    expect(tools).toEqual(['rest_tool1', 'rest_tool2'])
+    expect(global.fetch).toHaveBeenCalled()
+  })
+
+  it('fetches tools via WS when useWS is true', async () => {
+    const { state, fetchTools } = useAgentStream()
+    state.useWS = true
+    
+    const toolsPromise = fetchTools()
+    
+    // Wait for WS to be created
+    await vi.waitFor(() => expect(lastWebSocket).not.toBeNull())
+    
+    const tools = await toolsPromise
+    expect(tools).toEqual(['tool1', 'tool2'])
+    expect(lastWebSocket?.send).toHaveBeenCalledWith(expect.stringContaining('"type":"list_tools"'))
+  })
+
   describe('WebSocket path', () => {
     it('starts streaming and connects to WebSocket', async () => {
       const { state, runTool } = useAgentStream()
       state.useWS = true
       
-      const runPromise = runTool('test_tool', { arg1: 'val1' })
+      runTool('test_tool', { arg1: 'val1' })
       
       // Wait for WS to be created and connected
-      await vi.waitFor(() => expect(lastWebSocket).not.toBeNull())
-      
-      // Give it a moment to resolve the connect() promise and enter startTask
-      await new Promise(r => setTimeout(r, 100))
+      await vi.waitFor(() => expect(state.status).toBe('connected'))
 
       lastWebSocket?.triggerMessage({
         call_id: 'ws-call-id-test_tool',
@@ -122,8 +158,6 @@ describe('useAgentStream', () => {
         payload: { ok: true }
       })
 
-      await runPromise
-
       expect(state.isConnected).toBe(true)
       expect(state.status).toBe('completed')
       expect(state.callId).toBe('ws-call-id-test_tool')
@@ -134,45 +168,73 @@ describe('useAgentStream', () => {
       state.useWS = true
       
       // Run first tool
-      const run1 = runTool('tool_1')
-      await vi.waitFor(() => expect(lastWebSocket).not.toBeNull())
-      await new Promise(r => setTimeout(r, 100))
-      
-      lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-tool_1', type: 'progress', payload: { step: 'Started', pct: 0 } })
+      runTool('tool_1')
+      await vi.waitFor(() => expect(state.status).toBe('connected'))
       lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-tool_1', type: 'result', payload: {} })
-      await run1
+      await vi.waitFor(() => expect(state.status).toBe('completed'))
       
       expect(wsInstanceCount).toBe(1)
-      expect(state.status).toBe('completed')
       
       // Run second tool
-      const run2 = runTool('tool_2')
-      await new Promise(r => setTimeout(r, 100))
-      lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-tool_2', type: 'progress', payload: { step: 'Started', pct: 0 } })
+      runTool('tool_2')
+      await vi.waitFor(() => expect(state.status).toBe('connected'))
       lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-tool_2', type: 'result', payload: {} })
-      await run2
+      await vi.waitFor(() => expect(state.status).toBe('completed'))
       
       expect(wsInstanceCount).toBe(1)
-      expect(state.status).toBe('completed')
     })
 
     it('handles unexpected WS closure during streaming by reconnecting', async () => {
       const { state, runTool } = useAgentStream()
       state.useWS = true
       
-      const runPromise = runTool('test_tool')
-      await vi.waitFor(() => expect(lastWebSocket).not.toBeNull())
-      await new Promise(r => setTimeout(r, 100))
+      runTool('test_tool')
+      await vi.waitFor(() => expect(state.status).toBe('connected'))
       
       lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-test_tool', type: 'progress', payload: { step: 'Started', pct: 0 } })
       
       lastWebSocket?.triggerClose()
       
-      await new Promise(r => setTimeout(r, 50))
-      
-      expect(state.status).toBe('reconnecting')
+      await vi.waitFor(() => expect(state.status).toBe('reconnecting'))
       expect(state.isConnected).toBe(false)
       expect(state.logs[state.logs.length - 1]).toContain('Reconnecting')
+    })
+
+    it('handles stopTool by sending stop message and waiting for stop_success', async () => {
+      const { state, runTool, stopTool } = useAgentStream()
+      state.useWS = true
+      
+      runTool('test_tool')
+      await vi.waitFor(() => expect(state.status).toBe('connected'))
+      
+      await stopTool()
+      
+      expect(state.status).toBe('cancelled')
+      expect(state.isStreaming).toBe(false)
+      
+      // Should still be subscribed until stop_success
+      lastWebSocket?.triggerMessage({
+        call_id: 'ws-call-id-test_tool',
+        type: 'stop_success',
+        payload: {},
+        request_id: 'req-123'
+      })
+      
+      expect(state.logs).toContain('Stop command acknowledged by server.')
+    })
+
+    it('reset() cleans up WebSocket subscription', async () => {
+        const { state, runTool, reset } = useAgentStream()
+        state.useWS = true
+        
+        runTool('test_tool')
+        await vi.waitFor(() => expect(state.status).toBe('connected'))
+        
+        const unsubscribeSpy = vi.spyOn(wsManager, 'unsubscribe')
+        reset()
+        
+        expect(unsubscribeSpy).toHaveBeenCalledWith('ws-call-id-test_tool')
+        expect(state.callId).toBeNull()
     })
   })
 })

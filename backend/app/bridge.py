@@ -3,7 +3,7 @@ import json
 import uuid
 import threading
 import time
-from typing import Any, Dict, AsyncGenerator, Callable, Literal, Union, Optional
+from typing import Any, Dict, List, AsyncGenerator, Callable, Literal, Union, Optional
 from pydantic import BaseModel, Field, validate_call
 from .logger import logger
 from .metrics import ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL
@@ -44,7 +44,7 @@ class ProgressEvent(BaseModel):
         description="The unique identifier for this specific task execution session.",
         examples=["550e8400-e29b-41d4-a716-446655440000"]
     )
-    type: Literal["progress", "result", "error", "input_request"] = Field(
+    type: Literal["progress", "result", "error", "input_request", "task_started"] = Field(
         ..., 
         description="The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, 'error' signifies a failure, and 'input_request' prompts the user for information.",
         examples=["progress", "result", "error", "input_request"]
@@ -100,6 +100,10 @@ class ToolRegistry:
             logger.info(f"Tool registered: {tool_name}", extra={"tool_name": tool_name})
             return func
         return decorator
+
+    def list_tools(self) -> List[str]:
+        with self._lock:
+            return list(self._tools.keys())
 
     def get_tool(self, name: str):
         with self._lock:
