@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import Any, Dict, List, AsyncGenerator, Callable, Literal, Union, Optional
 from pydantic import BaseModel, Field, validate_call
 from .logger import logger
@@ -45,6 +46,10 @@ class ProgressEvent(BaseModel):
         description="The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, 'error' signifies a failure, and 'input_request' prompts the user for information.",
         examples=["progress", "result", "error", "input_request"]
     )
+    timestamp: float = Field(
+        default_factory=time.time,
+        description="Unix timestamp of when the event was created."
+    )
     payload: Union[ProgressPayload, Dict[str, Any]] = Field(
         ..., 
         description="The actual data payload. Contains a ProgressPayload object for 'progress' types, or the final result/error details.",
@@ -61,7 +66,11 @@ class InputManager:
             self._pending_inputs[call_id] = future
         
         logger.info(f"Task {call_id} waiting for input: {prompt}", extra={"call_id": call_id, "prompt": prompt})
-        return await future
+        try:
+            return await future
+        finally:
+            async with self._lock:
+                self._pending_inputs.pop(call_id, None)
 
     async def provide_input(self, call_id: str, value: Any):
         async with self._lock:
@@ -107,7 +116,6 @@ class ToolRegistry:
 
     async def store_task(self, call_id: str, gen: AsyncGenerator, tool_name: str):
         import inspect
-        import time
         # Final safety check: ensure gen is actually an async generator
         if not inspect.isasyncgen(gen):
             # If it's a coroutine, we MUST await it or close it to avoid RuntimeWarning
@@ -120,6 +128,9 @@ class ToolRegistry:
             raise TypeError(f"Tool {tool_name} did not return an async generator. Got {type(gen)}")
 
         async with self._lock:
+            if call_id in self._active_tasks:
+                raise ValueError(f"Task with call_id {call_id} already exists")
+                
             self._active_tasks[call_id] = {
                 "gen": gen,
                 "tool_name": tool_name,
@@ -180,7 +191,6 @@ class ToolRegistry:
 
     async def cleanup_stale_tasks(self, max_age_seconds: int):
         """Closes tasks that were created more than max_age_seconds ago and never consumed."""
-        import time
         now = time.time()
         stale_tasks = []
         

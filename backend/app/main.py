@@ -2,12 +2,13 @@ import asyncio
 import json
 import uuid
 import time
+import inspect
 from typing import Dict, List, Optional, Any
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_manager
 from .logger import logger
@@ -52,10 +53,12 @@ app.add_middleware(
 
 class TaskStartRequest(BaseModel):
     args: Dict[str, Any] = {}
+    call_id: Optional[str] = None
 
 class TaskStartResponse(BaseModel):
     call_id: str
     stream_url: str
+    timestamp: float = Field(default_factory=time.time)
 
 class InputProvideRequest(BaseModel):
     call_id: str
@@ -81,15 +84,29 @@ async def start_task(
     if not tool:
         raise HTTPException(status_code=404, detail=f"Tool not found: {tool_name}")
     
-    call_id = str(uuid.uuid4())
+    call_id = (request.call_id if request else None) or str(uuid.uuid4())
     
     args = request.args if request else {}
     
+    gen = None
     try:
         # Create the generator but don't start consuming yet
         gen = tool(**args)
         await registry.store_task(call_id, gen, tool_name)
+    except ValueError as e:
+        # Handle call_id collision
+        if gen:
+            if inspect.isasyncgen(gen):
+                await gen.aclose()
+            elif inspect.iscoroutine(gen):
+                gen.close()
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        if gen:
+            if inspect.isasyncgen(gen):
+                await gen.aclose()
+            elif inspect.iscoroutine(gen):
+                gen.close()
         logger.error(f"Error starting tool {tool_name}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
@@ -219,6 +236,10 @@ async def websocket_endpoint(websocket: WebSocket):
     send_lock = asyncio.Lock()
 
     async def safe_send_json(data: dict):
+        # Ensure all outgoing WebSocket messages have a timestamp
+        if "timestamp" not in data:
+            data["timestamp"] = time.time()
+            
         async with send_lock:
             try:
                 await websocket.send_json(data)
@@ -276,6 +297,7 @@ async def websocket_endpoint(websocket: WebSocket):
             if msg_type == "start":
                 tool_name = message.get("tool_name")
                 args = message.get("args", {})
+                requested_call_id = message.get("call_id")
                 
                 tool = registry.get_tool(tool_name)
                 if not tool:
@@ -286,8 +308,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     })
                     continue
                 
-                call_id = str(uuid.uuid4())
+                call_id = requested_call_id or str(uuid.uuid4())
                 
+                gen = None
                 try:
                     gen = tool(**args)
                     await registry.store_task(call_id, gen, tool_name)
@@ -300,7 +323,24 @@ async def websocket_endpoint(websocket: WebSocket):
                     })
                     task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
                     active_tasks[call_id] = task
+                except ValueError as e:
+                    if gen:
+                        if inspect.isasyncgen(gen):
+                            await gen.aclose()
+                        elif inspect.iscoroutine(gen):
+                            gen.close()
+                    await safe_send_json({
+                        "type": "error",
+                        "call_id": call_id,
+                        "request_id": request_id,
+                        "payload": {"detail": str(e)}
+                    })
                 except Exception as e:
+                    if gen:
+                        if inspect.isasyncgen(gen):
+                            await gen.aclose()
+                        elif inspect.iscoroutine(gen):
+                            gen.close()
                     logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
                     await safe_send_json({
                         "type": "error",
@@ -308,7 +348,6 @@ async def websocket_endpoint(websocket: WebSocket):
                         "request_id": request_id,
                         "payload": {"detail": str(e)}
                     })
-                    # If store_task failed but gen was created, it's handled in store_task
             
             elif msg_type == "stop":
                 call_id = message.get("call_id")
