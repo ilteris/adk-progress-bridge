@@ -39,6 +39,15 @@ class MockWebSocket extends EventTarget {
                 request_id: parsed.request_id
             })
         }, 10)
+    } else if (parsed.type === 'list_tools') {
+        // Automatically respond with tools_list
+        setTimeout(() => {
+            this.triggerMessage({
+                type: 'tools_list',
+                tools: ['tool1', 'tool2'],
+                request_id: parsed.request_id
+            })
+        }, 10)
     }
   })
 
@@ -95,6 +104,34 @@ describe('useAgentStream', () => {
     expect(state.status).toBe('idle')
     expect(state.isConnected).toBe(false)
     expect(state.isStreaming).toBe(false)
+  })
+
+  it('fetches tools via REST when useWS is false', async () => {
+    const { fetchTools } = useAgentStream()
+    vi.stubGlobal('fetch', vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(['rest_tool1', 'rest_tool2']),
+      })
+    ))
+    
+    const tools = await fetchTools()
+    expect(tools).toEqual(['rest_tool1', 'rest_tool2'])
+    expect(global.fetch).toHaveBeenCalled()
+  })
+
+  it('fetches tools via WS when useWS is true', async () => {
+    const { state, fetchTools } = useAgentStream()
+    state.useWS = true
+    
+    const toolsPromise = fetchTools()
+    
+    // Wait for WS to be created
+    await vi.waitFor(() => expect(lastWebSocket).not.toBeNull())
+    
+    const tools = await toolsPromise
+    expect(tools).toEqual(['tool1', 'tool2'])
+    expect(lastWebSocket?.send).toHaveBeenCalledWith(expect.stringContaining('"type":"list_tools"'))
   })
 
   describe('WebSocket path', () => {
