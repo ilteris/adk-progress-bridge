@@ -3,6 +3,7 @@ import json
 import uuid
 import threading
 import time
+import inspect
 from typing import Any, Dict, List, AsyncGenerator, Callable, Literal, Union, Optional
 from pydantic import BaseModel, Field, validate_call
 from .logger import logger
@@ -65,10 +66,6 @@ class InputManager:
             self._pending_inputs[call_id] = future
         
         logger.info(f"Task {call_id} waiting for input: {prompt}", extra={"call_id": call_id, "prompt": prompt})
-        
-        # This will be handled by the WebSocket endpoint sending an 'input_request' event
-        # The caller of this function (the tool) should yield the request before calling this, 
-        # or we could integrate it here. Let's make it a helper that yields.
         return await future
 
     def provide_input(self, call_id: str, value: Any):
@@ -93,6 +90,11 @@ class ToolRegistry:
     def register(self, name: Optional[str] = None):
         def decorator(func: Callable):
             tool_name = name or func.__name__
+            
+            # Verify it's an async generator
+            if not inspect.isasyncgenfunction(func):
+                logger.warning(f"Tool {tool_name} is not an async generator function. It might fail during execution.")
+            
             # Apply pydantic validation to the tool
             validated_func = validate_call(func)
             with self._lock:
@@ -110,6 +112,10 @@ class ToolRegistry:
             return self._tools.get(name)
 
     def store_task(self, call_id: str, gen: AsyncGenerator, tool_name: str):
+        # Final safety check: ensure gen is actually an async generator
+        if not inspect.isasyncgen(gen):
+            raise TypeError(f"Tool {tool_name} did not return an async generator. Got {type(gen)}")
+
         with self._lock:
             self._active_tasks[call_id] = {
                 "gen": gen,

@@ -13,11 +13,15 @@ def test_tasks_thread_safety():
     num_threads = 20
     num_ops = 1000
     
+    # Define an async generator function
+    async def mock_async_gen():
+        yield 1
+
     def worker(worker_id):
         for i in range(num_ops):
             call_id = f"worker-{worker_id}-task-{i}"
-            # Mock generator
-            gen = (x for x in range(1))
+            # Create an async generator object
+            gen = mock_async_gen()
             registry.store_task(call_id, gen, "test_tool")
             task_data = registry.get_task(call_id)
             if task_data["gen"] != gen:

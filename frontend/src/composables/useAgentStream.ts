@@ -9,9 +9,10 @@ interface ProgressPayload {
 
 interface AgentEvent {
   call_id: string
-  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success'
+  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list'
   payload: any
   request_id?: string
+  tools?: string[]
 }
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error' | 'completed' | 'cancelled' | 'waiting_for_input'
@@ -44,6 +45,7 @@ const BRIDGE_API_KEY = import.meta.env.VITE_BRIDGE_API_KEY || ''
 export class WebSocketManager {
   private ws: WebSocket | null = null
   private subscribers: Map<string, (event: AgentEvent) => void> = new Map()
+  private requestCallbacks: Map<string, { resolve: (data: any) => void, reject: (err: any) => void, timeout: any }> = new Map()
   private connectionPromise: Promise<void> | null = null
   private heartbeatInterval: any = null
   private reconnectTimeout: any = null
@@ -61,6 +63,11 @@ export class WebSocketManager {
       this.ws = null
     }
     this.subscribers.clear()
+    for (const req of this.requestCallbacks.values()) {
+        clearTimeout(req.timeout)
+        req.reject(new Error('WebSocket manager reset'))
+    }
+    this.requestCallbacks.clear()
     this.connectionPromise = null
     this.reconnectAttempts = 0
   }
@@ -93,10 +100,25 @@ export class WebSocketManager {
 
       this.ws.onmessage = (event) => {
         try {
-            const data: AgentEvent = JSON.parse(event.data)
+            const data: any = JSON.parse(event.data)
             // Handle pong for heartbeat
-            if ((data as any).type === 'pong') return
+            if (data.type === 'pong') return
 
+            // Handle request_id correlations
+            if (data.request_id && this.requestCallbacks.has(data.request_id)) {
+                const { resolve: reqResolve, reject: reqReject, timeout } = this.requestCallbacks.get(data.request_id)!
+                clearTimeout(timeout)
+                this.requestCallbacks.delete(data.request_id)
+                
+                if (data.type === 'error') {
+                    reqReject(new Error(data.payload?.detail || 'Request failed'))
+                } else {
+                    reqResolve(data)
+                }
+                return
+            }
+
+            // Handle task-specific events
             const callback = this.subscribers.get(data.call_id)
             if (callback) {
                 callback(data)
@@ -125,6 +147,13 @@ export class WebSocketManager {
             // Error out all active subscribers if manually closed or failed permanently
             this.notifyErrorToAll('WebSocket connection closed')
             this.subscribers.clear()
+            
+            // Reject all pending requests
+            for (const [reqId, req] of this.requestCallbacks.entries()) {
+                clearTimeout(req.timeout)
+                req.reject(new Error('WebSocket connection closed'))
+                this.requestCallbacks.delete(reqId)
+            }
         }
       }
     })
@@ -212,78 +241,38 @@ export class WebSocketManager {
     }
   }
 
+  private async sendWithCorrelation(data: any, timeoutMs: number = 5000): Promise<any> {
+      await this.connect()
+      const requestId = Math.random().toString(36).substring(2, 11)
+      data.request_id = requestId
+
+      return new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+              this.requestCallbacks.delete(requestId)
+              reject(new Error(`Timeout waiting for response to ${data.type}`))
+          }, timeoutMs)
+
+          this.requestCallbacks.set(requestId, { resolve, reject, timeout })
+          this.send(data)
+      })
+  }
+
   async startTask(toolName: string, args: any, onEvent: (event: AgentEvent) => void): Promise<string> {
-    await this.connect()
-    
-    const requestId = Math.random().toString(36).substring(2, 11)
-
-    return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-            this.ws?.removeEventListener('message', tempListener)
-            reject(new Error('Timeout waiting for task start'))
-        }, 5000)
-
-        const tempListener = (event: MessageEvent) => {
-            try {
-                const data = JSON.parse(event.data)
-                if (data.type === 'task_started' && data.request_id === requestId) {
-                    clearTimeout(timeout)
-                    this.ws?.removeEventListener('message', tempListener)
-                    this.subscribe(data.call_id, onEvent)
-                    // We don't call onEvent(data) here because task_started is just a meta-event
-                    resolve(data.call_id)
-                } else if (data.type === 'error' && data.request_id === requestId) {
-                    clearTimeout(timeout)
-                    this.ws?.removeEventListener('message', tempListener)
-                    reject(new Error(data.payload?.detail || 'Failed to start task'))
-                }
-            } catch (e) {}
-        }
-        
-        this.ws?.addEventListener('message', tempListener)
-        
-        this.send({
-            type: 'start',
-            tool_name: toolName,
-            args: args,
-            request_id: requestId
-        })
+    const data = await this.sendWithCorrelation({
+        type: 'start',
+        tool_name: toolName,
+        args: args
     })
+    
+    this.subscribe(data.call_id, onEvent)
+    return data.call_id
   }
 
   async getTools(): Promise<string[]> {
-    await this.connect()
-    
-    const requestId = Math.random().toString(36).substring(2, 11)
-
-    return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-            this.ws?.removeEventListener('message', tempListener)
-            reject(new Error('Timeout waiting for tools list'))
-        }, 5000)
-
-        const tempListener = (event: MessageEvent) => {
-            try {
-                const data = JSON.parse(event.data)
-                if (data.type === 'tools_list' && data.request_id === requestId) {
-                    clearTimeout(timeout)
-                    this.ws?.removeEventListener('message', tempListener)
-                    resolve(data.tools)
-                } else if (data.type === 'error' && data.request_id === requestId) {
-                    clearTimeout(timeout)
-                    this.ws?.removeEventListener('message', tempListener)
-                    reject(new Error(data.payload?.detail || 'Failed to fetch tools'))
-                }
-            } catch (e) {}
-        }
-        
-        this.ws?.addEventListener('message', tempListener)
-        
-        this.send({
-            type: 'list_tools',
-            request_id: requestId
-        })
+    const data = await this.sendWithCorrelation({
+        type: 'list_tools'
     })
+    return data.tools
   }
 }
 
