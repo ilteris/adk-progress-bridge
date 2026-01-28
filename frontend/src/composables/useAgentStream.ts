@@ -370,9 +370,11 @@ export function useAgentStream() {
 
   const stopTool = async () => {
     if (state.useWS && state.callId && state.isStreaming) {
+      const requestId = Math.random().toString(36).substring(2, 11)
       wsManager.send({
         type: 'stop',
-        call_id: state.callId
+        call_id: state.callId,
+        request_id: requestId
       })
       state.status = 'cancelled'
       state.isStreaming = false
@@ -405,10 +407,12 @@ export function useAgentStream() {
   const sendInput = async (value: string) => {
     if (state.callId && state.status === 'waiting_for_input') {
         if (state.useWS) {
+            const requestId = Math.random().toString(36).substring(2, 11)
             wsManager.send({
                 type: 'input',
                 call_id: state.callId,
-                value: value
+                value: value,
+                request_id: requestId
             })
         } else {
             try {
