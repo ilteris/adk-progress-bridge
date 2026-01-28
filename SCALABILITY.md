@@ -26,7 +26,7 @@ The simplest way to scale the current architecture is to use a Load Balancer (e.
 WebSockets inherently solve part of the session affinity problem because once a connection is established, it remains pinned to the same server instance.
 
 - **WebSocket Flow**: Since tool execution and streaming happen over the same persistent TCP connection in the `/ws` endpoint, there is no "Instance A vs Instance B" conflict during a single task's lifecycle.
-- **Horizontal Scaling**: You still need a Load Balancer that supports WebSockets (e.g., using `ip_hash` or cookie-based affinity) to ensure that if a client reconnects, they have a higher probability of landing on the same instance where their background tasks might still be cleaning up, although the `/ws` handler is designed to clean up tasks on disconnect.
+- **Horizontal Scaling**: You still need a Load Balancer that supports WebSockets (e.g., using `ip_hash` or cookie-based affinity) to ensure that if a client reconnects, they have a higher probability of landing on the same instance where their background tasks might still be cleaning up, although the `/ws` handler is designed to clean up tasks on disconnect. The 60-second heartbeat timeout ensures that even in the case of silent network failures or load balancer timeouts, dead connections are cleaned up promptly by the server.
 
 ### 3. Distributed Task Execution (Stateless API)
 For a truly stateless API tier that can scale horizontally without affinity, the execution logic must be decoupled from the API process.
