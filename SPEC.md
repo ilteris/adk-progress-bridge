@@ -10,13 +10,14 @@ The system consists of a Python backend (FastAPI) acting as the ADK Agent host a
 #### `ProgressEvent` (Pydantic Model)
 A structured container for event data.
 *   `call_id`: UUID string.
+*   `timestamp`: Unix timestamp (float) for event correlation.
 *   `type`: Literal ["progress", "result", "error", "input_request", "task_started"].
 *   `payload`: Any event-specific data.
 
 #### `ToolRegistry`
 Manages tool registration and active task sessions.
 *   `register(func)`: Decorator to register a tool.
-*   `store_task(call_id, gen, tool_name)`: Persists an active generator.
+*   `store_task(call_id, gen, tool_name)`: Persists an active generator. Raises `ValueError` if `call_id` already exists (collision protection).
 *   `list_tools()`: Returns a list of all registered tool names.
 *   `cleanup_tasks()`: Graceful shutdown handler.
 
@@ -28,7 +29,7 @@ Manages bi-directional input for tasks that require user interaction.
 
 *   **REST Flow (SSE):**
     *   `GET /tools`: Returns a list of all registered tool names.
-    *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id`.
+    *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id` and `timestamp`.
     *   `GET /stream/{call_id}`: SSE stream for progress.
     *   `POST /stop_task/{call_id}`: Manual termination of SSE task.
     *   `POST /provide_input`: REST fallback to provide input for SSE tasks.
