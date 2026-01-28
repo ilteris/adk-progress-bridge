@@ -64,14 +64,14 @@ class InputProvideRequest(BaseModel):
     call_id: str
     value: Any
 
-@app.get("/tools", response_model=List[str])
+@app.get("/tools", response_model=List[str], responses={401: {"description": "Not authenticated"}})
 async def list_tools(authenticated: bool = Depends(verify_api_key)):
     """
     Returns a list of all registered tools.
     """
     return registry.list_tools()
 
-@app.post("/start_task/{tool_name}", response_model=TaskStartResponse)
+@app.post("/start_task/{tool_name}", response_model=TaskStartResponse, responses={401: {"description": "Not authenticated"}})
 async def start_task(
     tool_name: str, 
     request: Optional[TaskStartRequest] = None, 
@@ -115,7 +115,7 @@ async def start_task(
         stream_url=f"/stream/{call_id}"
     )
 
-@app.get("/stream/{call_id}")
+@app.get("/stream/{call_id}", responses={401: {"description": "Not authenticated"}})
 @app.get("/stream")
 async def stream_task(
     call_id: Optional[str] = None,
@@ -181,14 +181,14 @@ async def stream_task(
         media_type="text/event-stream"
     )
 
-@app.post("/provide_input")
+@app.post("/provide_input", responses={401: {"description": "Not authenticated"}})
 async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
     if await input_manager.provide_input(request.call_id, request.value):
         return {"status": "input accepted"}
     else:
         raise HTTPException(status_code=404, detail=f"No task waiting for input with call_id: {request.call_id}")
 
-@app.post("/stop_task/{call_id}")
+@app.post("/stop_task/{call_id}", responses={401: {"description": "Not authenticated"}})
 @app.post("/stop_task")
 async def stop_task(
     call_id: Optional[str] = None, 
