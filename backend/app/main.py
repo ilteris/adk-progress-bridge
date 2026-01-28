@@ -219,6 +219,10 @@ async def websocket_endpoint(websocket: WebSocket):
     send_lock = asyncio.Lock()
 
     async def safe_send_json(data: dict):
+        # Ensure all outgoing WebSocket messages have a timestamp for correlation/auditing
+        if "timestamp" not in data:
+            data["timestamp"] = time.time()
+            
         async with send_lock:
             try:
                 await websocket.send_json(data)
@@ -269,8 +273,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 await safe_send_json({
                     "type": "tools_list",
                     "tools": tools,
-                    "request_id": request_id,
-                    "timestamp": time.time()
+                    "request_id": request_id
                 })
                 continue
 
@@ -282,9 +285,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 if not tool:
                     await safe_send_json({
                         "type": "error",
-                    "request_id": request_id,
-                    "timestamp": time.time(),
-                    "payload": {"detail": f"Tool not found: {tool_name}"}
+                        "request_id": request_id,
+                        "payload": {"detail": f"Tool not found: {tool_name}"}
                     })
                     continue
                 
@@ -298,8 +300,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "type": "task_started", 
                         "call_id": call_id, 
                         "tool_name": tool_name, 
-                        "request_id": request_id,
-                        "timestamp": time.time()
+                        "request_id": request_id
                     })
                     task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
                     active_tasks[call_id] = task
@@ -309,7 +310,6 @@ async def websocket_endpoint(websocket: WebSocket):
                         "type": "error",
                         "call_id": call_id,
                         "request_id": request_id,
-                        "timestamp": time.time(),
                         "payload": {"detail": str(e)}
                     })
             
@@ -328,15 +328,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     await safe_send_json({
                         "type": "stop_success",
                         "call_id": call_id,
-                        "request_id": request_id,
-                        "timestamp": time.time()
+                        "request_id": request_id
                     })
                 else:
                     await safe_send_json({
                         "type": "error",
                         "call_id": call_id,
                         "request_id": request_id,
-                        "timestamp": time.time(), 
                         "payload": {"detail": f"No active task found with call_id: {call_id}"}
                     })
             
@@ -349,15 +347,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     await safe_send_json({
                         "type": "input_success",
                         "call_id": call_id,
-                        "request_id": request_id,
-                        "timestamp": time.time()
+                        "request_id": request_id
                     })
                 else:
                     await safe_send_json({
                         "type": "error",
                         "call_id": call_id,
                         "request_id": request_id,
-                        "timestamp": time.time(), 
                         "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
                     })
             
@@ -366,7 +362,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 await safe_send_json({
                     "type": "error",
                     "request_id": request_id,
-                    "timestamp": time.time(),
                     "payload": {"detail": f"Unknown message type: {msg_type}"}
                 })
 
