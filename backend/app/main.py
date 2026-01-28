@@ -219,6 +219,10 @@ async def websocket_endpoint(websocket: WebSocket):
     send_lock = asyncio.Lock()
 
     async def safe_send_json(data: dict):
+        # Ensure all outgoing WebSocket messages have a timestamp for correlation/auditing
+        if "timestamp" not in data:
+            data["timestamp"] = time.time()
+            
         async with send_lock:
             try:
                 await websocket.send_json(data)
@@ -330,7 +334,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     await safe_send_json({
                         "type": "error",
                         "call_id": call_id,
-                        "request_id": request_id, 
+                        "request_id": request_id,
                         "payload": {"detail": f"No active task found with call_id: {call_id}"}
                     })
             
@@ -349,7 +353,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     await safe_send_json({
                         "type": "error",
                         "call_id": call_id,
-                        "request_id": request_id, 
+                        "request_id": request_id,
                         "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
                     })
             
@@ -357,7 +361,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.warning(f"Unknown WebSocket message type: {msg_type}")
                 await safe_send_json({
                     "type": "error",
-                    "request_id": request_id, 
+                    "request_id": request_id,
                     "payload": {"detail": f"Unknown message type: {msg_type}"}
                 })
 
