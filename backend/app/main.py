@@ -322,6 +322,7 @@ async def websocket_endpoint(websocket: WebSocket):
                                 gen.close()
                             elif inspect.isasyncgen(gen):
                                 await gen.aclose()
+                        registry.remove_task(call_id)
                         logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
                         await safe_send_json({
                             "type": "error",
