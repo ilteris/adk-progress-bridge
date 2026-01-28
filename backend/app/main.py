@@ -230,7 +230,8 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             try:
-                data = await websocket.receive_text()
+                # Add a 60-second timeout for the heartbeat (client pings every 30s)
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=60.0)
                 message = json.loads(data)
                 if not isinstance(message, dict):
                     logger.warning(f"Received non-dictionary message over WebSocket: {type(message)}")
@@ -239,6 +240,9 @@ async def websocket_endpoint(websocket: WebSocket):
                         "payload": {"detail": "Message must be a JSON object (dictionary)"}
                     })
                     continue
+            except asyncio.TimeoutError:
+                logger.warning("WebSocket heartbeat timeout (60s exceeded)")
+                break
             except json.JSONDecodeError:
                 logger.warning("Received invalid JSON over WebSocket")
                 await safe_send_json({
@@ -363,7 +367,7 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.error(f"WebSocket error: {e}")
     finally:
         if active_tasks:
-            logger.info(f"Cleaning up {len(active_tasks)} WebSocket tasks due to disconnect")
+            logger.info(f"Cleaning up {len(active_tasks)} WebSocket tasks due to disconnect/timeout")
             for task in active_tasks.values():
                 task.cancel()
 
