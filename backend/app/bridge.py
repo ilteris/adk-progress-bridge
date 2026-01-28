@@ -115,6 +115,12 @@ class ToolRegistry:
     def store_task(self, call_id: str, gen: AsyncGenerator, tool_name: str):
         # Final safety check: ensure gen is actually an async generator
         if not inspect.isasyncgen(gen):
+            # If it is a coroutine but not a generator, close it to avoid RuntimeWarnings
+            if inspect.iscoroutine(gen):
+                try:
+                    gen.close()
+                except:
+                    pass
             raise TypeError(f"Tool {tool_name} did not return an async generator. Got {type(gen)}")
 
         with self._lock:
