@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_manager
 from .logger import logger
@@ -54,6 +54,7 @@ class TaskStartRequest(BaseModel):
     args: Dict[str, Any] = {}
 
 class TaskStartResponse(BaseModel):
+    timestamp: float = Field(default_factory=time.time, description="Unix timestamp of when the task was created.")
     call_id: str
     stream_url: str
 
@@ -219,6 +220,10 @@ async def websocket_endpoint(websocket: WebSocket):
     send_lock = asyncio.Lock()
 
     async def safe_send_json(data: dict):
+        # Ensure all outgoing WebSocket messages have a timestamp for correlation/auditing
+        if "timestamp" not in data:
+            data["timestamp"] = time.time()
+            
         async with send_lock:
             try:
                 await websocket.send_json(data)
@@ -330,7 +335,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     await safe_send_json({
                         "type": "error",
                         "call_id": call_id,
-                        "request_id": request_id, 
+                        "request_id": request_id,
                         "payload": {"detail": f"No active task found with call_id: {call_id}"}
                     })
             
@@ -349,7 +354,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     await safe_send_json({
                         "type": "error",
                         "call_id": call_id,
-                        "request_id": request_id, 
+                        "request_id": request_id,
                         "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
                     })
             
@@ -357,7 +362,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.warning(f"Unknown WebSocket message type: {msg_type}")
                 await safe_send_json({
                     "type": "error",
-                    "request_id": request_id, 
+                    "request_id": request_id,
                     "payload": {"detail": f"Unknown message type: {msg_type}"}
                 })
 
