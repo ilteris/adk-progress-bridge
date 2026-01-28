@@ -192,3 +192,15 @@ def test_websocket_non_dict_json():
         data = websocket.receive_json()
         assert data["type"] == "error"
         assert "must be a JSON object" in data["payload"]["detail"]
+
+@pytest.mark.asyncio
+async def test_websocket_multiple_pings():
+    """
+    Tests that the WebSocket can handle multiple sequential pings.
+    """
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        for _ in range(5):
+            websocket.send_json({"type": "ping"})
+            data = websocket.receive_json()
+            assert data["type"] == "pong"
