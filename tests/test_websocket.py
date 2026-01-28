@@ -67,21 +67,24 @@ def test_websocket_stop():
         # 3. Send stop
         websocket.send_json({
             "type": "stop",
-            "call_id": call_id
+            "call_id": call_id,
+            "request_id": "stop_req_1"
         })
         
-        # 4. Wait for cancellation message
+        # 4. Wait for stop_success and cancellation message
+        found_stop_success = False
         found_cancelled = False
         for _ in range(20):
             data = websocket.receive_json()
+            if data["type"] == "stop_success" and data.get("request_id") == "stop_req_1":
+                found_stop_success = True
             if data["type"] == "progress" and data["payload"].get("step") == "Cancelled":
                 found_cancelled = True
-                break
-            # Or if the tool yields the "Task stopped by user" message
-            if data["type"] == "progress" and "stopped by user" in (data["payload"].get("log") or ""):
-                found_cancelled = True
+            
+            if found_stop_success and found_cancelled:
                 break
         
+        assert found_stop_success
         assert found_cancelled
 
 def test_websocket_invalid_tool():
@@ -90,11 +93,13 @@ def test_websocket_invalid_tool():
         websocket.send_json({
             "type": "start",
             "tool_name": "non_existent",
-            "args": {}
+            "args": {},
+            "request_id": "invalid_tool_req"
         })
         
         data = websocket.receive_json()
         assert data["type"] == "error"
+        assert data.get("request_id") == "invalid_tool_req"
         assert "Tool not found" in data["payload"]["detail"]
 
 def test_websocket_interactive():
@@ -119,6 +124,7 @@ def test_websocket_interactive():
         assert call_id is not None
 
         found_input_request = False
+        found_input_success = False
         found_result = False
         
         # Receive events until we get an input request
@@ -133,9 +139,13 @@ def test_websocket_interactive():
                 websocket.send_json({
                     "type": "input",
                     "call_id": call_id,
-                    "value": "yes"
+                    "value": "yes",
+                    "request_id": "input_req_1"
                 })
             
+            if data["type"] == "input_success" and data.get("request_id") == "input_req_1":
+                found_input_success = True
+
             if data["type"] == "result":
                 found_result = True
                 assert data["payload"]["status"] == "complete"
@@ -143,4 +153,42 @@ def test_websocket_interactive():
                 break
                 
         assert found_input_request
+        assert found_input_success
         assert found_result
+
+def test_websocket_list_tools():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "type": "list_tools",
+            "request_id": "list_tools_req"
+        })
+        
+        data = websocket.receive_json()
+        assert data["type"] == "tools_list"
+        assert data.get("request_id") == "list_tools_req"
+        assert isinstance(data["tools"], list)
+        assert "long_audit" in data["tools"]
+
+def test_websocket_ping_pong():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({"type": "ping"})
+        data = websocket.receive_json()
+        assert data["type"] == "pong"
+
+def test_websocket_invalid_json():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_text("not a json")
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert "Invalid JSON" in data["payload"]["detail"]
+
+def test_websocket_non_dict_json():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json([1, 2, 3])
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert "must be a JSON object" in data["payload"]["detail"]
