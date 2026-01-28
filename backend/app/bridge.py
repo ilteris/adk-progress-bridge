@@ -50,6 +50,7 @@ class ProgressEvent(BaseModel):
         description="The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, 'error' signifies a failure, and 'input_request' prompts the user for information.",
         examples=["progress", "result", "error", "input_request"]
     )
+    timestamp: float = Field(default_factory=time.time, description="Unix timestamp of when the event was created.")
     payload: Union[ProgressPayload, Dict[str, Any]] = Field(
         ..., 
         description="The actual data payload. Contains a ProgressPayload object for 'progress' types, or the final result/error details.",
