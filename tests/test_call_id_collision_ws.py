@@ -1,7 +1,17 @@
+import sys
+import os
+import json
 import pytest
 import asyncio
-import json
 from fastapi.testclient import TestClient
+
+# Add the project root to sys.path to import backend
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Set API key for tests before importing app
+API_KEY = "test_secret_key"
+os.environ["BRIDGE_API_KEY"] = API_KEY
+
 from backend.app.main import app
 from backend.app.bridge import registry
 
@@ -12,7 +22,7 @@ async def test_ws_call_id_collision_does_not_remove_existing_task():
     returns an error but DOES NOT remove the existing task.
     """
     with TestClient(app) as client:
-        with client.websocket_connect("/ws?api_key=test-key") as websocket:
+        with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
             # 1. Start a task with a specific call_id
             call_id = "test-collision-id"
             websocket.send_json({
