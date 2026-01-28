@@ -22,11 +22,14 @@ The simplest way to scale the current architecture is to use a Load Balancer (e.
     - Uneven load distribution if some tasks are significantly heavier than others.
     - If an instance goes down, all active tasks on that instance are lost.
 
-### 2. WebSocket persistence
+### 2. WebSocket Persistence & Heartbeats
 WebSockets inherently solve part of the session affinity problem because once a connection is established, it remains pinned to the same server instance.
 
 - **WebSocket Flow**: Since tool execution and streaming happen over the same persistent TCP connection in the `/ws` endpoint, there is no "Instance A vs Instance B" conflict during a single task's lifecycle.
-- **Horizontal Scaling**: You still need a Load Balancer that supports WebSockets (e.g., using `ip_hash` or cookie-based affinity) to ensure that if a client reconnects, they have a higher probability of landing on the same instance where their background tasks might still be cleaning up, although the `/ws` handler is designed to clean up tasks on disconnect.
+- **Heartbeats & Load Balancers**: The implementation includes a 30s client-to-server heartbeat (ping/pong) and a 60s server-side timeout. This is critical for scalability because:
+    - **Prevents Idle Timeouts**: Many Load Balancers (e.g., AWS ELB, Nginx) close idle connections after 60 seconds. Regular heartbeats keep the connection active.
+    - **Detects "Silent" Disconnects**: If a client loses power or network without sending a TCP FIN/ACK, heartbeats allow the server to detect the dead connection and clean up resources/tasks promptly.
+    - **State Maintenance**: Keeps the entry in the Load Balancer's connection table alive, ensuring bi-directional traffic flow.
 
 ### 3. Distributed Task Execution (Stateless API)
 For a truly stateless API tier that can scale horizontally without affinity, the execution logic must be decoupled from the API process.
