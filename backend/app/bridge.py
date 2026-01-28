@@ -118,6 +118,8 @@ class ToolRegistry:
             raise TypeError(f"Tool {tool_name} did not return an async generator. Got {type(gen)}")
 
         with self._lock:
+            if call_id in self._active_tasks:
+                raise ValueError(f"Task with call_id {call_id} already exists")
             self._active_tasks[call_id] = {
                 "gen": gen,
                 "tool_name": tool_name,
