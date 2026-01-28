@@ -302,7 +302,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 else:
                     await safe_send_json({
                         "type": "error",
-                        "request_id": message.get("request_id"), "payload": {"detail": f"No active task found with call_id: {call_id}"}
+                        "call_id": call_id,
+                        "request_id": message.get("request_id"), 
+                        "payload": {"detail": f"No active task found with call_id: {call_id}"}
                     })
             
             elif msg_type == "input":
@@ -313,14 +315,17 @@ async def websocket_endpoint(websocket: WebSocket):
                 else:
                     await safe_send_json({
                         "type": "error",
-                        "request_id": message.get("request_id"), "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
+                        "call_id": call_id,
+                        "request_id": message.get("request_id"), 
+                        "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
                     })
             
             else:
                 logger.warning(f"Unknown WebSocket message type: {msg_type}")
                 await safe_send_json({
                     "type": "error",
-                    "request_id": message.get("request_id"), "payload": {"detail": f"Unknown message type: {msg_type}"}
+                    "request_id": message.get("request_id"), 
+                    "payload": {"detail": f"Unknown message type: {msg_type}"}
                 })
 
     except WebSocketDisconnect:
