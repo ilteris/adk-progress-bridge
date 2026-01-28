@@ -387,7 +387,7 @@ export function useAgentStream() {
         }
       }
 
-      eventSource.onerror = (err) => {
+      eventSource.onerror = () => {
         if (eventSource?.readyState === EventSource.CONNECTING) {
           state.status = 'reconnecting'
           state.isConnected = false
