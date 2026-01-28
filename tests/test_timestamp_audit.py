@@ -1,3 +1,5 @@
+import sys
+import os
 import pytest
 import json
 import time
@@ -6,6 +8,7 @@ from fastapi.testclient import TestClient
 
 # Set API key for tests before importing app
 os.environ["BRIDGE_API_KEY"] = "test_secret_key"
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.app.main import app
 
 client = TestClient(app)
