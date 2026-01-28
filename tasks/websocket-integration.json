@@ -2,5 +2,5 @@
   "title": "WebSocket Integration",
   "status": "completed",
   "role": "Architect",
-  "description": "ULTRA-STRENGTHENED: WebSocket integration is fully functional with bi-directional support and robust concurrency management. Added 'task_started' confirmation and 'request_id' correlation to prevent race conditions during concurrent task starts. Verified with extensive tests in tests/test_websocket.py, tests/test_ws_cleanup.py, and tests/test_ws_concurrency.py. Updated SPEC.md to document the refined protocol."
+  "description": "ULTRA-STRENGTHENED: WebSocket integration is fully functional with bi-directional support and robust concurrency management. Added a thread-safe send lock to prevent concurrent WebSocket writes. Fixed a bug where request_id was missing in error responses for failed task starts. Added robust JSON parsing to the WS loop to prevent connection crashes. Verified with comprehensive tests in tests/test_websocket.py, tests/test_ws_cleanup.py, tests/test_ws_concurrency.py, and tests/test_ws_error_correlation.py."
 }

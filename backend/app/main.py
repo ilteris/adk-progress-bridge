@@ -208,16 +208,34 @@ async def websocket_endpoint(websocket: WebSocket):
     logger.info("WebSocket connection established")
     
     active_tasks: Dict[str, asyncio.Task] = {}
+    # Use a lock to ensure only one task can send over the websocket at a time
+    send_lock = asyncio.Lock()
+
+    async def safe_send_json(data: dict):
+        async with send_lock:
+            try:
+                await websocket.send_json(data)
+            except Exception as e:
+                # If the websocket is closed, we might get an error here
+                logger.error(f"Error sending WS message: {e}")
+                raise
 
     try:
         while True:
-            data = await websocket.receive_text()
-            message = json.loads(data)
+            try:
+                data = await websocket.receive_text()
+                message = json.loads(data)
+            except json.JSONDecodeError:
+                logger.warning("Received invalid JSON over WebSocket")
+                continue
+            except Exception as e:
+                logger.error(f"Error receiving WS message: {e}")
+                break
             
             msg_type = message.get("type")
             
             if msg_type == "ping":
-                await websocket.send_json({"type": "pong"})
+                await safe_send_json({"type": "pong"})
                 continue
 
             if msg_type == "start":
@@ -227,8 +245,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 tool = registry.get_tool(tool_name)
                 if not tool:
-                    await websocket.send_json({
+                    await safe_send_json({
                         "type": "error",
+                        "request_id": request_id,
                         "payload": {"detail": f"Tool not found: {tool_name}"}
                     })
                     continue
@@ -239,13 +258,20 @@ async def websocket_endpoint(websocket: WebSocket):
                     gen = tool(**args)
                     registry.store_task(call_id, gen, tool_name)
                     registry.mark_consumed(call_id)
-                    await websocket.send_json({"type": "task_started", "call_id": call_id, "tool_name": tool_name, "request_id": request_id})
-                    task = asyncio.create_task(run_ws_generator(websocket, call_id, tool_name, gen, active_tasks))
+                    await safe_send_json({
+                        "type": "task_started", 
+                        "call_id": call_id, 
+                        "tool_name": tool_name, 
+                        "request_id": request_id
+                    })
+                    task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
                     active_tasks[call_id] = task
                 except Exception as e:
-                    await websocket.send_json({
+                    logger.error(f"Failed to start tool {tool_name} via WS: {e}")
+                    await safe_send_json({
                         "type": "error",
                         "call_id": call_id,
+                        "request_id": request_id,
                         "payload": {"detail": str(e)}
                     })
             
@@ -254,13 +280,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 if call_id in active_tasks:
                     logger.info(f"Stopping task {call_id} via WebSocket request")
                     active_tasks[call_id].cancel()
-                    await websocket.send_json({
+                    await safe_send_json({
                         "call_id": call_id,
                         "type": "progress",
                         "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}
                     })
                 else:
-                    await websocket.send_json({
+                    await safe_send_json({
                         "type": "error",
                         "payload": {"detail": f"No active task found with call_id: {call_id}"}
                     })
@@ -271,7 +297,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 if input_manager.provide_input(call_id, value):
                     logger.info(f"Input received for task {call_id}")
                 else:
-                    await websocket.send_json({
+                    await safe_send_json({
                         "type": "error",
                         "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
                     })
@@ -286,7 +312,7 @@ async def websocket_endpoint(websocket: WebSocket):
             for task in active_tasks.values():
                 task.cancel()
 
-async def run_ws_generator(websocket: WebSocket, call_id: str, tool_name: str, gen, active_tasks: Dict[str, asyncio.Task]):
+async def run_ws_generator(send_fn, call_id: str, tool_name: str, gen, active_tasks: Dict[str, asyncio.Task]):
     call_id_var.set(call_id)
     tool_name_var.set(tool_name)
     
@@ -304,7 +330,7 @@ async def run_ws_generator(websocket: WebSocket, call_id: str, tool_name: str, g
             else:
                 event = ProgressEvent(call_id=call_id, type="result", payload=item)
             
-            await websocket.send_json(event.model_dump())
+            await send_fn(event.model_dump())
             
     except asyncio.CancelledError:
         status = "cancelled"
@@ -315,7 +341,7 @@ async def run_ws_generator(websocket: WebSocket, call_id: str, tool_name: str, g
         logger.error(f"Error during WS task {call_id}: {e}")
         event = ProgressEvent(call_id=call_id, type="error", payload={"detail": str(e)})
         try:
-            await websocket.send_json(event.model_dump())
+            await send_fn(event.model_dump())
         except:
             pass
     finally:
