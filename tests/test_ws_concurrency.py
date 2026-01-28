@@ -11,15 +11,21 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.app.main import app
 
 @pytest.mark.asyncio
+async def test_websocket_ping_pong():
+    """
+    Tests that the WebSocket endpoint responds to ping with pong.
+    """
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({"type": "ping"})
+        data = websocket.receive_json()
+        assert data["type"] == "pong"
+
+@pytest.mark.asyncio
 async def test_websocket_concurrency():
     """
     Tests that multiple tasks can run concurrently over the same WebSocket connection.
     """
-    # TestClient's websocket_connect is synchronous-style but used within async tests with some tricks,
-    # or we can just use it normally if not using pytest-asyncio for the connection itself.
-    # Actually, for concurrent receiving, we might need a real async websocket client or multiple threads.
-    # But TestClient.websocket_connect is a context manager.
-    
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
         # Start 3 tasks
@@ -38,7 +44,7 @@ async def test_websocket_concurrency():
         
         # Now we expect to receive a mix of events for all 3 call IDs
         results_received = set()
-        for _ in range(50): # Plenty of iterations to catch all events
+        for _ in range(50):
             try:
                 data = websocket.receive_json()
                 if data["type"] == "result":
@@ -59,7 +65,6 @@ async def test_websocket_concurrent_input():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
         # Start 2 interactive tasks
-        call_ids = []
         for i in range(2):
             websocket.send_json({
                 "type": "start",
@@ -92,8 +97,3 @@ async def test_websocket_concurrent_input():
         
         assert len(waiting_for_ids) == 2, "Both tasks should have requested input"
         assert len(results_received) == 2, "Both tasks should have completed"
-
-if __name__ == "__main__":
-    # If run directly, run these tests
-    # Note: Requires a running loop or just use pytest
-    print("Run this file using: pytest tests/test_ws_concurrency.py")

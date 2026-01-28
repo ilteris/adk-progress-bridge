@@ -35,6 +35,149 @@ const WS_BASE_URL = API_BASE_URL.replace('http', 'ws')
 // Support VITE_BRIDGE_API_KEY for authenticated requests
 const BRIDGE_API_KEY = import.meta.env.VITE_BRIDGE_API_KEY || ''
 
+/**
+ * Shared WebSocket Manager to support multiple concurrent tasks over a single connection.
+ */
+export class WebSocketManager {
+  private ws: WebSocket | null = null
+  private subscribers: Map<string, (event: AgentEvent) => void> = new Map()
+  private connectionPromise: Promise<void> | null = null
+  private heartbeatInterval: any = null
+
+  // For testing
+  public reset() {
+    this.stopHeartbeat()
+    if (this.ws) {
+      this.ws.close()
+      this.ws = null
+    }
+    this.subscribers.clear()
+    this.connectionPromise = null
+  }
+
+  async connect(): Promise<void> {
+    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+        if (this.connectionPromise) return this.connectionPromise
+        return Promise.resolve()
+    }
+    
+    if (this.connectionPromise) return this.connectionPromise
+
+    this.connectionPromise = new Promise((resolve, reject) => {
+      const wsUrl = new URL(`${WS_BASE_URL}/ws`)
+      if (BRIDGE_API_KEY) {
+        wsUrl.searchParams.append('api_key', BRIDGE_API_KEY)
+      }
+
+      this.ws = new WebSocket(wsUrl.toString())
+
+      this.ws.onopen = () => {
+        this.startHeartbeat()
+        this.connectionPromise = null
+        resolve()
+      }
+
+      this.ws.onmessage = (event) => {
+        try {
+            const data: AgentEvent = JSON.parse(event.data)
+            const callback = this.subscribers.get(data.call_id)
+            if (callback) {
+                callback(data)
+            }
+        } catch (e) {
+            console.error('[WS] Failed to parse message', e)
+        }
+      }
+
+      this.ws.onerror = (err) => {
+        this.connectionPromise = null
+        reject(err)
+      }
+
+      this.ws.onclose = () => {
+        this.stopHeartbeat()
+        this.ws = null
+        this.connectionPromise = null
+        // Error out all active subscribers
+        for (const [callId, callback] of this.subscribers.entries()) {
+            callback({
+                call_id: callId,
+                type: 'error',
+                payload: { detail: 'WebSocket connection closed' }
+            })
+        }
+        this.subscribers.clear()
+      }
+    })
+
+    return this.connectionPromise
+  }
+
+  private startHeartbeat() {
+    this.stopHeartbeat()
+    this.heartbeatInterval = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type: 'ping' }))
+      }
+    }, 30000)
+  }
+
+  private stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval)
+      this.heartbeatInterval = null
+    }
+  }
+
+  subscribe(callId: string, callback: (event: AgentEvent) => void) {
+    this.subscribers.set(callId, callback)
+  }
+
+  unsubscribe(callId: string) {
+    this.subscribers.delete(callId)
+  }
+
+  send(data: any) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(data))
+    }
+  }
+
+  async startTask(toolName: string, args: any, onEvent: (event: AgentEvent) => void): Promise<string> {
+    await this.connect()
+    
+    return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+            this.ws?.removeEventListener('message', tempListener)
+            reject(new Error('Timeout waiting for task start'))
+        }, 5000)
+
+        const tempListener = (event: MessageEvent) => {
+            try {
+                const data = JSON.parse(event.data)
+                if (data.call_id && data.type !== 'ping') {
+                    clearTimeout(timeout)
+                    this.ws?.removeEventListener('message', tempListener)
+                    this.subscribe(data.call_id, onEvent)
+                    onEvent(data)
+                    resolve(data.call_id)
+                }
+            } catch (e) {}
+        }
+        
+        this.ws?.addEventListener('message', tempListener)
+        
+        this.send({
+            type: 'start',
+            tool_name: toolName,
+            args: args
+        })
+    })
+  }
+}
+
+export const wsManager = new WebSocketManager()
+
 export function useAgentStream() {
   const state = reactive<AgentState>({
     status: 'idle',
@@ -50,10 +193,9 @@ export function useAgentStream() {
     inputPrompt: null
   })
 
-  let ws: WebSocket | null = null
   let eventSource: EventSource | null = null
 
-  const reset = (closeWS = true) => {
+  const reset = () => {
     state.status = 'idle'
     state.isConnected = false
     state.callId = null
@@ -65,11 +207,6 @@ export function useAgentStream() {
     state.isStreaming = false
     state.inputPrompt = null
     
-    if (closeWS && ws) {
-      ws.close()
-      ws = null
-    }
-    
     if (eventSource) {
       eventSource.close()
       eventSource = null
@@ -78,7 +215,6 @@ export function useAgentStream() {
 
   const runToolSSE = async (toolName: string, args: Record<string, any>) => {
     try {
-      // 1. Start Task
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (BRIDGE_API_KEY) {
         headers['X-API-Key'] = BRIDGE_API_KEY
@@ -87,9 +223,7 @@ export function useAgentStream() {
       const response = await fetch(`${API_BASE_URL}/start_task/${toolName}`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-            args: args
-        })
+        body: JSON.stringify({ args })
       })
 
       if (!response.ok) {
@@ -100,7 +234,6 @@ export function useAgentStream() {
       const { call_id } = await response.json()
       state.callId = call_id
 
-      // 2. Connect to SSE
       const streamUrl = new URL(`${API_BASE_URL}/stream`)
       streamUrl.searchParams.append('call_id', call_id)
       if (BRIDGE_API_KEY) {
@@ -118,14 +251,12 @@ export function useAgentStream() {
 
       eventSource.onmessage = (event) => {
         const data: AgentEvent = JSON.parse(event.data)
-        // Ensure we only process events for the current call_id
         if (data.call_id === state.callId) {
             handleEvent(data, () => eventSource?.close())
         }
       }
 
       eventSource.onerror = (err) => {
-        console.error('EventSource failed:', err)
         if (eventSource?.readyState === EventSource.CONNECTING) {
           state.status = 'reconnecting'
           state.isConnected = false
@@ -144,89 +275,33 @@ export function useAgentStream() {
     }
   }
 
-  const connectWS = (): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        resolve()
-        return
-      }
-
-      const wsUrl = new URL(`${WS_BASE_URL}/ws`)
-      if (BRIDGE_API_KEY) {
-        wsUrl.searchParams.append('api_key', BRIDGE_API_KEY)
-      }
-
-      ws = new WebSocket(wsUrl.toString())
-
-      ws.onopen = () => {
-        state.isConnected = true
-        state.logs.push('Connected to WebSocket...')
-        resolve()
-      }
-
-      ws.onmessage = (event) => {
-        const data: AgentEvent = JSON.parse(event.data)
-        
-        // If we don't have a callId yet, this might be the start of our new task
-        if (!state.callId && data.call_id) {
-            state.callId = data.call_id
-        }
-        
-        // Only handle events matching our current callId to avoid ghost tasks
-        if (data.call_id === state.callId) {
-            handleEvent(data, () => {
-                state.isStreaming = false
-            })
-        }
-      }
-
-      ws.onerror = (err) => {
-        console.error('WebSocket error:', err)
-        state.error = 'WebSocket connection failed'
-        state.status = 'error'
-        state.isStreaming = false
-        reject(err)
-      }
-
-      ws.onclose = () => {
-        state.isConnected = false
-        if (state.isStreaming) {
-          state.error = 'WebSocket connection closed unexpectedly'
-          state.status = 'error'
-          state.isStreaming = false
-          state.logs.push('Error: WebSocket closed unexpectedly during streaming.')
-        } else if (state.status !== 'completed' && state.status !== 'error' && state.status !== 'cancelled') {
-          state.status = 'idle'
-        }
-        state.logs.push('WebSocket closed.')
-        ws = null
-      }
-    })
-  }
-
   const runToolWS = async (toolName: string, args: Record<string, any>) => {
     try {
-      await connectWS()
+      state.status = 'connecting'
+      const callId = await wsManager.startTask(toolName, args, (event) => {
+        handleEvent(event, () => {
+            wsManager.unsubscribe(callId)
+        })
+      })
+      state.callId = callId
+      state.isConnected = true
       state.status = 'connected'
-      
-      ws?.send(JSON.stringify({
-        type: 'start',
-        tool_name: toolName,
-        args: args
-      }))
-    } catch (err) {
-      // Error handled in connectWS
+    } catch (err: any) {
+      state.error = err.message || 'WebSocket error'
+      state.status = 'error'
+      state.isStreaming = false
     }
   }
 
   const stopTool = async () => {
-    if (state.useWS && ws && state.callId && state.isStreaming) {
-      ws.send(JSON.stringify({
+    if (state.useWS && state.callId && state.isStreaming) {
+      wsManager.send({
         type: 'stop',
         call_id: state.callId
-      }))
+      })
       state.status = 'cancelled'
       state.isStreaming = false
+      wsManager.unsubscribe(state.callId)
     } else if (state.callId && state.isStreaming) {
       try {
         const headers: Record<string, string> = {}
@@ -237,9 +312,7 @@ export function useAgentStream() {
           method: 'POST',
           headers
         })
-      } catch (err) {
-        console.error('Failed to stop SSE task on backend:', err)
-      }
+      } catch (err) {}
       
       if (eventSource) {
         eventSource.close()
@@ -256,12 +329,12 @@ export function useAgentStream() {
 
   const sendInput = async (value: string) => {
     if (state.callId && state.status === 'waiting_for_input') {
-        if (state.useWS && ws) {
-            ws.send(JSON.stringify({
+        if (state.useWS) {
+            wsManager.send({
                 type: 'input',
                 call_id: state.callId,
                 value: value
-            }))
+            })
         } else {
             try {
                 const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -276,9 +349,7 @@ export function useAgentStream() {
                         value: value
                     })
                 })
-            } catch (err) {
-                console.error('Failed to send input via POST:', err)
-            }
+            } catch (err) {}
         }
         state.status = 'connected'
         state.inputPrompt = null
@@ -314,17 +385,14 @@ export function useAgentStream() {
   }
 
   const runTool = async (toolName: string, args: Record<string, any> = {}) => {
-    // 1. If already streaming, stop it first
     if (state.isStreaming) {
       await stopTool()
     }
 
     const useWS = state.useWS
-    // 2. Reset state (but keep WS open if using WS)
-    reset(!useWS)
+    reset()
     state.useWS = useWS 
     state.isStreaming = true
-    state.status = 'connecting'
 
     if (state.useWS) {
       await runToolWS(toolName, args)
@@ -335,7 +403,9 @@ export function useAgentStream() {
 
   if (getCurrentInstance()) {
     onUnmounted(() => {
-      if (ws) ws.close()
+      if (state.isStreaming) {
+          stopTool()
+      }
       if (eventSource) eventSource.close()
     })
   }

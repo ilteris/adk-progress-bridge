@@ -100,7 +100,6 @@ async def stream_task(
 ):
     """
     SSE endpoint to stream progress and results for a task.
-    Supports both path parameter and query parameter for call_id.
     """
     actual_call_id = call_id or cid
     if not actual_call_id:
@@ -114,7 +113,6 @@ async def stream_task(
     tool_name = task_data["tool_name"]
 
     async def event_generator():
-        # Set context vars for the generator's thread/task
         call_id_var.set(actual_call_id)
         tool_name_var.set(tool_name)
         
@@ -136,7 +134,6 @@ async def stream_task(
         except asyncio.CancelledError:
             status = "cancelled"
             logger.info(f"Task {actual_call_id} was cancelled by client")
-            # Ensure generator is closed
             await gen.aclose()
         except Exception as e:
             status = "error"
@@ -162,10 +159,6 @@ async def stream_task(
 
 @app.post("/provide_input")
 async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
-    """
-    Allows providing input to a task waiting for it. 
-    Useful for SSE-based flows where the client can't send data back over the stream.
-    """
     if input_manager.provide_input(request.call_id, request.value):
         return {"status": "input accepted"}
     else:
@@ -178,10 +171,6 @@ async def stop_task(
     cid: Optional[str] = Query(None, alias="call_id"),
     authenticated: bool = Depends(verify_api_key)
 ):
-    """
-    Manually stops a running task.
-    Supports both path parameter and query parameter for call_id.
-    """
     actual_call_id = call_id or cid
     if not actual_call_id:
         raise HTTPException(status_code=400, detail="call_id is required")
@@ -192,8 +181,6 @@ async def stop_task(
     
     await task_data["gen"].aclose()
     
-    # If the task was not yet consumed, it won't be removed by the stream generator's finally block
-    # because the stream generator was never started. So we remove it here.
     if not task_data["consumed"]:
         registry.remove_task(actual_call_id)
         
@@ -229,6 +216,10 @@ async def websocket_endpoint(websocket: WebSocket):
             
             msg_type = message.get("type")
             
+            if msg_type == "ping":
+                await websocket.send_json({"type": "pong"})
+                continue
+
             if msg_type == "start":
                 tool_name = message.get("tool_name")
                 args = message.get("args", {})
@@ -245,11 +236,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 try:
                     gen = tool(**args)
-                    # Register task globally
                     registry.store_task(call_id, gen, tool_name)
-                    # Mark as consumed immediately so it's not reaped by the stale cleanup loop
                     registry.mark_consumed(call_id)
-                    # Run the generator in a background task tracked locally
                     task = asyncio.create_task(run_ws_generator(websocket, call_id, tool_name, gen, active_tasks))
                     active_tasks[call_id] = task
                 except Exception as e:
@@ -291,14 +279,12 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
-        # Cleanup all tasks associated with this connection
         if active_tasks:
             logger.info(f"Cleaning up {len(active_tasks)} WebSocket tasks due to disconnect")
             for task in active_tasks.values():
                 task.cancel()
 
 async def run_ws_generator(websocket: WebSocket, call_id: str, tool_name: str, gen, active_tasks: Dict[str, asyncio.Task]):
-    # Set context vars
     call_id_var.set(call_id)
     tool_name_var.set(tool_name)
     
@@ -329,13 +315,12 @@ async def run_ws_generator(websocket: WebSocket, call_id: str, tool_name: str, g
         try:
             await websocket.send_json(event.model_dump())
         except:
-            pass # Socket might be closed
+            pass
     finally:
         duration = time.perf_counter() - start_time
         TASK_DURATION.labels(tool_name=tool_name).observe(duration)
         TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
         
-        # Cleanup
         registry.remove_task(call_id)
         active_tasks.pop(call_id, None)
         
