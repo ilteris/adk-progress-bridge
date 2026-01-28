@@ -52,3 +52,11 @@ def test_websocket_missing_tool():
         assert data["type"] == "error"
         assert data["request_id"] == "robust_1"
         assert "Tool not found" in data["payload"]["detail"]
+
+def test_websocket_ping_pong():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({"type": "ping"})
+        
+        data = websocket.receive_json()
+        assert data["type"] == "pong"
