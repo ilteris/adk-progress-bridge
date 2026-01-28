@@ -301,6 +301,13 @@ async def websocket_endpoint(websocket: WebSocket):
                         "type": "error",
                         "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
                     })
+            
+            else:
+                logger.warning(f"Unknown WebSocket message type: {msg_type}")
+                await safe_send_json({
+                    "type": "error",
+                    "payload": {"detail": f"Unknown message type: {msg_type}"}
+                })
 
     except WebSocketDisconnect:
         logger.info("WebSocket disconnected")

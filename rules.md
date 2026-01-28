@@ -26,9 +26,11 @@ The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 
 #### WebSocket Flow (Bi-directional)
 - `WS /ws`: Bi-directional connection for task control and streaming.
-- Message `{"type": "start", "tool_name": "...", "args": {...}}` starts a task.
+- Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task.
+- Server responds with `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` to confirm start.
 - Message `{"type": "stop", "call_id": "..."}` stops a task.
 - Message `{"type": "input", "call_id": "...", "value": "..."}` provides interactive input.
+- Message `{"type": "ping"}` -> Server responds with `{"type": "pong"}`.
 
 #### Event Schema
 - All progress events MUST follow the `ProgressEvent` schema defined in `backend/app/bridge.py`.
