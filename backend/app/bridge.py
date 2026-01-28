@@ -67,7 +67,11 @@ class InputManager:
             self._pending_inputs[call_id] = future
         
         logger.info(f"Task {call_id} waiting for input: {prompt}", extra={"call_id": call_id, "prompt": prompt})
-        return await future
+        try:
+            return await future
+        finally:
+            with self._lock:
+                self._pending_inputs.pop(call_id, None)
 
     def provide_input(self, call_id: str, value: Any):
         with self._lock:

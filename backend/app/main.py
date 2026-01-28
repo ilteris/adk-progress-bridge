@@ -95,8 +95,11 @@ async def start_task(
         registry.store_task(call_id, gen, tool_name)
     except Exception as e:
         # Properly cleanup to avoid RuntimeWarning for unawaited coroutines
-        if gen and inspect.iscoroutine(gen):
-            gen.close()
+        if gen:
+            if inspect.iscoroutine(gen):
+                gen.close()
+            elif inspect.isasyncgen(gen):
+                await gen.aclose()
         logger.error(f"Error starting tool {tool_name}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
@@ -314,8 +317,11 @@ async def websocket_endpoint(websocket: WebSocket):
                         task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
                         active_tasks[call_id] = task
                     except Exception as e:
-                        if gen and inspect.iscoroutine(gen):
-                            gen.close()
+                        if gen:
+                            if inspect.iscoroutine(gen):
+                                gen.close()
+                            elif inspect.isasyncgen(gen):
+                                await gen.aclose()
                         logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
                         await safe_send_json({
                             "type": "error",
