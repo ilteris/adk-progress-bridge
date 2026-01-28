@@ -9,7 +9,7 @@ interface ProgressPayload {
 
 interface AgentEvent {
   call_id: string
-  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting'
+  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success'
   payload: any
   request_id?: string
 }
@@ -28,6 +28,7 @@ export interface AgentState {
   isStreaming: boolean
   useWS: boolean
   inputPrompt: string | null
+  tools: string[]
 }
 
 // Support VITE_API_URL environment variable, defaulting to localhost for dev
@@ -300,7 +301,8 @@ export function useAgentStream() {
     error: null,
     isStreaming: false,
     useWS: false,
-    inputPrompt: null
+    inputPrompt: null,
+    tools: []
   })
 
   let eventSource: EventSource | null = null
@@ -324,16 +326,24 @@ export function useAgentStream() {
   }
 
   const fetchTools = async (): Promise<string[]> => {
-    if (state.useWS) {
-        return await wsManager.getTools()
-    } else {
-        const headers: Record<string, string> = {}
-        if (BRIDGE_API_KEY) {
-            headers['X-API-Key'] = BRIDGE_API_KEY
-        }
-        const response = await fetch(`${API_BASE_URL}/tools`, { headers })
-        if (!response.ok) throw new Error('Failed to fetch tools via REST')
-        return await response.json()
+    try {
+      let tools: string[] = []
+      if (state.useWS) {
+          tools = await wsManager.getTools()
+      } else {
+          const headers: Record<string, string> = {}
+          if (BRIDGE_API_KEY) {
+              headers['X-API-Key'] = BRIDGE_API_KEY
+          }
+          const response = await fetch(`${API_BASE_URL}/tools`, { headers })
+          if (!response.ok) throw new Error('Failed to fetch tools via REST')
+          tools = await response.json()
+      }
+      state.tools = tools
+      return tools
+    } catch (err: any) {
+      console.error('Failed to fetch tools:', err)
+      return []
     }
   }
 
@@ -499,6 +509,10 @@ export function useAgentStream() {
         state.status = 'reconnecting'
         state.isConnected = false
         state.logs.push('WebSocket connection lost. Reconnecting...')
+    } else if (data.type === 'stop_success') {
+        state.logs.push('Stop command acknowledged by server.')
+    } else if (data.type === 'input_success') {
+        state.logs.push('Input command acknowledged by server.')
     } else if (data.type === 'result') {
       state.result = data.payload
       state.currentStep = 'Completed'
