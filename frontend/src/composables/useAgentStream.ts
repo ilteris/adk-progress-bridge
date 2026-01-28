@@ -308,6 +308,10 @@ export function useAgentStream() {
   let eventSource: EventSource | null = null
 
   const reset = () => {
+    if (state.useWS && state.callId) {
+        wsManager.unsubscribe(state.callId)
+    }
+
     state.status = 'idle'
     state.isConnected = false
     state.callId = null
@@ -437,7 +441,8 @@ export function useAgentStream() {
       })
       state.status = 'cancelled'
       state.isStreaming = false
-      wsManager.unsubscribe(state.callId)
+      // We do NOT unsubscribe here, so we can receive stop_success and the final "Cancelled" progress event.
+      // handleEvent or reset will eventually unsubscribe.
     } else if (state.callId && state.isStreaming) {
       try {
         const headers: Record<string, string> = {}
@@ -511,6 +516,8 @@ export function useAgentStream() {
         state.logs.push('WebSocket connection lost. Reconnecting...')
     } else if (data.type === 'stop_success') {
         state.logs.push('Stop command acknowledged by server.')
+        // stop_success is the final acknowledgement for a stop command
+        closeFn()
     } else if (data.type === 'input_success') {
         state.logs.push('Input command acknowledged by server.')
     } else if (data.type === 'result') {
