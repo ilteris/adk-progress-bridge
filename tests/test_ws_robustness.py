@@ -73,3 +73,32 @@ def test_websocket_unknown_type_with_request_id():
         assert data["type"] == "error"
         assert data.get("request_id") == "robust_unknown"
         assert "Unknown message type" in data["payload"]["detail"]
+
+def test_websocket_stop_missing_call_id():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "type": "stop",
+            "call_id": "non-existent-call-id",
+            "request_id": "stop_missing"
+        })
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert data.get("request_id") == "stop_missing"
+        assert "No active task found" in data["payload"]["detail"]
+
+def test_websocket_input_missing_call_id():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "type": "input",
+            "call_id": "non-existent-call-id",
+            "value": "some-value",
+            "request_id": "input_missing"
+        })
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert data.get("request_id") == "input_missing"
+        assert "No task waiting for input" in data["payload"]["detail"]
