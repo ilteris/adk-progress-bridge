@@ -2,5 +2,5 @@
   "title": "WebSocket Integration",
   "status": "completed",
   "role": "Architect",
-  "description": "VERIFIED & STRENGTHENED: WebSocket integration is fully functional with bi-directional support (start, stop, input). Verified the fix for the 'mark_consumed' bug and confirmed that concurrent tasks and inputs work perfectly over a single connection. Extensive tests in tests/test_websocket.py, tests/test_ws_cleanup.py, and tests/test_ws_concurrency.py pass."
+  "description": "ULTRA-STRENGTHENED: WebSocket integration is fully functional with bi-directional support and robust concurrency management. Added 'task_started' confirmation and 'request_id' correlation to prevent race conditions during concurrent task starts. Verified with extensive tests in tests/test_websocket.py, tests/test_ws_cleanup.py, and tests/test_ws_concurrency.py. Updated SPEC.md to document the refined protocol."
 }

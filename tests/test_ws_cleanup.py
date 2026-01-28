@@ -22,13 +22,19 @@ def test_websocket_marks_consumed():
         websocket.send_json({
             "type": "start",
             "tool_name": "long_audit",
-            "args": {"duration": 1}
+            "args": {"duration": 1},
+            "request_id": "test_req_consumed"
         })
         
-        # 2. Receive first event to get call_id
-        data = websocket.receive_json()
-        assert "call_id" in data
-        call_id = data["call_id"]
+        # 2. Receive task_started message to get call_id
+        call_id = None
+        for _ in range(10):
+            data = websocket.receive_json()
+            if data["type"] == "task_started" and data.get("request_id") == "test_req_consumed":
+                call_id = data["call_id"]
+                break
+        
+        assert call_id is not None
         
         # 3. Check registry state directly
         task_data = registry.get_task_no_consume(call_id)
@@ -45,16 +51,21 @@ def test_websocket_not_reaped_by_cleanup():
         websocket.send_json({
             "type": "start",
             "tool_name": "long_audit",
-            "args": {"duration": 10}
+            "args": {"duration": 10},
+            "request_id": "test_req_no_reap"
         })
         
-        # 2. Receive first event
-        data = websocket.receive_json()
-        call_id = data["call_id"]
+        # 2. Receive task_started message
+        call_id = None
+        for _ in range(10):
+            data = websocket.receive_json()
+            if data["type"] == "task_started" and data.get("request_id") == "test_req_no_reap":
+                call_id = data["call_id"]
+                break
+        
+        assert call_id is not None
         
         # 3. Trigger cleanup with 0 seconds age (everything not consumed is stale)
-        # We need to run this in the event loop context of the server if possible, 
-        # but since registry is a singleton, we can just call it.
         async def run_cleanup():
             await registry.cleanup_stale_tasks(max_age_seconds=-1) # Everything not consumed is stale
             

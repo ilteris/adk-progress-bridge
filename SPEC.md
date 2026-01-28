@@ -10,7 +10,7 @@ The system consists of a Python backend (FastAPI) acting as the ADK Agent host a
 #### `ProgressEvent` (Pydantic Model)
 A structured container for event data.
 *   `call_id`: UUID string.
-*   `type`: Literal ["progress", "result", "error", "input_request"].
+*   `type`: Literal ["progress", "result", "error", "input_request", "task_started"].
 *   `payload`: Any event-specific data.
 
 #### `ToolRegistry`
@@ -32,7 +32,8 @@ Manages bi-directional input for tasks that require user interaction.
     *   `POST /provide_input`: REST fallback to provide input for SSE tasks.
 *   **WebSocket Flow:**
     *   `WS /ws`: Bi-directional connection for task control and streaming.
-    *   Message `{"type": "start", "tool_name": "...", "args": {...}}` starts a task.
+    *   Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task.
+    *   Server responds with `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` to confirm start and provide the call identifier.
     *   Message `{"type": "stop", "call_id": "..."}` stops a task.
     *   Message `{"type": "input", "call_id": "...", "value": "..."}` provides interactive input.
 
@@ -75,9 +76,10 @@ interface AgentState {
 ### 4.1 Bi-directional WebSockets
 The WebSocket layer allows for:
 1.  **Lower Latency:** No HTTP handshake overhead for starting/stopping tasks once connected.
-2.  **Explicit Cancellation:** Direct `stop` messages over the socket are handled instantly.
-3.  **Connection Awareness:** The server automatically closes generators if the client disconnects.
-4.  **Native Interaction:** Interactive input is sent directly back over the same socket.
+2.  **Explicit Correlation:** `request_id` ensures that task starts are correctly matched to their session identifiers, supporting high-concurrency over a single socket.
+3.  **Explicit Cancellation:** Direct `stop` messages over the socket are handled instantly.
+4.  **Connection Awareness:** The server automatically closes generators if the client disconnects.
+5.  **Native Interaction:** Interactive input is sent directly back over the same socket.
 
 ### 4.2 Security
 All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` header or `api_key` query parameter.

@@ -9,8 +9,9 @@ interface ProgressPayload {
 
 interface AgentEvent {
   call_id: string
-  type: 'progress' | 'result' | 'error' | 'input_request'
+  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started'
   payload: any
+  request_id?: string
 }
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error' | 'completed' | 'cancelled' | 'waiting_for_input'
@@ -146,6 +147,8 @@ export class WebSocketManager {
   async startTask(toolName: string, args: any, onEvent: (event: AgentEvent) => void): Promise<string> {
     await this.connect()
     
+    const requestId = Math.random().toString(36).substring(2, 11)
+
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
             this.ws?.removeEventListener('message', tempListener)
@@ -155,12 +158,16 @@ export class WebSocketManager {
         const tempListener = (event: MessageEvent) => {
             try {
                 const data = JSON.parse(event.data)
-                if (data.call_id && data.type !== 'ping') {
+                if (data.type === 'task_started' && data.request_id === requestId) {
                     clearTimeout(timeout)
                     this.ws?.removeEventListener('message', tempListener)
                     this.subscribe(data.call_id, onEvent)
-                    onEvent(data)
+                    // We don't call onEvent(data) here because task_started is just a meta-event
                     resolve(data.call_id)
+                } else if (data.type === 'error' && data.request_id === requestId) {
+                    clearTimeout(timeout)
+                    this.ws?.removeEventListener('message', tempListener)
+                    reject(new Error(data.payload?.detail || 'Failed to start task'))
                 }
             } catch (e) {}
         }
@@ -170,7 +177,8 @@ export class WebSocketManager {
         this.send({
             type: 'start',
             tool_name: toolName,
-            args: args
+            args: args,
+            request_id: requestId
         })
     })
   }

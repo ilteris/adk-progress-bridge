@@ -28,7 +28,20 @@ class MockWebSocket extends EventTarget {
     }, 10)
   }
 
-  send = vi.fn()
+  send = vi.fn((data: string) => {
+    const parsed = JSON.parse(data)
+    if (parsed.type === 'start') {
+        // Automatically respond with task_started
+        setTimeout(() => {
+            this.triggerMessage({
+                type: 'task_started',
+                call_id: 'ws-call-id-' + parsed.tool_name,
+                request_id: parsed.request_id
+            })
+        }, 10)
+    }
+  })
+
   close = vi.fn(() => {
     this.readyState = 3 // CLOSED
     if (this.onclose) {
@@ -95,19 +108,25 @@ describe('useAgentStream', () => {
       await vi.waitFor(() => expect(lastWebSocket).not.toBeNull())
       
       // Give it a moment to resolve the connect() promise and enter startTask
-      await new Promise(r => setTimeout(r, 50))
+      await new Promise(r => setTimeout(r, 100))
 
       lastWebSocket?.triggerMessage({
-        call_id: 'ws-call-id',
+        call_id: 'ws-call-id-test_tool',
         type: 'progress',
         payload: { step: 'Started', pct: 0 }
+      })
+
+      lastWebSocket?.triggerMessage({
+        call_id: 'ws-call-id-test_tool',
+        type: 'result',
+        payload: { ok: true }
       })
 
       await runPromise
 
       expect(state.isConnected).toBe(true)
-      expect(state.status).toBe('connected')
-      expect(state.callId).toBe('ws-call-id')
+      expect(state.status).toBe('completed')
+      expect(state.callId).toBe('ws-call-id-test_tool')
     })
 
     it('reuses existing WebSocket connection', async () => {
@@ -117,24 +136,24 @@ describe('useAgentStream', () => {
       // Run first tool
       const run1 = runTool('tool_1')
       await vi.waitFor(() => expect(lastWebSocket).not.toBeNull())
-      await new Promise(r => setTimeout(r, 50))
+      await new Promise(r => setTimeout(r, 100))
       
-      lastWebSocket?.triggerMessage({ call_id: 'tool_1_id', type: 'progress', payload: { step: 'Started', pct: 0 } })
+      lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-tool_1', type: 'progress', payload: { step: 'Started', pct: 0 } })
+      lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-tool_1', type: 'result', payload: {} })
       await run1
       
       expect(wsInstanceCount).toBe(1)
-      
-      // Complete first tool
-      lastWebSocket?.triggerMessage({ call_id: 'tool_1_id', type: 'result', payload: {} })
       expect(state.status).toBe('completed')
       
       // Run second tool
       const run2 = runTool('tool_2')
-      await new Promise(r => setTimeout(r, 50))
-      lastWebSocket?.triggerMessage({ call_id: 'tool_2_id', type: 'progress', payload: { step: 'Started', pct: 0 } })
+      await new Promise(r => setTimeout(r, 100))
+      lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-tool_2', type: 'progress', payload: { step: 'Started', pct: 0 } })
+      lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-tool_2', type: 'result', payload: {} })
       await run2
       
       expect(wsInstanceCount).toBe(1)
+      expect(state.status).toBe('completed')
     })
 
     it('handles unexpected WS closure during streaming', async () => {
@@ -143,12 +162,15 @@ describe('useAgentStream', () => {
       
       const runPromise = runTool('test_tool')
       await vi.waitFor(() => expect(lastWebSocket).not.toBeNull())
-      await new Promise(r => setTimeout(r, 50))
+      await new Promise(r => setTimeout(r, 100))
       
-      lastWebSocket?.triggerMessage({ call_id: 'ws-call-id', type: 'progress', payload: { step: 'Started', pct: 0 } })
-      await runPromise
+      lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-test_tool', type: 'progress', payload: { step: 'Started', pct: 0 } })
       
       lastWebSocket?.triggerClose()
+      
+      try {
+        await runPromise
+      } catch (e) {}
       
       expect(state.status).toBe('error')
       expect(state.error).toContain('WebSocket connection closed')

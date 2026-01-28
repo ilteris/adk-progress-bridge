@@ -223,6 +223,7 @@ async def websocket_endpoint(websocket: WebSocket):
             if msg_type == "start":
                 tool_name = message.get("tool_name")
                 args = message.get("args", {})
+                request_id = message.get("request_id")
                 
                 tool = registry.get_tool(tool_name)
                 if not tool:
@@ -238,6 +239,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     gen = tool(**args)
                     registry.store_task(call_id, gen, tool_name)
                     registry.mark_consumed(call_id)
+                    await websocket.send_json({"type": "task_started", "call_id": call_id, "tool_name": tool_name, "request_id": request_id})
                     task = asyncio.create_task(run_ws_generator(websocket, call_id, tool_name, gen, active_tasks))
                     active_tasks[call_id] = task
                 except Exception as e:

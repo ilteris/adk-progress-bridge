@@ -17,19 +17,24 @@ def test_websocket_flow():
         websocket.send_json({
             "type": "start",
             "tool_name": "long_audit",
-            "args": {"duration": 1}
+            "args": {"duration": 1},
+            "request_id": "test_req_1"
         })
         
-        # 2. Receive progress
-        data = websocket.receive_json()
-        assert data["type"] == "progress"
-        assert "call_id" in data
-        call_id = data["call_id"]
+        # 2. Receive task_started (might get progress first)
+        call_id = None
+        for _ in range(10):
+            data = websocket.receive_json()
+            if data["type"] == "task_started" and data.get("request_id") == "test_req_1":
+                call_id = data["call_id"]
+                break
+        
+        assert call_id is not None
         
         # 3. Receive result (eventually)
         found_result = False
         # We might get multiple progress events
-        for _ in range(10):
+        for _ in range(20):
             data = websocket.receive_json()
             if data["type"] == "result":
                 found_result = True
@@ -45,12 +50,19 @@ def test_websocket_stop():
         websocket.send_json({
             "type": "start",
             "tool_name": "long_audit",
-            "args": {"duration": 5}
+            "args": {"duration": 5},
+            "request_id": "test_req_stop"
         })
         
-        # 2. Capture call_id
-        data = websocket.receive_json()
-        call_id = data["call_id"]
+        # 2. Receive task_started
+        call_id = None
+        for _ in range(10):
+            data = websocket.receive_json()
+            if data["type"] == "task_started" and data.get("request_id") == "test_req_stop":
+                call_id = data["call_id"]
+                break
+        
+        assert call_id is not None
         
         # 3. Send stop
         websocket.send_json({
@@ -60,7 +72,7 @@ def test_websocket_stop():
         
         # 4. Wait for cancellation message
         found_cancelled = False
-        for _ in range(10):
+        for _ in range(20):
             data = websocket.receive_json()
             if data["type"] == "progress" and data["payload"].get("step") == "Cancelled":
                 found_cancelled = True
@@ -92,24 +104,32 @@ def test_websocket_interactive():
         websocket.send_json({
             "type": "start",
             "tool_name": "interactive_task",
-            "args": {}
+            "args": {},
+            "request_id": "test_req_interactive"
         })
         
+        # 2. Receive task_started
         call_id = None
+        for _ in range(10):
+            data = websocket.receive_json()
+            if data["type"] == "task_started" and data.get("request_id") == "test_req_interactive":
+                call_id = data["call_id"]
+                break
+        
+        assert call_id is not None
+
         found_input_request = False
         found_result = False
         
         # Receive events until we get an input request
-        for _ in range(20):
+        for _ in range(30):
             data = websocket.receive_json()
-            if not call_id:
-                call_id = data.get("call_id")
             
             if data["type"] == "input_request":
                 found_input_request = True
                 assert "prompt" in data["payload"]
                 
-                # 2. Send input response
+                # 3. Send input response
                 websocket.send_json({
                     "type": "input",
                     "call_id": call_id,
@@ -124,14 +144,3 @@ def test_websocket_interactive():
                 
         assert found_input_request
         assert found_result
-
-if __name__ == "__main__":
-    # Run tests manually if executed directly
-    test_websocket_flow()
-    print("test_websocket_flow passed")
-    test_websocket_stop()
-    print("test_websocket_stop passed")
-    test_websocket_invalid_tool()
-    print("test_websocket_invalid_tool passed")
-    test_websocket_interactive()
-    print("test_websocket_interactive passed")
