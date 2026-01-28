@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_manager
 from .logger import logger
@@ -55,6 +55,7 @@ class TaskStartRequest(BaseModel):
     call_id: Optional[str] = None
 
 class TaskStartResponse(BaseModel):
+    timestamp: float = Field(default_factory=time.time, description="Unix timestamp of when the task was created.")
     call_id: str
     stream_url: str
 
@@ -220,6 +221,10 @@ async def websocket_endpoint(websocket: WebSocket):
     send_lock = asyncio.Lock()
 
     async def safe_send_json(data: dict):
+        # Ensure all outgoing WebSocket messages have a timestamp for correlation/auditing
+        if "timestamp" not in data:
+            data["timestamp"] = time.time()
+            
         async with send_lock:
             try:
                 await websocket.send_json(data)

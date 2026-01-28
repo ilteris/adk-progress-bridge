@@ -11,6 +11,7 @@ interface AgentEvent {
   call_id: string
   type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list'
   payload: any
+  timestamp?: number
   request_id?: string
   tools?: string[]
 }
@@ -166,7 +167,8 @@ export class WebSocketManager {
         callback({
             call_id: callId,
             type: type,
-            payload: {}
+            payload: {},
+            timestamp: Date.now() / 1000
         })
     }
   }
@@ -176,7 +178,8 @@ export class WebSocketManager {
         callback({
             call_id: callId,
             type: 'error',
-            payload: { detail }
+            payload: { detail },
+            timestamp: Date.now() / 1000
         })
     }
   }
