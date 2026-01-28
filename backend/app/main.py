@@ -320,7 +320,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.warning(f"Unknown WebSocket message type: {msg_type}")
                 await safe_send_json({
                     "type": "error",
-                    "payload": {"detail": f"Unknown message type: {msg_type}"}
+                    "request_id": message.get("request_id"), "payload": {"detail": f"Unknown message type: {msg_type}"}
                 })
 
     except WebSocketDisconnect:
