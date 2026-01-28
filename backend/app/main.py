@@ -52,6 +52,7 @@ app.add_middleware(
 
 class TaskStartRequest(BaseModel):
     args: Dict[str, Any] = {}
+    call_id: Optional[str] = None
 
 class TaskStartResponse(BaseModel):
     call_id: str
@@ -81,7 +82,7 @@ async def start_task(
     if not tool:
         raise HTTPException(status_code=404, detail=f"Tool not found: {tool_name}")
     
-    call_id = str(uuid.uuid4())
+    call_id = request.call_id or str(uuid.uuid4())
     
     args = request.args if request else {}
     
@@ -287,7 +288,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         })
                         continue
                     
-                    call_id = str(uuid.uuid4())
+                    call_id = message.get("call_id") or str(uuid.uuid4())
                     
                     try:
                         gen = tool(**args)
