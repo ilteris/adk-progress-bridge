@@ -50,6 +50,18 @@ We define a strict JSON schema for the events streamed over the wire.
   }
 }
 
+// Event: "ping"
+{
+  "type": "ping"
+}
+
+// Event: "tools_list"
+{
+  "type": "tools_list",
+  "tools": ["tool1", "tool2"],
+  "request_id": "req-123"
+}
+
 // Event: "result"
 {
   "call_id": "550e8400-e29b...",
@@ -113,6 +125,14 @@ const handleUserResponse = (val: string) => {
     sendInput(val)
 }
 ```
+
+## 🛠️ Bi-directional WebSocket Protocol Details
+The WebSocket layer allows for:
+1.  **Lower Latency:** No HTTP handshake overhead for starting/stopping tasks once connected.
+2.  **Explicit Correlation:** `request_id` allows matching commands to responses in high-concurrency scenarios.
+3.  **Explicit Cancellation:** Direct `stop` messages over the socket are handled instantly with success confirmation.
+4.  **Connection Awareness:** The server automatically closes generators if the client disconnects.
+5.  **Native Interaction:** Interactive input is sent directly back over the same socket.
 
 ## 🤖 AI Agent Skill
 

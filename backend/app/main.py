@@ -3,6 +3,7 @@ import json
 import uuid
 import time
 from typing import Dict, List, Optional, Any
+import inspect
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import StreamingResponse
@@ -85,11 +86,14 @@ async def start_task(
     
     args = request.args if request else {}
     
+    gen = None
     try:
         # Create the generator but don't start consuming yet
         gen = tool(**args)
         registry.store_task(call_id, gen, tool_name)
     except Exception as e:
+        if gen is not None and inspect.iscoroutine(gen):
+            await gen
         logger.error(f"Error starting tool {tool_name}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
@@ -288,6 +292,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 call_id = str(uuid.uuid4())
                 
+                gen = None
                 try:
                     gen = tool(**args)
                     registry.store_task(call_id, gen, tool_name)
@@ -301,6 +306,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
                     active_tasks[call_id] = task
                 except Exception as e:
+                    if gen is not None and inspect.iscoroutine(gen):
+                        await gen
                     logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
                     await safe_send_json({
                         "type": "error",
