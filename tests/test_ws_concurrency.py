@@ -5,13 +5,12 @@ import pytest
 import asyncio
 from fastapi.testclient import TestClient
 
-# Add the project root to sys.path to import backend
+# Add the project root to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.app.main import app
 
-@pytest.mark.asyncio
-async def test_websocket_ping_pong():
+def test_websocket_ping_pong():
     """
     Tests that the WebSocket endpoint responds to ping with pong.
     """
@@ -21,17 +20,18 @@ async def test_websocket_ping_pong():
         data = websocket.receive_json()
         assert data["type"] == "pong"
 
-@pytest.mark.asyncio
-async def test_websocket_concurrency():
+def test_websocket_concurrency():
     """
-    Tests that multiple tasks can run concurrently over the same WebSocket connection.
+    Test that multiple tasks can run concurrently over a single WebSocket connection.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
-        # Start 3 tasks
+        num_tasks = 5
         call_ids = []
-        for i in range(3):
-            req_id = f"concurrency_req_{i}"
+        
+        # 1. Start multiple tasks
+        for i in range(num_tasks):
+            req_id = f"req_{i}"
             websocket.send_json({
                 "type": "start",
                 "tool_name": "long_audit",
@@ -39,35 +39,89 @@ async def test_websocket_concurrency():
                 "request_id": req_id
             })
             
-            # We get task_started, but might receive progress from previous tasks first
-            found_started = False
-            for _ in range(20):
+            # Receive task_started for each
+            found_start = False
+            for _ in range(10):
                 data = websocket.receive_json()
                 if data["type"] == "task_started" and data.get("request_id") == req_id:
                     call_ids.append(data["call_id"])
-                    found_started = True
+                    found_start = True
                     break
-            assert found_started, f"Should have received task_started for {req_id}"
+            assert found_start, f"Task {i} failed to start"
+
+        assert len(call_ids) == num_tasks
         
-        assert len(set(call_ids)) == 3, "Should have 3 unique call IDs"
-        
-        # Now we expect to receive a mix of events for all 3 call IDs
+        # 2. Collect results for all tasks
         results_received = set()
-        for _ in range(100):
+        for _ in range(200):
             try:
                 data = websocket.receive_json()
                 if data["type"] == "result":
                     results_received.add(data["call_id"])
                 
-                if len(results_received) == 3:
+                if len(results_received) == num_tasks:
                     break
             except Exception:
                 break
-        
-        assert results_received == set(call_ids), f"Should have received results for all tasks. Got: {results_received}"
+                
+        assert len(results_received) == num_tasks
+        for cid in call_ids:
+            assert cid in results_received
 
-@pytest.mark.asyncio
-async def test_websocket_concurrent_input():
+def test_websocket_interleaved_stop():
+    """
+    Test starting two tasks and stopping one while the other continues.
+    """
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        # Start Task A
+        websocket.send_json({
+            "type": "start",
+            "tool_name": "long_audit",
+            "args": {"duration": 5},
+            "request_id": "req_A"
+        })
+        data = websocket.receive_json()
+        while data["type"] != "task_started":
+            data = websocket.receive_json()
+        call_id_a = data["call_id"]
+        
+        # Start Task B
+        websocket.send_json({
+            "type": "start",
+            "tool_name": "long_audit",
+            "args": {"duration": 1},
+            "request_id": "req_B"
+        })
+        data = websocket.receive_json()
+        while data["type"] != "task_started":
+            data = websocket.receive_json()
+        call_id_b = data["call_id"]
+        
+        # Stop Task A
+        websocket.send_json({
+            "type": "stop",
+            "call_id": call_id_a,
+            "request_id": "stop_A"
+        })
+        
+        found_stop_success_a = False
+        found_result_b = False
+        
+        for _ in range(100):
+            data = websocket.receive_json()
+            if data["type"] == "stop_success" and data.get("call_id") == call_id_a:
+                found_stop_success_a = True
+            if data["type"] == "result" and data.get("call_id") == call_id_b:
+                found_result_b = True
+                
+            if found_stop_success_a and found_result_b:
+                break
+                
+        assert found_stop_success_a
+        assert found_result_b
+
+def test_websocket_concurrent_input():
     """
     Tests that multiple tasks can wait for and receive input concurrently.
     """
@@ -107,7 +161,8 @@ async def test_websocket_concurrent_input():
                 websocket.send_json({
                     "type": "input",
                     "call_id": cid,
-                    "value": "yes"
+                    "value": "yes",
+                    "request_id": f"provide_{cid}"
                 })
             
             if data["type"] == "result":
