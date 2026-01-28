@@ -1,26 +1,19 @@
-# Deployment Guide Plan
+# Implementation Plan - WebSocket Integration Robustness
 
-## 1. Containerization
-- Create `backend/Dockerfile`: Optimized Python 3.11-slim image.
-- Create `frontend/Dockerfile`: Multi-stage build (Node -> Nginx) to serve the Vue.js app.
+## Problem
+WebSocket-started tasks are currently not marked as "consumed" in the `ToolRegistry`. This makes them vulnerable to being prematurely terminated by the background `cleanup_stale_tasks` loop if they run longer than the stale threshold (default 300s).
 
-## 2. Environment Variables
-- Refactor `backend/app/main.py` to use `os.getenv` for:
-    - `CORS_ALLOWED_ORIGINS`
-    - `TASK_CLEANUP_MAX_AGE`
-    - `TASK_CLEANUP_INTERVAL`
-    - `PORT` (for Cloud Run compatibility)
+## Proposed Changes
 
-## 3. Documentation (deployment_guide.md)
-- **Cloud Run**:
-    - Build and Push commands.
-    - Deploy command with environment variables.
-    - Scaling (concurrency settings).
-- **GKE**:
-    - Kubernetes manifests (Deployment, Service, HPA).
-    - Horizontal Scaling Caveat: **Sticky Sessions** requirement due to in-memory task registry.
-- **Monitoring Integration**:
-    - Instructions for scraping the `/metrics` endpoint in a production K8s cluster.
+### 1. Backend (bridge.py)
+- Add `mark_consumed(call_id: str)` method to `ToolRegistry` to allow explicit state updates without retrieving the generator (since WS flow already has it).
 
-## 4. Verification
-- Verify Docker builds locally.
+### 2. Backend (main.py)
+- Call `registry.mark_consumed(call_id)` in the WebSocket `start` message handler after storing the task.
+
+### 3. Documentation (rules.md)
+- Update `rules.md` to include WebSocket specifications, matching the SSE standards.
+
+## Verification Plan
+- Run `tests/test_websocket.py` to ensure no regressions.
+- Add a specific test case in a new test file `tests/test_ws_cleanup.py` that verifies WS tasks are NOT reaped by the stale cleanup loop.

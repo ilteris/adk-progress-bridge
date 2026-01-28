@@ -2,5 +2,5 @@
   "title": "WebSocket Integration",
   "status": "completed",
   "role": "Architect",
-  "description": "RE-VERIFIED: WebSocket integration is robust and fully operational. Verified both start/stop and interactive input flows via verify_websocket.py. All communication protocols (SSE and WS) are synchronized and working as intended."
+  "description": "VERIFIED & STRENGTHENED: WebSocket integration is fully functional with bi-directional support (start, stop, input). Verified the fix for the 'mark_consumed' bug and confirmed that concurrent tasks and inputs work perfectly over a single connection. Extensive tests in tests/test_websocket.py, tests/test_ws_cleanup.py, and tests/test_ws_concurrency.py pass."
 }

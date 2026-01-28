@@ -247,6 +247,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     gen = tool(**args)
                     # Register task globally
                     registry.store_task(call_id, gen, tool_name)
+                    # Mark as consumed immediately so it's not reaped by the stale cleanup loop
+                    registry.mark_consumed(call_id)
                     # Run the generator in a background task tracked locally
                     task = asyncio.create_task(run_ws_generator(websocket, call_id, tool_name, gen, active_tasks))
                     active_tasks[call_id] = task

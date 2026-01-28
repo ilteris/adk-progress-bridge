@@ -125,11 +125,19 @@ class ToolRegistry:
                 return task_data
             return None
     
-    
+    def mark_consumed(self, call_id: str):
+        """Marks a task as consumed without retrieving it. Used for WebSocket tasks."""
+        with self._lock:
+            task_data = self._active_tasks.get(call_id)
+            if task_data:
+                task_data["consumed"] = True
+                logger.debug(f"Task marked as consumed: {call_id}", extra={"call_id": call_id})
+
     def get_task_no_consume(self, call_id: str) -> Optional[Dict[str, Any]]:
         """Retrieves the task data without marking it as consumed."""
         with self._lock:
             return self._active_tasks.get(call_id)
+
     def remove_task(self, call_id: str):
         """Removes the task from the registry if it exists."""
         with self._lock:
