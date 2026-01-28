@@ -6,7 +6,7 @@ test('full audit flow', async ({ page }) => {
 
   // Verify initial state
   await expect(page.locator('h4')).toHaveText('Task Monitor');
-  const startBtn = page.getByRole('button', { name: 'Start Audit' });
+  const startBtn = page.getByRole('button', { name: 'Start Task' });
   await expect(startBtn).toBeEnabled();
 
   // Set duration to 2 seconds for faster test

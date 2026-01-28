@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import pytest
+import asyncio
 from fastapi.testclient import TestClient
 
 # Add the project root to sys.path to import backend
@@ -84,6 +85,46 @@ def test_websocket_invalid_tool():
         assert data["type"] == "error"
         assert "Tool not found" in data["payload"]["detail"]
 
+def test_websocket_interactive():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        # 1. Start interactive task
+        websocket.send_json({
+            "type": "start",
+            "tool_name": "interactive_task",
+            "args": {}
+        })
+        
+        call_id = None
+        found_input_request = False
+        found_result = False
+        
+        # Receive events until we get an input request
+        for _ in range(20):
+            data = websocket.receive_json()
+            if not call_id:
+                call_id = data.get("call_id")
+            
+            if data["type"] == "input_request":
+                found_input_request = True
+                assert "prompt" in data["payload"]
+                
+                # 2. Send input response
+                websocket.send_json({
+                    "type": "input",
+                    "call_id": call_id,
+                    "value": "yes"
+                })
+            
+            if data["type"] == "result":
+                found_result = True
+                assert data["payload"]["status"] == "complete"
+                assert "user approval" in data["payload"]["message"]
+                break
+                
+        assert found_input_request
+        assert found_result
+
 if __name__ == "__main__":
     # Run tests manually if executed directly
     test_websocket_flow()
@@ -92,3 +133,5 @@ if __name__ == "__main__":
     print("test_websocket_stop passed")
     test_websocket_invalid_tool()
     print("test_websocket_invalid_tool passed")
+    test_websocket_interactive()
+    print("test_websocket_interactive passed")
