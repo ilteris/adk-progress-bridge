@@ -50,6 +50,7 @@ class ProgressEvent(BaseModel):
         description="The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, 'error' signifies a failure, and 'input_request' prompts the user for information.",
         examples=["progress", "result", "error", "input_request"]
     )
+    timestamp: float = Field(default_factory=time.time, description="Unix timestamp of when the event was created.")
     payload: Union[ProgressPayload, Dict[str, Any]] = Field(
         ..., 
         description="The actual data payload. Contains a ProgressPayload object for 'progress' types, or the final result/error details.",
@@ -66,7 +67,11 @@ class InputManager:
             self._pending_inputs[call_id] = future
         
         logger.info(f"Task {call_id} waiting for input: {prompt}", extra={"call_id": call_id, "prompt": prompt})
-        return await future
+        try:
+            return await future
+        finally:
+            with self._lock:
+                self._pending_inputs.pop(call_id, None)
 
     def provide_input(self, call_id: str, value: Any):
         with self._lock:
@@ -117,6 +122,8 @@ class ToolRegistry:
             raise TypeError(f"Tool {tool_name} did not return an async generator. Got {type(gen)}")
 
         with self._lock:
+            if call_id in self._active_tasks:
+                raise ValueError(f"Task with call_id {call_id} already exists")
             self._active_tasks[call_id] = {
                 "gen": gen,
                 "tool_name": tool_name,

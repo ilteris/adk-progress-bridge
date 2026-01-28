@@ -11,6 +11,7 @@ interface AgentEvent {
   call_id: string
   type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list'
   payload: any
+  timestamp?: number
   request_id?: string
   tools?: string[]
 }
@@ -166,7 +167,8 @@ export class WebSocketManager {
         callback({
             call_id: callId,
             type: type,
-            payload: {}
+            payload: {},
+            timestamp: Date.now() / 1000
         })
     }
   }
@@ -176,7 +178,8 @@ export class WebSocketManager {
         callback({
             call_id: callId,
             type: 'error',
-            payload: { detail }
+            payload: { detail },
+            timestamp: Date.now() / 1000
         })
     }
   }
@@ -258,14 +261,22 @@ export class WebSocketManager {
   }
 
   async startTask(toolName: string, args: any, onEvent: (event: AgentEvent) => void): Promise<string> {
-    const data = await this.sendWithCorrelation({
-        type: 'start',
-        tool_name: toolName,
-        args: args
-    })
+    const callId = crypto.randomUUID()
+    // Subscribe BEFORE sending the request to avoid race condition with fast tools
+    this.subscribe(callId, onEvent)
     
-    this.subscribe(data.call_id, onEvent)
-    return data.call_id
+    try {
+        const data = await this.sendWithCorrelation({
+            type: 'start',
+            tool_name: toolName,
+            args: args,
+            call_id: callId
+        })
+        return data.call_id
+    } catch (err) {
+        this.unsubscribe(callId)
+        throw err
+    }
   }
 
   async getTools(): Promise<string[]> {
@@ -342,6 +353,7 @@ export function useAgentStream() {
 
   const runToolSSE = async (toolName: string, args: Record<string, any>) => {
     try {
+      state.status = 'connecting'
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (BRIDGE_API_KEY) {
         headers['X-API-Key'] = BRIDGE_API_KEY
@@ -371,7 +383,11 @@ export function useAgentStream() {
 
       eventSource.onopen = () => {
         state.isConnected = true
-        state.status = 'connected'
+        // Only set to connected if no other events (like input request or result) 
+        // have moved the status further along
+        if (state.status === 'connecting') {
+            state.status = 'connected'
+        }
         state.error = null
         state.logs.push('Connected to SSE stream...')
       }
@@ -383,7 +399,7 @@ export function useAgentStream() {
         }
       }
 
-      eventSource.onerror = (err) => {
+      eventSource.onerror = () => {
         if (eventSource?.readyState === EventSource.CONNECTING) {
           state.status = 'reconnecting'
           state.isConnected = false
@@ -412,7 +428,10 @@ export function useAgentStream() {
       })
       state.callId = callId
       state.isConnected = true
-      state.status = 'connected'
+      // Only set status to 'connected' if it hasn't been moved to another active state (like waiting_for_input or completed)
+      if (state.status === 'connecting') {
+          state.status = 'connected'
+      }
     } catch (err: any) {
       state.error = err.message || 'WebSocket error'
       state.status = 'error'

@@ -8,11 +8,15 @@ from fastapi.testclient import TestClient
 # Add the project root to sys.path to import backend
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Set API key for tests before importing app
+API_KEY = "test_secret_key"
+os.environ["BRIDGE_API_KEY"] = API_KEY
+
 from backend.app.main import app
 
 def test_websocket_flow():
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         # 1. Start a task
         websocket.send_json({
             "type": "start",
@@ -45,7 +49,7 @@ def test_websocket_flow():
 
 def test_websocket_stop():
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         # 1. Start a task
         websocket.send_json({
             "type": "start",
@@ -89,7 +93,7 @@ def test_websocket_stop():
 
 def test_websocket_invalid_tool():
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         websocket.send_json({
             "type": "start",
             "tool_name": "non_existent",
@@ -104,7 +108,7 @@ def test_websocket_invalid_tool():
 
 def test_websocket_interactive():
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         # 1. Start interactive task
         websocket.send_json({
             "type": "start",
@@ -158,7 +162,7 @@ def test_websocket_interactive():
 
 def test_websocket_list_tools():
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         websocket.send_json({
             "type": "list_tools",
             "request_id": "list_tools_req"
@@ -172,14 +176,14 @@ def test_websocket_list_tools():
 
 def test_websocket_ping_pong():
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         websocket.send_json({"type": "ping"})
         data = websocket.receive_json()
         assert data["type"] == "pong"
 
 def test_websocket_invalid_json():
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         websocket.send_text("not a json")
         data = websocket.receive_json()
         assert data["type"] == "error"
@@ -187,7 +191,7 @@ def test_websocket_invalid_json():
 
 def test_websocket_non_dict_json():
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         websocket.send_json([1, 2, 3])
         data = websocket.receive_json()
         assert data["type"] == "error"

@@ -176,6 +176,8 @@ For Cloud Run, metrics can be collected using the [OpenTelemetry Sidecar](https:
 
 ## 🔐 Security & Best Practices
 
+5.  **WebSocket Support**: If using a Load Balancer or Ingress (especially on GKE or Cloud Run), ensure that WebSocket support is enabled and that connection timeouts are configured appropriately (e.g., 3600s) to prevent the socket from being closed prematurely. Most modern GCP services handle WebSockets automatically, but custom Ingress controllers may require specific annotations (e.g., `nginx.org/websocket-services`).
+
 1.  **CORS**: In production, replace `CORS_ALLOWED_ORIGINS=*` with the actual domain of your frontend.
 2.  **Timeouts**: Ensure your Load Balancers or Ingress controllers have high timeouts (e.g., 600s+) to prevent premature closure of the SSE stream.
 3.  **Secret Manager**: Use [Google Secret Manager](https://cloud.google.com/secret-manager) for sensitive environment variables like API keys.

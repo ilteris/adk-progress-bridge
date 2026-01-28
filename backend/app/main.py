@@ -2,18 +2,19 @@ import asyncio
 import json
 import uuid
 import time
+import inspect
 from typing import Dict, List, Optional, Any
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_manager
 from .logger import logger
 from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
-from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
+from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, WS_CONNECTIONS_ACTIVE
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,8 +53,10 @@ app.add_middleware(
 
 class TaskStartRequest(BaseModel):
     args: Dict[str, Any] = {}
+    call_id: Optional[str] = None
 
 class TaskStartResponse(BaseModel):
+    timestamp: float = Field(default_factory=time.time, description="Unix timestamp of when the task was created.")
     call_id: str
     stream_url: str
 
@@ -81,15 +84,22 @@ async def start_task(
     if not tool:
         raise HTTPException(status_code=404, detail=f"Tool not found: {tool_name}")
     
-    call_id = str(uuid.uuid4())
+    call_id = (request.call_id if request else None) or str(uuid.uuid4())
     
     args = request.args if request else {}
     
+    gen = None
     try:
         # Create the generator but don't start consuming yet
         gen = tool(**args)
         registry.store_task(call_id, gen, tool_name)
     except Exception as e:
+        # Properly cleanup to avoid RuntimeWarning for unawaited coroutines
+        if gen:
+            if inspect.iscoroutine(gen):
+                gen.close()
+            elif inspect.isasyncgen(gen):
+                await gen.aclose()
         logger.error(f"Error starting tool {tool_name}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     
@@ -206,7 +216,7 @@ async def websocket_endpoint(websocket: WebSocket):
     Bi-directional WebSocket endpoint for executing tools and receiving progress.
     """
     await websocket.accept()
-    
+    WS_CONNECTIONS_ACTIVE.inc()
     try:
         await verify_api_key_ws(websocket)
     except HTTPException:
@@ -219,6 +229,10 @@ async def websocket_endpoint(websocket: WebSocket):
     send_lock = asyncio.Lock()
 
     async def safe_send_json(data: dict):
+        # Ensure all outgoing WebSocket messages have a timestamp for correlation/auditing
+        if "timestamp" not in data:
+            data["timestamp"] = time.time()
+            
         async with send_lock:
             try:
                 await websocket.send_json(data)
@@ -260,105 +274,120 @@ async def websocket_endpoint(websocket: WebSocket):
             msg_type = message.get("type")
             request_id = message.get("request_id")
             
-            if msg_type == "ping":
-                await safe_send_json({"type": "pong"})
-                continue
+            try:
+                if msg_type == "ping":
+                    await safe_send_json({"type": "pong"})
+                    continue
 
-            if msg_type == "list_tools":
-                tools = registry.list_tools()
-                await safe_send_json({
-                    "type": "tools_list",
-                    "tools": tools,
-                    "request_id": request_id
-                })
-                continue
-
-            if msg_type == "start":
-                tool_name = message.get("tool_name")
-                args = message.get("args", {})
-                
-                tool = registry.get_tool(tool_name)
-                if not tool:
+                if msg_type == "list_tools":
+                    tools = registry.list_tools()
                     await safe_send_json({
-                        "type": "error",
-                        "request_id": request_id,
-                        "payload": {"detail": f"Tool not found: {tool_name}"}
+                        "type": "tools_list",
+                        "tools": tools,
+                        "request_id": request_id
                     })
                     continue
+
+                if msg_type == "start":
+                    tool_name = message.get("tool_name")
+                    args = message.get("args", {})
+                    
+                    tool = registry.get_tool(tool_name)
+                    if not tool:
+                        await safe_send_json({
+                            "type": "error",
+                            "request_id": request_id,
+                            "payload": {"detail": f"Tool not found: {tool_name}"}
+                        })
+                        continue
+                    
+                    call_id = message.get("call_id") or str(uuid.uuid4())
+                    
+                    gen = None
+                    try:
+                        gen = tool(**args)
+                        registry.store_task(call_id, gen, tool_name)
+                        registry.mark_consumed(call_id)
+                        await safe_send_json({
+                            "type": "task_started", 
+                            "call_id": call_id, 
+                            "tool_name": tool_name, 
+                            "request_id": request_id
+                        })
+                        task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
+                        active_tasks[call_id] = task
+                    except Exception as e:
+                        if gen:
+                            if inspect.iscoroutine(gen):
+                                gen.close()
+                            elif inspect.isasyncgen(gen):
+                                await gen.aclose()
+                        registry.remove_task(call_id)
+                        logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
+                        await safe_send_json({
+                            "type": "error",
+                            "call_id": call_id,
+                            "request_id": request_id,
+                            "payload": {"detail": str(e)}
+                        })
                 
-                call_id = str(uuid.uuid4())
+                elif msg_type == "stop":
+                    call_id = message.get("call_id")
+                    if call_id in active_tasks:
+                        logger.info(f"Stopping task {call_id} via WebSocket request", extra={"call_id": call_id})
+                        active_tasks[call_id].cancel()
+                        # Final progress update
+                        await safe_send_json({
+                            "call_id": call_id,
+                            "type": "progress",
+                            "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}
+                        })
+                        # Command acknowledgment
+                        await safe_send_json({
+                            "type": "stop_success",
+                            "call_id": call_id,
+                            "request_id": request_id
+                        })
+                    else:
+                        await safe_send_json({
+                            "type": "error",
+                            "call_id": call_id,
+                            "request_id": request_id, 
+                            "payload": {"detail": f"No active task found with call_id: {call_id}"}
+                        })
                 
-                try:
-                    gen = tool(**args)
-                    registry.store_task(call_id, gen, tool_name)
-                    registry.mark_consumed(call_id)
-                    await safe_send_json({
-                        "type": "task_started", 
-                        "call_id": call_id, 
-                        "tool_name": tool_name, 
-                        "request_id": request_id
-                    })
-                    task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
-                    active_tasks[call_id] = task
-                except Exception as e:
-                    logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
-                    await safe_send_json({
-                        "type": "error",
-                        "call_id": call_id,
-                        "request_id": request_id,
-                        "payload": {"detail": str(e)}
-                    })
-            
-            elif msg_type == "stop":
-                call_id = message.get("call_id")
-                if call_id in active_tasks:
-                    logger.info(f"Stopping task {call_id} via WebSocket request", extra={"call_id": call_id})
-                    active_tasks[call_id].cancel()
-                    # Final progress update
-                    await safe_send_json({
-                        "call_id": call_id,
-                        "type": "progress",
-                        "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}
-                    })
-                    # Command acknowledgment
-                    await safe_send_json({
-                        "type": "stop_success",
-                        "call_id": call_id,
-                        "request_id": request_id
-                    })
+                elif msg_type == "input":
+                    call_id = message.get("call_id")
+                    value = message.get("value")
+                    if input_manager.provide_input(call_id, value):
+                        logger.info(f"Input received for task {call_id}", extra={"call_id": call_id})
+                        # Command acknowledgment
+                        await safe_send_json({
+                            "type": "input_success",
+                            "call_id": call_id,
+                            "request_id": request_id
+                        })
+                    else:
+                        await safe_send_json({
+                            "type": "error",
+                            "call_id": call_id,
+                            "request_id": request_id, 
+                            "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
+                        })
+                
                 else:
+                    logger.warning(f"Unknown WebSocket message type: {msg_type}")
                     await safe_send_json({
                         "type": "error",
-                        "call_id": call_id,
                         "request_id": request_id, 
-                        "payload": {"detail": f"No active task found with call_id: {call_id}"}
+                        "payload": {"detail": f"Unknown message type: {msg_type}"}
                     })
-            
-            elif msg_type == "input":
-                call_id = message.get("call_id")
-                value = message.get("value")
-                if input_manager.provide_input(call_id, value):
-                    logger.info(f"Input received for task {call_id}", extra={"call_id": call_id})
-                    # Command acknowledgment
-                    await safe_send_json({
-                        "type": "input_success",
-                        "call_id": call_id,
-                        "request_id": request_id
-                    })
-                else:
-                    await safe_send_json({
-                        "type": "error",
-                        "call_id": call_id,
-                        "request_id": request_id, 
-                        "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
-                    })
-            
-            else:
-                logger.warning(f"Unknown WebSocket message type: {msg_type}")
+            except Exception as e:
+                logger.error(f"Error handling WS message {msg_type}: {e}")
                 await safe_send_json({
                     "type": "error",
-                    "request_id": request_id, 
-                    "payload": {"detail": f"Unknown message type: {msg_type}"}
+                    "request_id": request_id,
+                    "payload": {"detail": f"Internal error handling {msg_type}: {str(e)}"}
                 })
 
     except WebSocketDisconnect:
@@ -366,6 +395,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
+        WS_CONNECTIONS_ACTIVE.dec()
         if active_tasks:
             logger.info(f"Cleaning up {len(active_tasks)} WebSocket tasks due to disconnect/timeout")
             for task in active_tasks.values():
