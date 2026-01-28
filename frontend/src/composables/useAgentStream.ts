@@ -11,6 +11,7 @@ interface AgentEvent {
   call_id: string
   type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list'
   payload: any
+  timestamp?: number
   request_id?: string
   tools?: string[]
 }
@@ -166,7 +167,8 @@ export class WebSocketManager {
         callback({
             call_id: callId,
             type: type,
-            payload: {}
+            payload: {},
+            timestamp: Date.now() / 1000
         })
     }
   }
@@ -176,7 +178,8 @@ export class WebSocketManager {
         callback({
             call_id: callId,
             type: 'error',
-            payload: { detail }
+            payload: { detail },
+            timestamp: Date.now() / 1000
         })
     }
   }
@@ -342,6 +345,7 @@ export function useAgentStream() {
 
   const runToolSSE = async (toolName: string, args: Record<string, any>) => {
     try {
+      state.status = 'connecting'
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (BRIDGE_API_KEY) {
         headers['X-API-Key'] = BRIDGE_API_KEY
@@ -490,37 +494,40 @@ export function useAgentStream() {
   }
 
   const handleEvent = (data: AgentEvent, closeFn: () => void) => {
+    const timestamp = data.timestamp ? new Date(data.timestamp * 1000).toLocaleTimeString() : ''
+    const logPrefix = timestamp ? `[${timestamp}] ` : ''
+
     if (data.type === 'progress') {
       const payload = data.payload as ProgressPayload
       state.currentStep = payload.step
       state.progressPct = payload.pct
-      if (payload.log) state.logs.push(payload.log)
+      if (payload.log) state.logs.push(`${logPrefix}${payload.log}`)
     } else if (data.type === 'input_request') {
         state.status = 'waiting_for_input'
         state.inputPrompt = data.payload.prompt
-        state.logs.push(`AGENT REQUESTED INPUT: ${state.inputPrompt}`)
+        state.logs.push(`${logPrefix}AGENT REQUESTED INPUT: ${state.inputPrompt}`)
     } else if (data.type === 'reconnecting') {
         state.status = 'reconnecting'
         state.isConnected = false
-        state.logs.push('WebSocket connection lost. Reconnecting...')
+        state.logs.push(`${logPrefix}WebSocket connection lost. Reconnecting...`)
     } else if (data.type === 'stop_success') {
-        state.logs.push('Stop command acknowledged by server.')
+        state.logs.push(`${logPrefix}Stop command acknowledged by server.`)
         // stop_success is the final acknowledgement for a stop command
         closeFn()
     } else if (data.type === 'input_success') {
-        state.logs.push('Input command acknowledged by server.')
+        state.logs.push(`${logPrefix}Input command acknowledged by server.`)
     } else if (data.type === 'result') {
       state.result = data.payload
       state.currentStep = 'Completed'
       state.progressPct = 100
       state.status = 'completed'
-      state.logs.push('Task completed successfully.')
+      state.logs.push(`${logPrefix}Task completed successfully.`)
       state.isStreaming = false
       closeFn()
     } else if (data.type === 'error') {
       state.error = data.payload.detail || 'Unknown error'
       state.status = 'error'
-      state.logs.push(`Error: ${state.error}`)
+      state.logs.push(`${logPrefix}Error: ${state.error}`)
       state.isStreaming = false
       closeFn()
     }
