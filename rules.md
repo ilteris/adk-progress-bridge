@@ -19,6 +19,7 @@
 The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 
 #### SSE Flow (Uni-directional)
+- `GET /tools`: Returns a list of all registered tool names.
 - `POST /start_task/{tool_name}`: Initiates a tool, returns `{ call_id }`.
 - `GET /stream/{call_id}`: SSE endpoint for progress streaming.
 - `POST /provide_input`: REST fallback for providing user input mid-execution.
@@ -26,15 +27,16 @@ The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 
 #### WebSocket Flow (Bi-directional)
 - `WS /ws`: Bi-directional connection for task control and streaming.
+- Message `{"type": "list_tools", "request_id": "..."}` -> Server responds with `{"type": "tools_list", "tools": [...], "request_id": "..."}`.
 - Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task.
 - Server responds with `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` to confirm start.
-- Message `{"type": "stop", "call_id": "..."}` stops a task.
-- Message `{"type": "input", "call_id": "...", "value": "..."}` provides interactive input.
+- Message `{"type": "stop", "call_id": "...", "request_id": "..."}` stops a task -> Server responds with `{"type": "stop_success", "call_id": "...", "request_id": "..."}`.
+- Message `{"type": "input", "call_id": "...", "value": "...", "request_id": "..."}` provides interactive input -> Server responds with `{"type": "input_success", "call_id": "...", "request_id": "..."}`.
 - Message `{"type": "ping"}` -> Server responds with `{"type": "pong"}`.
 
 #### Event Schema
 - All progress events MUST follow the `ProgressEvent` schema defined in `backend/app/bridge.py`.
-- Event types are strictly: `"progress"`, `"result"`, `"error"`, `"input_request"`.
+- Event types are strictly: `"progress"`, `"result"`, `"error"`, `"input_request"`, `"task_started"`.
 - Always include `call_id` for event correlation.
 
 ### Tool Registration
