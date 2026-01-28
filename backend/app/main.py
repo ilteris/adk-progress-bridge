@@ -225,7 +225,7 @@ async def websocket_endpoint(websocket: WebSocket):
     logger.info("WebSocket connection established")
     
     active_tasks: Dict[str, asyncio.Task] = {}
-    # Use a lock to ensure only one task can send over the websocket at a time
+    # Use a lock to ensure thread-safe concurrent WebSocket writes and prevent message interleaving
     send_lock = asyncio.Lock()
 
     async def safe_send_json(data: dict):
