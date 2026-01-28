@@ -83,7 +83,7 @@ async def start_task(
     if not tool:
         raise HTTPException(status_code=404, detail=f"Tool not found: {tool_name}")
     
-    call_id = request.call_id or str(uuid.uuid4())
+    call_id = (request.call_id if request else None) or str(uuid.uuid4())
     
     args = request.args if request else {}
     
