@@ -22,7 +22,13 @@ The simplest way to scale the current architecture is to use a Load Balancer (e.
     - Uneven load distribution if some tasks are significantly heavier than others.
     - If an instance goes down, all active tasks on that instance are lost.
 
-### 2. Distributed Task Execution (Stateless API)
+### 2. WebSocket persistence
+WebSockets inherently solve part of the session affinity problem because once a connection is established, it remains pinned to the same server instance.
+
+- **WebSocket Flow**: Since tool execution and streaming happen over the same persistent TCP connection in the `/ws` endpoint, there is no "Instance A vs Instance B" conflict during a single task's lifecycle.
+- **Horizontal Scaling**: You still need a Load Balancer that supports WebSockets (e.g., using `ip_hash` or cookie-based affinity) to ensure that if a client reconnects, they have a higher probability of landing on the same instance where their background tasks might still be cleaning up, although the `/ws` handler is designed to clean up tasks on disconnect.
+
+### 3. Distributed Task Execution (Stateless API)
 For a truly stateless API tier that can scale horizontally without affinity, the execution logic must be decoupled from the API process.
 
 #### Proposed Distributed Architecture:
@@ -31,7 +37,7 @@ For a truly stateless API tier that can scale horizontally without affinity, the
 3.  **State Store**: Use Redis to store task metadata and progress history.
 4.  **Pub/Sub for Real-time Updates**:
     - The **Worker** executes the tool and publishes progress updates to a Redis channel named after the `call_id`.
-    - The **API Instance** (any instance) receives the `/stream/{call_id}` request, subscribes to the Redis channel, and yields messages as SSE events.
+    - The **API Instance** (any instance) receives the `/stream/{call_id}` or WebSocket request, subscribes to the Redis channel, and yields messages as events.
 
 #### Redis-based ToolRegistry Schema:
 Instead of storing generators, the `ToolRegistry` would manage task state in Redis:
@@ -45,7 +51,7 @@ To transition to a Redis-backed registry:
 
 1.  **Abstract Registry**: Create a `BaseRegistry` interface and implement `InMemoryRegistry` and `RedisRegistry`.
 2.  **Tool Adapters**: Modify `@progress_tool` to support serializing tool arguments and pushing to a queue.
-3.  **Event Bridge**: Implement a listener in the API that bridges Redis PubSub messages to the SSE `StreamingResponse`.
+3.  **Event Bridge**: Implement a listener in the API that bridges Redis PubSub messages to the SSE/WebSocket response.
 4.  **Cleanup**: Use Redis EXPIRE keys for automatic cleanup of stale task metadata instead of a manual background loop.
 
 ## Metrics & Monitoring in Multi-Instance
