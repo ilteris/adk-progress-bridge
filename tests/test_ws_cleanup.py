@@ -1,3 +1,4 @@
+import time
 import sys
 import os
 import json
@@ -79,7 +80,50 @@ def test_websocket_not_reaped_by_cleanup():
         task_data = registry.get_task_no_consume(call_id)
         assert task_data is not None, "WebSocket task should NOT have been reaped by cleanup"
 
+def test_websocket_disconnect_cleans_up_all_tasks():
+    """
+    Verifies that if a WebSocket client disconnects while multiple tasks 
+    are running, all those tasks are properly cancelled and removed 
+    from the registry.
+    """
+    client = TestClient(app)
+    call_ids = []
+    
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
+        # Start 3 tasks
+        for i in range(3):
+            websocket.send_json({
+                "type": "start",
+                "tool_name": "long_audit",
+                "args": {"duration": 10},
+                "request_id": f"req_{i}"
+            })
+            
+            # Receive task_started
+            found_start = False
+            for _ in range(10):
+                data = websocket.receive_json()
+                if data["type"] == "task_started" and data.get("request_id") == f"req_{i}":
+                    call_ids.append(data["call_id"])
+                    found_start = True
+                    break
+            assert found_start
+        
+        assert len(call_ids) == 3
+        
+        # Verify they are in registry
+        for cid in call_ids:
+            assert registry.get_task_no_consume(cid) is not None
+            
+        # Disconnect by exiting 'with' block
+    
+    # Wait a bit for tasks to be cancelled in the background
+    time.sleep(0.5)
+    
+    # Verify they are removed from registry
+    for cid in call_ids:
+        assert registry.get_task_no_consume(cid) is None, f"Task {cid} should have been cleaned up on disconnect"
+
 if __name__ == "__main__":
     # Manual run
-    test_websocket_marks_consumed()
-    print("test_websocket_marks_consumed passed")
+    pytest.main([__file__])
