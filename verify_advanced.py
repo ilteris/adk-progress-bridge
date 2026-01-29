@@ -6,7 +6,10 @@ import sys
 def test_tool(tool_name, args={}):
     print(f"\n--- Testing Tool: {tool_name} with args: {args} ---")
     # 1. Start Task
-    resp = requests.post(f"http://localhost:8000/start_task/{tool_name}", json=args)
+    # WRONG: resp = requests.post(f"http://localhost:8000/start_task/{tool_name}", json=args)
+    # CORRECT: TaskStartRequest has an 'args' field
+    resp = requests.post(f"http://localhost:8000/start_task/{tool_name}", json={"args": args})
+    
     if resp.status_code != 200:
         print(f"Failed to start task: {resp.text}")
         return
