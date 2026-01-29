@@ -304,9 +304,11 @@ async def websocket_endpoint(websocket: WebSocket):
                     call_id = message.get("call_id") or str(uuid.uuid4())
                     
                     gen = None
+                    task_added_locally = False
                     try:
                         gen = tool(**args)
                         registry.store_task(call_id, gen, tool_name)
+                        task_added_locally = True
                         registry.mark_consumed(call_id)
                         await safe_send_json({
                             "type": "task_started", 
@@ -322,7 +324,8 @@ async def websocket_endpoint(websocket: WebSocket):
                                 gen.close()
                             elif inspect.isasyncgen(gen):
                                 await gen.aclose()
-                        registry.remove_task(call_id)
+                        if task_added_locally:
+                            registry.remove_task(call_id)
                         logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
                         await safe_send_json({
                             "type": "error",
