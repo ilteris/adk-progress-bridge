@@ -181,6 +181,14 @@ def test_websocket_ping_pong():
         data = websocket.receive_json()
         assert data["type"] == "pong"
 
+def test_websocket_ping_pong_with_request_id():
+    client = TestClient(app)
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
+        websocket.send_json({"type": "ping", "request_id": "ping_123"})
+        data = websocket.receive_json()
+        assert data["type"] == "pong"
+        assert data.get("request_id") == "ping_123"
+
 def test_websocket_invalid_json():
     client = TestClient(app)
     with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:

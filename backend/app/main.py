@@ -276,7 +276,7 @@ async def websocket_endpoint(websocket: WebSocket):
             
             try:
                 if msg_type == "ping":
-                    await safe_send_json({"type": "pong"})
+                    await safe_send_json({"type": "pong", "request_id": request_id})
                     continue
 
                 if msg_type == "list_tools":
