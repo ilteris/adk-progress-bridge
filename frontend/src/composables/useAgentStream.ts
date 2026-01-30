@@ -42,6 +42,8 @@ const BRIDGE_API_KEY = import.meta.env.VITE_BRIDGE_API_KEY || ''
 const WS_HEARTBEAT_INTERVAL = 30000
 const WS_RECONNECT_MAX_ATTEMPTS = 10
 const WS_REQUEST_TIMEOUT = 5000
+const WS_RECONNECT_INITIAL_DELAY = 1000
+const WS_RECONNECT_MAX_DELAY = 30000
 
 /**
  * Shared WebSocket Manager to support multiple concurrent tasks over a single connection.
@@ -195,7 +197,7 @@ export class WebSocketManager {
         return
     }
 
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000)
+    const delay = Math.min(WS_RECONNECT_INITIAL_DELAY * Math.pow(2, this.reconnectAttempts), WS_RECONNECT_MAX_DELAY)
     console.log(`[WS] Scheduling reconnect in ${delay}ms (Attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`)
     
     this.reconnectTimeout = setTimeout(() => {
