@@ -73,3 +73,16 @@ def test_websocket_unknown_type_with_request_id():
         assert data["type"] == "error"
         assert data.get("request_id") == "robust_unknown"
         assert "Unknown message type" in data["payload"]["detail"]
+
+def test_websocket_message_size_limit():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        # Create a message larger than 1MB (default limit)
+        large_payload = "a" * (1024 * 1024 + 100)
+        large_message = json.dumps({"type": "ping", "data": large_payload})
+        
+        websocket.send_text(large_message)
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert "Message too large" in data["payload"]["detail"]
