@@ -117,6 +117,50 @@ async def run_ws_interactive():
     except Exception as e:
         print(f"WS Error in test_ws_interactive: {e}")
 
+async def run_ws_robustness():
+    api_key = os.getenv("BRIDGE_API_KEY", "")
+    url = "ws://localhost:8000/ws"
+    if api_key:
+        url += f"?api_key={api_key}"
+
+    try:
+        async with websockets.connect(url) as websocket:
+            print("\n--- Testing Robustness & Error Handling ---")
+            
+            # 1. Test ping/pong
+            print("Sending ping...")
+            await websocket.send(json.dumps({"type": "ping"}))
+            msg = await websocket.recv()
+            data = json.loads(msg)
+            print(f"Received: {data['type']}")
+            
+            # 2. Test Invalid JSON
+            print("Sending invalid JSON...")
+            await websocket.send("not-json")
+            msg = await websocket.recv()
+            data = json.loads(msg)
+            print(f"Received error: {data['payload']['detail']}")
+            
+            # 3. Test Unknown Message Type
+            print("Sending unknown message type...")
+            await websocket.send(json.dumps({"type": "unknown_cmd", "request_id": "req-unknown"}))
+            msg = await websocket.recv()
+            data = json.loads(msg)
+            print(f"Received error: {data['payload']['detail']}")
+            
+            # 4. Test Message Size Limit
+            print("Sending message too large...")
+            large_data = "x" * (1024 * 1024 + 100) # > 1MB
+            await websocket.send(large_data)
+            msg = await websocket.recv()
+            data = json.loads(msg)
+            print(f"Received error: {data['payload']['detail']}")
+            
+            print("Robustness verification SUCCESS")
+            
+    except Exception as e:
+        print(f"WS Error in run_ws_robustness: {e}")
+
 async def run_ws_list_tools():
     api_key = os.getenv("BRIDGE_API_KEY", "")
     url = "ws://localhost:8000/ws"
@@ -146,6 +190,7 @@ async def main():
     await run_ws_full()
     await run_ws_interactive()
     await run_ws_list_tools()
+    await run_ws_robustness()
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -274,7 +274,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.warning("Received invalid JSON over WebSocket")
                 await safe_send_json({
                     "type": "error",
-                    "payload": {"detail": "Invalid JSON received"}
+                    "payload": {"detail": "Invalid JSON received. Message must be a valid JSON string."}
                 })
                 continue
             except WebSocketDisconnect:
@@ -386,7 +386,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 await safe_send_json({
                     "type": "error",
                     "request_id": request_id, 
-                    "payload": {"detail": f"Unknown message type: {msg_type}"}
+                    "payload": {"detail": f"Unknown message type: {msg_type}. Supported types are: ping, list_tools, start, stop, input."}
                 })
 
     except WebSocketDisconnect:
