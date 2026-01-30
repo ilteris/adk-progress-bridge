@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 import pytest
 from fastapi.testclient import TestClient
 
@@ -24,5 +25,3 @@ def test_websocket_message_size_limit():
         data = websocket.receive_json()
         assert data["type"] == "error"
         assert "Message too large" in data["payload"]["detail"]
-
-import json # Ensure json is imported
