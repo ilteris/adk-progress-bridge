@@ -131,7 +131,9 @@ export class WebSocketManager {
                 } else {
                     reqResolve(data)
                 }
-                return
+                
+                // If it also has a call_id, don't return so subscribers can also handle it
+                if (!data.call_id) return
             }
 
             // Handle task-specific events
@@ -472,9 +474,8 @@ export function useAgentStream() {
           type: 'stop',
           call_id: state.callId
         })
-        state.logs.push('Stop command acknowledged by server.')
-        state.status = 'cancelled'
-        state.isStreaming = false
+        state.logs.push('Stop command sent via WebSocket.')
+        // Note: status will be updated to 'cancelled' in handleEvent when stop_success arrives
       } catch (err: any) {
           state.error = `Failed to send stop command: ${err.message}`
           state.status = 'error'
@@ -560,7 +561,8 @@ export function useAgentStream() {
         state.logs.push('WebSocket connection lost. Reconnecting...')
     } else if (data.type === 'stop_success') {
         state.logs.push('Stop command acknowledged by server.')
-        // stop_success is the final acknowledgement for a stop command
+        state.status = 'cancelled'
+        state.isStreaming = false
         closeFn()
     } else if (data.type === 'input_success') {
         state.logs.push('Input command acknowledged by server.')
