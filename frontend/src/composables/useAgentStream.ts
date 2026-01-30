@@ -9,7 +9,7 @@ interface ProgressPayload {
 
 interface AgentEvent {
   call_id: string
-  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list'
+  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'connected' | 'stop_success' | 'input_success' | 'tools_list'
   payload: any
   request_id?: string
   tools?: string[]
@@ -109,6 +109,7 @@ export class WebSocketManager {
       this.ws.onopen = () => {
         console.log('[WS] Connection established')
         this.startHeartbeat()
+        this.notifyStatusToAll('connected')
         this.reconnectAttempts = 0
         this.connectionPromise = null
         resolve()
@@ -186,7 +187,7 @@ export class WebSocketManager {
     return this.connectionPromise
   }
 
-  private notifyStatusToAll(type: 'reconnecting') {
+  private notifyStatusToAll(type: 'reconnecting' | 'connected') {
     for (const [callId, callback] of this.subscribers.entries()) {
         callback({
             call_id: callId,
@@ -559,6 +560,10 @@ export function useAgentStream() {
         state.status = 'reconnecting'
         state.isConnected = false
         state.logs.push('WebSocket connection lost. Reconnecting...')
+    } else if (data.type === 'connected') {
+        state.status = 'connected'
+        state.isConnected = true
+        state.logs.push('WebSocket connection re-established.')
     } else if (data.type === 'stop_success') {
         state.logs.push('Stop command acknowledged by server.')
         state.status = 'cancelled'

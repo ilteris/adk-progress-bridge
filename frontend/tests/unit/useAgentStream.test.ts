@@ -220,6 +220,27 @@ describe('useAgentStream', () => {
       expect(state.logs[state.logs.length - 1]).toContain('Reconnecting')
     })
 
+    it('handles reconnecting -> connected transition correctly', async () => {
+      const { state, runTool } = useAgentStream()
+      state.useWS = true
+      
+      runTool('test_tool')
+      await vi.waitFor(() => expect(state.status).toBe('connected'))
+      
+      // Connection lost
+      lastWebSocket?.triggerClose()
+      await vi.waitFor(() => expect(state.status).toBe('reconnecting'))
+      
+      // Connection re-established
+      // In MockWebSocket, the next constructor call will trigger 'open'
+      // But we need to wait for the reconnect attempt
+      await vi.waitFor(() => expect(wsInstanceCount).toBe(2), { timeout: 2000 })
+      
+      await vi.waitFor(() => expect(state.status).toBe('connected'))
+      expect(state.isConnected).toBe(true)
+      expect(state.logs[state.logs.length - 1]).toContain('re-established')
+    })
+
     it('handles stopTool by sending stop message and waiting for stop_success', async () => {
       const { state, runTool, stopTool } = useAgentStream()
       state.useWS = true
