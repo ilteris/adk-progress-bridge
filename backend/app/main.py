@@ -15,6 +15,10 @@ from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
 from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
 
+# Configuration Constants
+WS_HEARTBEAT_TIMEOUT = 60.0
+CLEANUP_INTERVAL = 60.0
+STALE_TASK_MAX_AGE = 300.0
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Start stale task cleanup in the background
@@ -29,8 +33,8 @@ async def lifespan(app: FastAPI):
 async def cleanup_background_task():
     try:
         while True:
-            await asyncio.sleep(60)
-            await registry.cleanup_stale_tasks(max_age_seconds=300)
+            await asyncio.sleep(CLEANUP_INTERVAL)
+            await registry.cleanup_stale_tasks(max_age_seconds=STALE_TASK_MAX_AGE)
     except asyncio.CancelledError:
         logger.info("Background cleanup task cancelled")
 
@@ -88,7 +92,7 @@ async def start_task(
     try:
         # Create the generator but don't start consuming yet
         gen = tool(**args)
-        registry.store_task(call_id, gen, tool_name)
+        await registry.store_task(call_id, gen, tool_name)
     except Exception as e:
         logger.error(f"Error starting tool {tool_name}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -112,7 +116,7 @@ async def stream_task(
     if not actual_call_id:
         raise HTTPException(status_code=400, detail="call_id is required")
 
-    task_data = registry.get_task(actual_call_id)
+    task_data = await registry.get_task(actual_call_id)
     if not task_data:
         raise HTTPException(status_code=404, detail="Task not found or already being streamed")
     
@@ -156,7 +160,7 @@ async def stream_task(
             TASK_DURATION.labels(tool_name=tool_name).observe(duration)
             TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
             
-            registry.remove_task(actual_call_id)
+            await registry.remove_task(actual_call_id)
             logger.info(f"Stream finished for task: {actual_call_id} (duration: {duration:.2f}s, status: {status})")
 
     return StreamingResponse(
@@ -166,7 +170,7 @@ async def stream_task(
 
 @app.post("/provide_input")
 async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
-    if input_manager.provide_input(request.call_id, request.value):
+    if await input_manager.provide_input(request.call_id, request.value):
         return {"status": "input accepted"}
     else:
         raise HTTPException(status_code=404, detail=f"No task waiting for input with call_id: {request.call_id}")
@@ -182,14 +186,14 @@ async def stop_task(
     if not actual_call_id:
         raise HTTPException(status_code=400, detail="call_id is required")
 
-    task_data = registry.get_task_no_consume(actual_call_id)
+    task_data = await registry.get_task_no_consume(actual_call_id)
     if not task_data:
         raise HTTPException(status_code=404, detail="Task not found or already finished")
     
     await task_data["gen"].aclose()
     
     if not task_data["consumed"]:
-        registry.remove_task(actual_call_id)
+        await registry.remove_task(actual_call_id)
         
     return {"status": "stop signal sent"}
 
@@ -230,8 +234,8 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             try:
-                # Add a 60-second timeout for the heartbeat (client pings every 30s)
-                data = await asyncio.wait_for(websocket.receive_text(), timeout=60.0)
+                # Add a heartbeat timeout (client pings periodically)
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=WS_HEARTBEAT_TIMEOUT)
                 message = json.loads(data)
                 if not isinstance(message, dict):
                     logger.warning(f"Received non-dictionary message over WebSocket: {type(message)}")
@@ -241,7 +245,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     })
                     continue
             except asyncio.TimeoutError:
-                logger.warning("WebSocket heartbeat timeout (60s exceeded)")
+                logger.warning("WebSocket heartbeat timeout exceeded")
                 break
             except json.JSONDecodeError:
                 logger.warning("Received invalid JSON over WebSocket")
@@ -290,8 +294,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 try:
                     gen = tool(**args)
-                    registry.store_task(call_id, gen, tool_name)
-                    registry.mark_consumed(call_id)
+                    await registry.store_task(call_id, gen, tool_name)
+                    await registry.mark_consumed(call_id)
                     await safe_send_json({
                         "type": "task_started", 
                         "call_id": call_id, 
@@ -308,6 +312,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "request_id": request_id,
                         "payload": {"detail": str(e)}
                     })
+                    # If store_task failed but gen was created, it's handled in store_task
             
             elif msg_type == "stop":
                 call_id = message.get("call_id")
@@ -337,7 +342,7 @@ async def websocket_endpoint(websocket: WebSocket):
             elif msg_type == "input":
                 call_id = message.get("call_id")
                 value = message.get("value")
-                if input_manager.provide_input(call_id, value):
+                if await input_manager.provide_input(call_id, value):
                     logger.info(f"Input received for task {call_id}", extra={"call_id": call_id})
                     # Command acknowledgment
                     await safe_send_json({
@@ -408,7 +413,7 @@ async def run_ws_generator(send_fn, call_id: str, tool_name: str, gen, active_ta
         TASK_DURATION.labels(tool_name=tool_name).observe(duration)
         TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
         
-        registry.remove_task(call_id)
+        await registry.remove_task(call_id)
         active_tasks.pop(call_id, None)
         
         logger.info(f"WS task finished: {call_id} (duration: {duration:.2f}s, status: {status})")
