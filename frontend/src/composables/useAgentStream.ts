@@ -38,6 +38,14 @@ const WS_BASE_URL = API_BASE_URL.replace('http', 'ws')
 // Support VITE_BRIDGE_API_KEY for authenticated requests
 const BRIDGE_API_KEY = import.meta.env.VITE_BRIDGE_API_KEY || ''
 
+// Constants
+const WS_HEARTBEAT_INTERVAL = 30000
+const WS_RECONNECT_MAX_ATTEMPTS = 10
+const WS_REQUEST_TIMEOUT = 5000
+const WS_RECONNECT_INITIAL_DELAY = 1000
+const WS_RECONNECT_MAX_DELAY = 30000
+const WS_BUFFER_SIZE = 100
+
 /**
  * Shared WebSocket Manager to support multiple concurrent tasks over a single connection.
  * Enhanced with automatic reconnection and heartbeat support.
@@ -46,11 +54,12 @@ export class WebSocketManager {
   private ws: WebSocket | null = null
   private subscribers: Map<string, (event: AgentEvent) => void> = new Map()
   private requestCallbacks: Map<string, { resolve: (data: any) => void, reject: (err: any) => void, timeout: any }> = new Map()
+  private messageBuffer: AgentEvent[] = []
   private connectionPromise: Promise<void> | null = null
   private heartbeatInterval: any = null
   private reconnectTimeout: any = null
   private reconnectAttempts: number = 0
-  private maxReconnectAttempts: number = 10
+  private maxReconnectAttempts: number = WS_RECONNECT_MAX_ATTEMPTS
   private isManuallyClosed: boolean = false
 
   // For testing
@@ -63,6 +72,7 @@ export class WebSocketManager {
       this.ws = null
     }
     this.subscribers.clear()
+    this.messageBuffer = []
     for (const req of this.requestCallbacks.values()) {
         clearTimeout(req.timeout)
         req.reject(new Error('WebSocket manager reset'))
@@ -122,6 +132,12 @@ export class WebSocketManager {
             const callback = this.subscribers.get(data.call_id)
             if (callback) {
                 callback(data)
+            } else if (data.call_id) {
+                // Buffer message if no subscriber yet
+                this.messageBuffer.push(data)
+                if (this.messageBuffer.length > WS_BUFFER_SIZE) {
+                    this.messageBuffer.shift()
+                }
             }
         } catch (e) {
             console.error('[WS] Failed to parse message', e)
@@ -147,6 +163,7 @@ export class WebSocketManager {
             // Error out all active subscribers if manually closed or failed permanently
             this.notifyErrorToAll('WebSocket connection closed')
             this.subscribers.clear()
+            this.messageBuffer = []
             
             // Reject all pending requests
             for (const [reqId, req] of this.requestCallbacks.entries()) {
@@ -187,10 +204,11 @@ export class WebSocketManager {
         console.error('[WS] Max reconnect attempts reached')
         this.notifyErrorToAll('WebSocket connection failed permanently')
         this.subscribers.clear()
+        this.messageBuffer = []
         return
     }
 
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000)
+    const delay = Math.min(WS_RECONNECT_INITIAL_DELAY * Math.pow(2, this.reconnectAttempts), WS_RECONNECT_MAX_DELAY)
     console.log(`[WS] Scheduling reconnect in ${delay}ms (Attempt ${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`)
     
     this.reconnectTimeout = setTimeout(() => {
@@ -215,7 +233,7 @@ export class WebSocketManager {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify({ type: 'ping' }))
       }
-    }, 30000)
+    }, WS_HEARTBEAT_INTERVAL)
   }
 
   private stopHeartbeat() {
@@ -227,21 +245,33 @@ export class WebSocketManager {
 
   subscribe(callId: string, callback: (event: AgentEvent) => void) {
     this.subscribers.set(callId, callback)
+    
+    // Replay and clear buffered messages for this callId
+    const relevantMessages = this.messageBuffer.filter(msg => msg.call_id === callId)
+    if (relevantMessages.length > 0) {
+        console.log(`[WS] Replaying ${relevantMessages.length} buffered messages for ${callId}`)
+        relevantMessages.forEach(msg => callback(msg))
+        this.messageBuffer = this.messageBuffer.filter(msg => msg.call_id !== callId)
+    }
   }
 
   unsubscribe(callId: string) {
     this.subscribers.delete(callId)
+    // Also clear any remaining buffered messages for this callId to prevent leaks
+    this.messageBuffer = this.messageBuffer.filter(msg => msg.call_id !== callId)
   }
 
-  send(data: any) {
+  send(data: any): boolean {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data))
+      return true
     } else {
         console.warn('[WS] Cannot send message, WebSocket not open')
+        return false
     }
   }
 
-  private async sendWithCorrelation(data: any, timeoutMs: number = 5000): Promise<any> {
+  private async sendWithCorrelation(data: any, timeoutMs: number = WS_REQUEST_TIMEOUT): Promise<any> {
       await this.connect()
       const requestId = Math.random().toString(36).substring(2, 11)
       data.request_id = requestId
@@ -253,7 +283,12 @@ export class WebSocketManager {
           }, timeoutMs)
 
           this.requestCallbacks.set(requestId, { resolve, reject, timeout })
-          this.send(data)
+          const sent = this.send(data)
+          if (!sent) {
+              clearTimeout(timeout)
+              this.requestCallbacks.delete(requestId)
+              reject(new Error(`Failed to send ${data.type}: WebSocket not open`))
+          }
       })
   }
 
@@ -423,15 +458,20 @@ export function useAgentStream() {
   const stopTool = async () => {
     if (state.useWS && state.callId && state.isStreaming) {
       const requestId = Math.random().toString(36).substring(2, 11)
-      wsManager.send({
+      const sent = wsManager.send({
         type: 'stop',
         call_id: state.callId,
         request_id: requestId
       })
-      state.status = 'cancelled'
-      state.isStreaming = false
-      // We do NOT unsubscribe here, so we can receive stop_success and the final "Cancelled" progress event.
-      // handleEvent or reset will eventually unsubscribe.
+      if (sent) {
+        state.status = 'cancelled'
+        state.isStreaming = false
+      } else {
+          state.error = 'Failed to send stop command: WebSocket connection lost'
+          state.status = 'error'
+          state.isStreaming = false
+          reset()
+      }
     } else if (state.callId && state.isStreaming) {
       try {
         const headers: Record<string, string> = {}
@@ -461,12 +501,17 @@ export function useAgentStream() {
     if (state.callId && state.status === 'waiting_for_input') {
         if (state.useWS) {
             const requestId = Math.random().toString(36).substring(2, 11)
-            wsManager.send({
+            const sent = wsManager.send({
                 type: 'input',
                 call_id: state.callId,
                 value: value,
                 request_id: requestId
             })
+            if (!sent) {
+                state.error = 'Failed to send input: WebSocket connection lost'
+                state.status = 'error'
+                return
+            }
         } else {
             try {
                 const headers: Record<string, string> = { 'Content-Type': 'application/json' }
