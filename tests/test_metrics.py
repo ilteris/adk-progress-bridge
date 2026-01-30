@@ -1,6 +1,9 @@
+import sys
+import os
 import pytest
 import asyncio
 import httpx
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.app.main import app
 from httpx import ASGITransport
 
