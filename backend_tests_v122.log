@@ -1,0 +1,33 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.2, pytest-9.0.2, pluggy-1.6.0
+rootdir: /Users/adele/Code/adk-progress-bridge
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 79 items
+
+tests/test_api_validation.py .....                                       [  6%]
+tests/test_api_validation_extra.py ..                                    [  8%]
+tests/test_auth.py ......                                                [ 16%]
+tests/test_input_validation.py .                                         [ 17%]
+tests/test_metrics.py ..                                                 [ 20%]
+tests/test_registry_thread_safety.py ..                                  [ 22%]
+tests/test_stop_http.py ..                                               [ 25%]
+tests/test_timeout_cleanup.py ..                                         [ 27%]
+tests/test_websocket.py ........                                         [ 37%]
+tests/test_ws_auth.py ....                                               [ 43%]
+tests/test_ws_cleanup.py ..                                              [ 45%]
+tests/test_ws_concurrency.py ....                                        [ 50%]
+tests/test_ws_error_correlation.py ....                                  [ 55%]
+tests/test_ws_final_100_percent.py .                                     [ 56%]
+tests/test_ws_final_audit.py ......                                      [ 64%]
+tests/test_ws_final_boss.py ...                                          [ 68%]
+tests/test_ws_final_signoff.py .                                         [ 69%]
+tests/test_ws_final_worker_verified.py ..                                [ 72%]
+tests/test_ws_metrics.py .                                               [ 73%]
+tests/test_ws_protocol_extension.py ....                                 [ 78%]
+tests/test_ws_robustness.py ...........                                  [ 92%]
+tests/test_ws_stress.py ..                                               [ 94%]
+tests/test_ws_stress_max.py ..                                           [ 97%]
+tests/test_ws_timeout.py ..                                              [100%]
+
+============================= 79 passed in 40.66s ==============================

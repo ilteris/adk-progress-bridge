@@ -1,0 +1,81 @@
+
+> frontend@0.0.0 test
+> vitest --run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Users/adele/Code/adk-progress-bridge/frontend[39m
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mfetches tools via WS when useWS is true
+[22m[39m[WS] Connecting to ws://localhost:8000/ws?api_key=test-key...
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mfetches tools via WS when useWS is true
+[22m[39m[WS] Connection established
+
+[90mstderr[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mstarts streaming and connects to WebSocket
+[22m[39m[WS] Connection closed: 1000 Normal Closure
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mstarts streaming and connects to WebSocket
+[22m[39m[WS] Connecting to ws://localhost:8000/ws?api_key=test-key...
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mstarts streaming and connects to WebSocket
+[22m[39m[WS] Connection established
+
+ [32m✓[39m tests/unit/TaskMonitor.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+[90mstderr[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mreuses existing WebSocket connection
+[22m[39m[WS] Connection closed: 1000 Normal Closure
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mreuses existing WebSocket connection
+[22m[39m[WS] Connecting to ws://localhost:8000/ws?api_key=test-key...
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mreuses existing WebSocket connection
+[22m[39m[WS] Connection established
+
+[90mstderr[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mhandles unexpected WS closure during streaming by reconnecting
+[22m[39m[WS] Connection closed: 1000 Normal Closure
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mhandles unexpected WS closure during streaming by reconnecting
+[22m[39m[WS] Connecting to ws://localhost:8000/ws?api_key=test-key...
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mhandles unexpected WS closure during streaming by reconnecting
+[22m[39m[WS] Connection established
+
+[90mstderr[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mhandles unexpected WS closure during streaming by reconnecting
+[22m[39m[WS] Connection closed: 1006 Abnormal Closure
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mhandles unexpected WS closure during streaming by reconnecting
+[22m[39m[WS] Scheduling reconnect in 1000ms (Attempt 1/10)
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mhandles stopTool by sending stop message and waiting for stop_success
+[22m[39m[WS] Connecting to ws://localhost:8000/ws?api_key=test-key...
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mhandles stopTool by sending stop message and waiting for stop_success
+[22m[39m[WS] Connection established
+
+[90mstderr[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mreset() cleans up WebSocket subscription
+[22m[39m[WS] Connection closed: 1000 Normal Closure
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mreset() cleans up WebSocket subscription
+[22m[39m[WS] Connecting to ws://localhost:8000/ws?api_key=test-key...
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mreset() cleans up WebSocket subscription
+[22m[39m[WS] Connection established
+
+[90mstderr[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mreplays buffered messages when subscribing late
+[22m[39m[WS] Connection closed: 1000 Normal Closure
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mreplays buffered messages when subscribing late
+[22m[39m[WS] Connecting to ws://localhost:8000/ws?api_key=test-key...
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mreplays buffered messages when subscribing late
+[22m[39m[WS] Connection established
+
+[90mstdout[2m | tests/unit/useAgentStream.test.ts[2m > [22m[2museAgentStream[2m > [22m[2mWebSocket path[2m > [22m[2mreplays buffered messages when subscribing late
+[22m[39m[WS] Replaying 1 buffered messages for late-sub-call-id
+
+ [32m✓[39m tests/unit/useAgentStream.test.ts [2m([22m[2m9 tests[22m[2m)[22m[33m 359[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m16 passed[39m[22m[90m (16)[39m
+[2m   Start at [22m 14:22:00
+[2m   Duration [22m 841ms[2m (transform 91ms, setup 0ms, import 167ms, tests 399ms, environment 617ms)[22m
+
