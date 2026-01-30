@@ -24,6 +24,7 @@ CLEANUP_INTERVAL = 60.0
 # STALE_TASK_MAX_AGE: Maximum age (seconds) of an unconsumed task before it is cleaned up.
 STALE_TASK_MAX_AGE = 300.0
 
+# Production-Ready WebSocket Integration: Bi-directional, heartbeat-supported, and concurrent-safe.
 # CORS Configuration
 # Defaults to "*" for development but can be restricted via environment variable.
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
