@@ -51,7 +51,7 @@ class ProgressEvent(BaseModel):
         examples=["progress", "result", "error", "input_request"]
     )
     timestamp: float = Field(default_factory=time.time, description="Unix timestamp of when the event was created.")
-    payload: Union[ProgressPayload, Dict[str, Any]] = Field(
+    payload: Any = Field(
         ..., 
         description="The actual data payload. Contains a ProgressPayload object for 'progress' types, or the final result/error details.",
     )
