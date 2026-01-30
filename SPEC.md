@@ -92,3 +92,7 @@ The WebSocket layer allows for:
 
 ### 4.2 Security
 All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` header or `api_key` query parameter.
+
+### 4.3 WebSocket Reliability & Multi-Instance Scalability
+*   **Heartbeat Timeout:** The server implements a 60-second heartbeat timeout (configurable via `WS_HEARTBEAT_TIMEOUT` in `backend/app/main.py`). If no message (including `ping`) is received from the client within this window, the server automatically closes the connection and cleans up all active tasks associated with that socket.
+*   **Persistent Affinity:** WebSockets maintain an active connection to a specific server instance, ensuring that long-running generators remain stable without requiring complex distributed state management for basic multi-instance deployments using sticky sessions.

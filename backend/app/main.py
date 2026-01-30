@@ -15,6 +15,9 @@ from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
 from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
 
+# Constants
+WS_HEARTBEAT_TIMEOUT = 60.0
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Start stale task cleanup in the background
@@ -230,8 +233,8 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             try:
-                # Add a 60-second timeout for the heartbeat (client pings every 30s)
-                data = await asyncio.wait_for(websocket.receive_text(), timeout=60.0)
+                # Add a timeout for the heartbeat (client pings every 30s)
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=WS_HEARTBEAT_TIMEOUT)
                 message = json.loads(data)
                 if not isinstance(message, dict):
                     logger.warning(f"Received non-dictionary message over WebSocket: {type(message)}")
@@ -241,7 +244,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     })
                     continue
             except asyncio.TimeoutError:
-                logger.warning("WebSocket heartbeat timeout (60s exceeded)")
+                logger.warning(f"WebSocket heartbeat timeout ({WS_HEARTBEAT_TIMEOUT}s exceeded)")
                 break
             except json.JSONDecodeError:
                 logger.warning("Received invalid JSON over WebSocket")
