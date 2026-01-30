@@ -1,19 +1,23 @@
-# Implementation Plan - WebSocket Integration Robustness
+# Plan: WebSocket Integration Final Verification & Sign-off
 
-## Problem
-WebSocket-started tasks are currently not marked as "consumed" in the `ToolRegistry`. This makes them vulnerable to being prematurely terminated by the background `cleanup_stale_tasks` loop if they run longer than the stale threshold (default 300s).
+As an Architect Worker, I will perform a final, comprehensive audit of the WebSocket integration to ensure it meets all specifications and remains stable after previous merges.
 
-## Proposed Changes
+## 1. Static Analysis & Code Audit
+- Review `backend/app/main.py` for WebSocket endpoint robustness (locks, error handling, correlation).
+- Review `frontend/src/composables/useAgentStream.ts` for reconnection logic and state management.
+- Verify `SPEC.md` alignment.
 
-### 1. Backend (bridge.py)
-- Add `mark_consumed(call_id: str)` method to `ToolRegistry` to allow explicit state updates without retrieving the generator (since WS flow already has it).
+## 2. Automated Testing
+- Run all backend tests (64/64 expected to pass).
+- Run all frontend unit tests (15/15 expected to pass).
+- Run all Playwright E2E tests (5/5 expected to pass).
 
-### 2. Backend (main.py)
-- Call `registry.mark_consumed(call_id)` in the WebSocket `start` message handler after storing the task.
+## 3. Manual Verification (Smoke Tests)
+- Run `verify_websocket.py` to confirm bi-directional flow.
+- Run `verify_stream.py` to confirm SSE fallback stability.
+- Run `verify_advanced.py` to confirm complex tool behavior.
 
-### 3. Documentation (rules.md)
-- Update `rules.md` to include WebSocket specifications, matching the SSE standards.
-
-## Verification Plan
-- Run `tests/test_websocket.py` to ensure no regressions.
-- Add a specific test case in a new test file `tests/test_ws_cleanup.py` that verifies WS tasks are NOT reaped by the stale cleanup loop.
+## 4. Documentation & Final Sign-off
+- Ensure `DEPLOYMENT.md` and `SCALABILITY.md` accurately reflect WebSocket behavior.
+- Update `tasks/websocket-integration.json` with the latest sign-off.
+- Create a final verification PR.
