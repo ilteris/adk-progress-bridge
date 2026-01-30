@@ -64,14 +64,14 @@ class InputProvideRequest(BaseModel):
     call_id: str
     value: Any
 
-@app.get("/tools", response_model=List[str])
+@app.get("/tools", response_model=List[str], responses={401: {"description": "Unauthorized"}})
 async def list_tools(authenticated: bool = Depends(verify_api_key)):
     """
     Returns a list of all registered tools.
     """
     return registry.list_tools()
 
-@app.post("/start_task/{tool_name}", response_model=TaskStartResponse)
+@app.post("/start_task/{tool_name}", response_model=TaskStartResponse, responses={401: {"description": "Unauthorized"}})
 async def start_task(
     tool_name: str, 
     request: Optional[TaskStartRequest] = None, 
@@ -108,8 +108,8 @@ async def start_task(
         stream_url=f"/stream/{call_id}"
     )
 
-@app.get("/stream/{call_id}")
-@app.get("/stream")
+@app.get("/stream/{call_id}", responses={401: {"description": "Unauthorized"}})
+@app.get("/stream", responses={401: {"description": "Unauthorized"}})
 async def stream_task(
     call_id: Optional[str] = None,
     cid: Optional[str] = Query(None, alias="call_id"),
@@ -133,6 +133,9 @@ async def stream_task(
         call_id_var.set(actual_call_id)
         tool_name_var.set(tool_name)
         
+        # Register the current task so it can be cancelled externally
+        registry.set_task_object(actual_call_id, asyncio.current_task())
+        
         start_time = time.perf_counter()
         status = "success"
         
@@ -150,7 +153,20 @@ async def stream_task(
                 
         except asyncio.CancelledError:
             status = "cancelled"
-            logger.info(f"Task {actual_call_id} was cancelled by client")
+            logger.info(f"Task {actual_call_id} was cancelled")
+            
+            # Send a final progress update to the client before closing
+            # Note: This might not reach the client if they disconnected, but it's good for internal stop.
+            try:
+                event = ProgressEvent(
+                    call_id=actual_call_id,
+                    type="progress",
+                    payload=ProgressPayload(step="Cancelled", pct=0, log="Task stopped by user or system.")
+                )
+                yield await format_sse(event)
+            except:
+                pass
+                
             await gen.aclose()
         except Exception as e:
             status = "error"
@@ -174,15 +190,15 @@ async def stream_task(
         media_type="text/event-stream"
     )
 
-@app.post("/provide_input")
+@app.post("/provide_input", responses={401: {"description": "Unauthorized"}})
 async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
     if input_manager.provide_input(request.call_id, request.value):
         return {"status": "input accepted"}
     else:
         raise HTTPException(status_code=404, detail=f"No task waiting for input with call_id: {request.call_id}")
 
-@app.post("/stop_task/{call_id}")
-@app.post("/stop_task")
+@app.post("/stop_task/{call_id}", responses={401: {"description": "Unauthorized"}})
+@app.post("/stop_task", responses={401: {"description": "Unauthorized"}})
 async def stop_task(
     call_id: Optional[str] = None, 
     cid: Optional[str] = Query(None, alias="call_id"),
@@ -196,8 +212,25 @@ async def stop_task(
     if not task_data:
         raise HTTPException(status_code=404, detail="Task not found or already finished")
     
-    await task_data["gen"].aclose()
-    
+    # If there's a running task, cancel it. This is more robust than gen.aclose()
+    # because it works even if the generator is currently being iterated.
+    running_task = task_data.get("running_task")
+    if running_task and not running_task.done():
+        logger.info(f"Cancelling running task for {actual_call_id}")
+        running_task.cancel()
+    else:
+        # Fallback to direct close if no task is registered
+        try:
+            await task_data["gen"].aclose()
+        except RuntimeError as e:
+            if "already running" in str(e):
+                # This should not happen now if we properly track tasks, 
+                # but if it does, it means the task IS running somewhere.
+                # We can't do much more here if we don't have the task handle.
+                logger.warning(f"Generator for {actual_call_id} is already running but no task was registered.")
+                raise HTTPException(status_code=409, detail="Task is currently running and cannot be stopped via this endpoint (missing task handle).")
+            raise
+
     if not task_data["consumed"]:
         registry.remove_task(actual_call_id)
         
@@ -276,7 +309,7 @@ async def websocket_endpoint(websocket: WebSocket):
             
             try:
                 if msg_type == "ping":
-                    await safe_send_json({"type": "pong"})
+                    await safe_send_json({"type": "pong", "request_id": request_id})
                     continue
 
                 if msg_type == "list_tools":
@@ -304,9 +337,11 @@ async def websocket_endpoint(websocket: WebSocket):
                     call_id = message.get("call_id") or str(uuid.uuid4())
                     
                     gen = None
+                    task_added_locally = False
                     try:
                         gen = tool(**args)
                         registry.store_task(call_id, gen, tool_name)
+                        task_added_locally = True
                         registry.mark_consumed(call_id)
                         await safe_send_json({
                             "type": "task_started", 
@@ -316,13 +351,16 @@ async def websocket_endpoint(websocket: WebSocket):
                         })
                         task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
                         active_tasks[call_id] = task
+                        # Register the task object globally as well
+                        registry.set_task_object(call_id, task)
                     except Exception as e:
                         if gen:
                             if inspect.iscoroutine(gen):
                                 gen.close()
                             elif inspect.isasyncgen(gen):
                                 await gen.aclose()
-                        registry.remove_task(call_id)
+                        if task_added_locally:
+                            registry.remove_task(call_id)
                         logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
                         await safe_send_json({
                             "type": "error",
@@ -420,10 +458,18 @@ async def run_ws_generator(send_fn, call_id: str, tool_name: str, gen, active_ta
                 event = ProgressEvent(call_id=call_id, type="result", payload=item)
             
             await send_fn(event.model_dump())
-            
     except asyncio.CancelledError:
         status = "cancelled"
         logger.info(f"WS task {call_id} cancelled")
+        try:
+            event = ProgressEvent(
+                call_id=call_id,
+                type="progress",
+                payload=ProgressPayload(step="Cancelled", pct=0, log="Task stopped by user or system.")
+            )
+            await send_fn(event.model_dump())
+        except:
+            pass
         await gen.aclose()
     except Exception as e:
         status = "error"
