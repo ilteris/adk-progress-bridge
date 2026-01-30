@@ -88,7 +88,7 @@ async def start_task(
     try:
         # Create the generator but don't start consuming yet
         gen = tool(**args)
-        registry.store_task(call_id, gen, tool_name)
+        await registry.store_task(call_id, gen, tool_name)
     except Exception as e:
         logger.error(f"Error starting tool {tool_name}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
@@ -112,7 +112,7 @@ async def stream_task(
     if not actual_call_id:
         raise HTTPException(status_code=400, detail="call_id is required")
 
-    task_data = registry.get_task(actual_call_id)
+    task_data = await registry.get_task(actual_call_id)
     if not task_data:
         raise HTTPException(status_code=404, detail="Task not found or already being streamed")
     
@@ -156,7 +156,7 @@ async def stream_task(
             TASK_DURATION.labels(tool_name=tool_name).observe(duration)
             TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
             
-            registry.remove_task(actual_call_id)
+            await registry.remove_task(actual_call_id)
             logger.info(f"Stream finished for task: {actual_call_id} (duration: {duration:.2f}s, status: {status})")
 
     return StreamingResponse(
@@ -166,7 +166,7 @@ async def stream_task(
 
 @app.post("/provide_input")
 async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
-    if input_manager.provide_input(request.call_id, request.value):
+    if await input_manager.provide_input(request.call_id, request.value):
         return {"status": "input accepted"}
     else:
         raise HTTPException(status_code=404, detail=f"No task waiting for input with call_id: {request.call_id}")
@@ -182,14 +182,14 @@ async def stop_task(
     if not actual_call_id:
         raise HTTPException(status_code=400, detail="call_id is required")
 
-    task_data = registry.get_task_no_consume(actual_call_id)
+    task_data = await registry.get_task_no_consume(actual_call_id)
     if not task_data:
         raise HTTPException(status_code=404, detail="Task not found or already finished")
     
     await task_data["gen"].aclose()
     
     if not task_data["consumed"]:
-        registry.remove_task(actual_call_id)
+        await registry.remove_task(actual_call_id)
         
     return {"status": "stop signal sent"}
 
@@ -261,7 +261,7 @@ async def websocket_endpoint(websocket: WebSocket):
             request_id = message.get("request_id")
             
             if msg_type == "ping":
-                await safe_send_json({"type": "pong"})
+                await safe_send_json({"type": "pong", "request_id": request_id})
                 continue
 
             if msg_type == "list_tools":
@@ -290,8 +290,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 try:
                     gen = tool(**args)
-                    registry.store_task(call_id, gen, tool_name)
-                    registry.mark_consumed(call_id)
+                    await registry.store_task(call_id, gen, tool_name)
+                    await registry.mark_consumed(call_id)
                     await safe_send_json({
                         "type": "task_started", 
                         "call_id": call_id, 
@@ -308,6 +308,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "request_id": request_id,
                         "payload": {"detail": str(e)}
                     })
+                    # If store_task failed but gen was created, it's handled in store_task
             
             elif msg_type == "stop":
                 call_id = message.get("call_id")
@@ -337,7 +338,7 @@ async def websocket_endpoint(websocket: WebSocket):
             elif msg_type == "input":
                 call_id = message.get("call_id")
                 value = message.get("value")
-                if input_manager.provide_input(call_id, value):
+                if await input_manager.provide_input(call_id, value):
                     logger.info(f"Input received for task {call_id}", extra={"call_id": call_id})
                     # Command acknowledgment
                     await safe_send_json({
@@ -408,7 +409,7 @@ async def run_ws_generator(send_fn, call_id: str, tool_name: str, gen, active_ta
         TASK_DURATION.labels(tool_name=tool_name).observe(duration)
         TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
         
-        registry.remove_task(call_id)
+        await registry.remove_task(call_id)
         active_tasks.pop(call_id, None)
         
         logger.info(f"WS task finished: {call_id} (duration: {duration:.2f}s, status: {status})")
