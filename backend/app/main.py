@@ -234,7 +234,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             try:
-                # Add a 60-second timeout for the heartbeat (client pings every 30s)
+                # Add a heartbeat timeout (client pings periodically)
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=WS_HEARTBEAT_TIMEOUT)
                 message = json.loads(data)
                 if not isinstance(message, dict):
@@ -245,7 +245,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     })
                     continue
             except asyncio.TimeoutError:
-                logger.warning("WebSocket heartbeat timeout (60s exceeded)")
+                logger.warning("WebSocket heartbeat timeout exceeded")
                 break
             except json.JSONDecodeError:
                 logger.warning("Received invalid JSON over WebSocket")
