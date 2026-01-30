@@ -15,10 +15,14 @@ from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
 from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
 
-# Configuration Constants
+# Configuration Constants for WebSocket and Task Lifecycle Management
+# WS_HEARTBEAT_TIMEOUT: Max time to wait for a client message (ping/pong) before closing connection.
 WS_HEARTBEAT_TIMEOUT = 60.0
+# CLEANUP_INTERVAL: Frequency (seconds) of the background stale task cleanup task.
 CLEANUP_INTERVAL = 60.0
+# STALE_TASK_MAX_AGE: Maximum age (seconds) of an unconsumed task before it is cleaned up.
 STALE_TASK_MAX_AGE = 300.0
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Start stale task cleanup in the background
