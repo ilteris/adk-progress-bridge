@@ -193,3 +193,11 @@ async def interactive_task():
         yield ProgressPayload(step="Aborting", pct=100, log=f"User said {user_response}, stopping.")
         await asyncio.sleep(0.5)
         yield {"status": "aborted", "message": "Task aborted by user."}
+
+@progress_tool(name="large_payload_tool")
+async def large_payload_tool(**kwargs):
+    """
+    A tool that accepts any arguments, used for testing large payloads.
+    """
+    yield ProgressPayload(step="Received large payload", pct=100, log=f"Args keys: {list(kwargs.keys())}")
+    yield {"status": "success", "received_keys": len(kwargs)}
