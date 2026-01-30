@@ -1,6 +1,12 @@
+import sys
+import os
 import pytest
 import asyncio
 from fastapi.testclient import TestClient
+
+# Add the project root to sys.path to import backend
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from backend.app.main import app
 from backend.app.bridge import registry
 
@@ -18,16 +24,6 @@ def test_non_generator_tool_fail():
     # It should fail with 400 because store_task raises TypeError
     assert response.status_code == 400
     assert "did not return an async generator" in response.json()["detail"]
-    
-    # Explicitly handle the un-awaited coroutine to avoid RuntimeWarning in tests
-    # This is a bit of a hack but since we are testing failure to start a non-gen tool,
-    # the coroutine returned by the tool is never used.
-    try:
-        # We don't have easy access to the coroutine object here because it was created inside start_task
-        # but store_task failed. However, the error message in test confirms it was caught.
-        pass
-    except:
-        pass
 
 @pytest.mark.asyncio
 async def test_websocket_non_generator_fail():

@@ -42,6 +42,10 @@ Manages bi-directional input for tasks that require user interaction.
         *   Response: `{"type": "stop_success", "call_id": "...", "request_id": "..."}`
     *   Message `{"type": "input", "call_id": "...", "value": "...", "request_id": "..."}` provides interactive input.
         *   Response: `{"type": "input_success", "call_id": "...", "request_id": "..."}`
+    *   **Heartbeat/Maintenance:**
+        *   Message `{"type": "ping"}` -> Server responds with `{"type": "pong"}`.
+        *   **WS_HEARTBEAT_TIMEOUT**: 60 seconds.
+        *   **WS_MESSAGE_SIZE_LIMIT**: 1MB.
 
 ## 3. Frontend Specification (Vue.js)
 
@@ -89,6 +93,8 @@ The WebSocket layer allows for:
 3.  **Explicit Cancellation:** Direct `stop` messages over the socket are handled instantly with success confirmation.
 4.  **Connection Awareness:** The server automatically closes generators if the client disconnects.
 5.  **Native Interaction:** Interactive input is sent directly back over the same socket.
+6.  **Automatic Reconnection**: Frontend implements exponential backoff for WebSocket reconnection.
+7.  **Message Buffering**: Frontend buffers messages if they arrive before the subscriber is ready.
 
 ### 4.2 Security
 All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` header or `api_key` query parameter.
