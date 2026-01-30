@@ -4,7 +4,7 @@
   "role": "Architect",
   "description": "ULTRA-STRENGTHENED: WebSocket integration is fully functional with bi-directional support, robust concurrency management, and automatic reconnection. Added a thread-safe send lock to prevent concurrent WebSocket writes. Fixed a bug where request_id was missing in error responses for failed task starts. Added robust JSON parsing to the WS loop and handled non-dictionary/unknown message types to prevent crashes. IMPLEMENTED FRONTEND RECONNECTION: Added exponential backoff reconnection logic to WebSocketManager and \"reconnecting\" status support to useAgentStream composable. EXTENDED PROTOCOL (2026-01-27): Added list_tools functionality to both REST and WebSocket. Added success acknowledgements (stop_success, input_success) for command correlation. Improved structured logging in WebSocket handlers. Updated frontend to dynamically fetch tools from the backend via either REST or WebSocket. Added E2E tests for WebSocket Stop and dynamic tool fetching. Verified with 61 backend tests (including stress test), 15 frontend unit tests, and 5 Playwright E2E tests (81 total). System is ultra-robust and production-ready. REFACTOR (2026-01-30): Move hardcoded WS heartbeat timeout to WS_HEARTBEAT_TIMEOUT constant in main.py for improved maintainability and architectural clarity. EXTENDED REFACTOR (2026-01-30): Also moved hardcoded heartbeat interval, reconnect attempts, and request timeout in frontend useAgentStream.ts to constants. Moved cleanup interval and stale task max age in main.py to constants. FINAL POLISH (2026-01-30): Moved hardcoded exponential backoff delay values in frontend to constants (WS_RECONNECT_INITIAL_DELAY, WS_RECONNECT_MAX_DELAY). ULTIMATE ROBUSTNESS (2026-01-30): Implemented message buffering in WebSocketManager to prevent race conditions where progress events arrive before the frontend has subscribed to a task. Verified with all 81 tests passing. FINAL AUDIT & SIGN-OFF (2026-01-30): Performed one final comprehensive end-to-end audit.",
   "id": "websocket-integration",
-  "result": "Final Handover PR: https://github.com/ilteris/adk-progress-bridge/pull/97",
+  "result": "Final Handover PR: https://github.com/ilteris/adk-progress-bridge/pull/97 | Extra Robustness PR: https://github.com/ilteris/adk-progress-bridge/pull/99",
   "history": [
     {
       "timestamp": "2026-01-30T08:35:00Z",
@@ -34,6 +34,12 @@
       "event": "task_verified",
       "actor": "Worker-Adele-Late-Night-Signoff",
       "message": "LATE NIGHT FINAL VERIFICATION: Re-verified entire system one last time. All 86 tests (66 backend, 15 unit, 5 E2E) passed. Checked constants in main.py and useAgentStream.ts. Verified thread-safety in bridge.py. WebSocket integration is 100% complete and robust."
+    },
+    {
+      "timestamp": "2026-01-30T23:30:00Z",
+      "event": "task_verified",
+      "actor": "Worker-Adele-Extra-Robustness",
+      "message": "EXTRA ROBUSTNESS VERIFICATION: Added more edge-case tests to tests/test_ws_robustness.py (missing tool_name, call_id, value). All 70 backend tests passed. Total 90 tests passing (70 backend, 15 unit, 5 E2E). PR #99 created."
     }
   ]
 }
