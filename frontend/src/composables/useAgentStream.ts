@@ -240,11 +240,17 @@ export class WebSocketManager {
     this.subscribers.delete(callId)
   }
 
-  send(data: any) {
+  /**
+   * Sends a message over the WebSocket if it's open.
+   * @returns true if the message was sent, false otherwise.
+   */
+  send(data: any): boolean {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data))
+      return true
     } else {
         console.warn('[WS] Cannot send message, WebSocket not open')
+        return false
     }
   }
 
@@ -260,7 +266,12 @@ export class WebSocketManager {
           }, timeoutMs)
 
           this.requestCallbacks.set(requestId, { resolve, reject, timeout })
-          this.send(data)
+          const sent = this.send(data)
+          if (!sent) {
+              clearTimeout(timeout)
+              this.requestCallbacks.delete(requestId)
+              reject(new Error(`Failed to send ${data.type}: WebSocket not open`))
+          }
       })
   }
 
@@ -430,15 +441,21 @@ export function useAgentStream() {
   const stopTool = async () => {
     if (state.useWS && state.callId && state.isStreaming) {
       const requestId = Math.random().toString(36).substring(2, 11)
-      wsManager.send({
+      const sent = wsManager.send({
         type: 'stop',
         call_id: state.callId,
         request_id: requestId
       })
-      state.status = 'cancelled'
-      state.isStreaming = false
-      // We do NOT unsubscribe here, so we can receive stop_success and the final "Cancelled" progress event.
-      // handleEvent or reset will eventually unsubscribe.
+      if (sent) {
+        state.status = 'cancelled'
+        state.isStreaming = false
+        // We do NOT unsubscribe here, so we can receive stop_success and the final "Cancelled" progress event.
+      } else {
+          state.error = 'Failed to send stop command: WebSocket connection lost'
+          state.status = 'error'
+          state.isStreaming = false
+          reset()
+      }
     } else if (state.callId && state.isStreaming) {
       try {
         const headers: Record<string, string> = {}
@@ -468,12 +485,17 @@ export function useAgentStream() {
     if (state.callId && state.status === 'waiting_for_input') {
         if (state.useWS) {
             const requestId = Math.random().toString(36).substring(2, 11)
-            wsManager.send({
+            const sent = wsManager.send({
                 type: 'input',
                 call_id: state.callId,
                 value: value,
                 request_id: requestId
             })
+            if (!sent) {
+                state.error = 'Failed to send input: WebSocket connection lost'
+                state.status = 'error'
+                return
+            }
         } else {
             try {
                 const headers: Record<string, string> = { 'Content-Type': 'application/json' }
