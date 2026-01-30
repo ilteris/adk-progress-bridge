@@ -7,6 +7,10 @@ from fastapi.testclient import TestClient
 # Add the project root to sys.path to import backend
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Set API key for tests before importing app
+API_KEY = "test_secret_key"
+os.environ["BRIDGE_API_KEY"] = API_KEY
+
 from backend.app.main import app
 
 @pytest.mark.asyncio
@@ -15,7 +19,7 @@ async def test_websocket_list_tools():
     Tests that listing tools over WebSocket works.
     """
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         req_id = "list_req_1"
         websocket.send_json({
             "type": "list_tools",
@@ -35,7 +39,7 @@ async def test_rest_list_tools():
     Tests that listing tools over REST works.
     """
     client = TestClient(app)
-    response = client.get("/tools")
+    response = client.get(f"/tools?api_key={API_KEY}")
     assert response.status_code == 200
     tools = response.json()
     assert isinstance(tools, list)
@@ -47,7 +51,7 @@ async def test_websocket_stop_acknowledgement():
     Tests that stopping a task over WebSocket returns a stop_success acknowledgement.
     """
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         # Start a task
         websocket.send_json({
             "type": "start",
@@ -89,7 +93,7 @@ async def test_websocket_input_acknowledgement():
     Tests that providing input over WebSocket returns an input_success acknowledgement.
     """
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         # Start interactive task
         websocket.send_json({
             "type": "start",
