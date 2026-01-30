@@ -18,13 +18,13 @@ from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
 # WS_HEARTBEAT_TIMEOUT: Max time to wait for a client message (ping/pong) before closing connection.
-WS_HEARTBEAT_TIMEOUT = 60.0
+WS_HEARTBEAT_TIMEOUT = float(os.getenv("WS_HEARTBEAT_TIMEOUT", "60.0"))
 # CLEANUP_INTERVAL: Frequency (seconds) of the background stale task cleanup task.
-CLEANUP_INTERVAL = 60.0
+CLEANUP_INTERVAL = float(os.getenv("CLEANUP_INTERVAL", "60.0"))
 # STALE_TASK_MAX_AGE: Maximum age (seconds) of an unconsumed task before it is cleaned up.
-STALE_TASK_MAX_AGE = 300.0
+STALE_TASK_MAX_AGE = float(os.getenv("STALE_TASK_MAX_AGE", "300.0"))
 # WS_MESSAGE_SIZE_LIMIT: Maximum allowed size (bytes) for an incoming WebSocket message.
-WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
+WS_MESSAGE_SIZE_LIMIT = int(os.getenv("WS_MESSAGE_SIZE_LIMIT", str(1024 * 1024)))  # 1MB
 
 # CORS Configuration
 # Defaults to "*" for development but can be restricted via environment variable.
