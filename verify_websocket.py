@@ -3,6 +3,7 @@ import websockets
 import json
 import os
 import sys
+import time
 
 async def run_ws_full():
     api_key = os.getenv("BRIDGE_API_KEY", "")
@@ -117,6 +118,50 @@ async def run_ws_interactive():
     except Exception as e:
         print(f"WS Error in test_ws_interactive: {e}")
 
+async def run_ws_robustness():
+    api_key = os.getenv("BRIDGE_API_KEY", "")
+    url = "ws://localhost:8000/ws"
+    if api_key:
+        url += f"?api_key={api_key}"
+
+    try:
+        async with websockets.connect(url) as websocket:
+            print("\n--- Testing Robustness & Error Handling ---")
+            
+            # 1. Test ping/pong
+            print("Sending ping...")
+            await websocket.send(json.dumps({"type": "ping"}))
+            msg = await websocket.recv()
+            data = json.loads(msg)
+            print(f"Received: {data['type']}")
+            
+            # 2. Test Invalid JSON
+            print("Sending invalid JSON...")
+            await websocket.send("not-json")
+            msg = await websocket.recv()
+            data = json.loads(msg)
+            print(f"Received error: {data['payload']['detail']}")
+            
+            # 3. Test Unknown Message Type
+            print("Sending unknown message type...")
+            await websocket.send(json.dumps({"type": "unknown_cmd", "request_id": "req-unknown"}))
+            msg = await websocket.recv()
+            data = json.loads(msg)
+            print(f"Received error: {data['payload']['detail']}")
+            
+            # 4. Test Message Size Limit
+            print("Sending message too large...")
+            large_data = "x" * (1024 * 1024 + 100) # > 1MB
+            await websocket.send(large_data)
+            msg = await websocket.recv()
+            data = json.loads(msg)
+            print(f"Received error: {data['payload']['detail']}")
+            
+            print("Robustness verification SUCCESS")
+            
+    except Exception as e:
+        print(f"WS Error in run_ws_robustness: {e}")
+
 async def run_ws_list_tools():
     api_key = os.getenv("BRIDGE_API_KEY", "")
     url = "ws://localhost:8000/ws"
@@ -142,10 +187,59 @@ async def run_ws_list_tools():
     except Exception as e:
         print(f"WS Error in run_ws_list_tools: {e}")
 
+async def run_ws_stress_concurrency():
+    api_key = os.getenv("BRIDGE_API_KEY", "")
+    url = "ws://localhost:8000/ws"
+    if api_key:
+        url += f"?api_key={api_key}"
+
+    print("\n--- Testing Concurrency Stress (v162) ---")
+    try:
+        async with websockets.connect(url) as websocket:
+            num_tasks = 10
+            print(f"Starting {num_tasks} tasks simultaneously over ONE WebSocket connection...")
+            
+            for i in range(num_tasks):
+                start_msg = {
+                    "type": "start",
+                    "tool_name": "long_audit",
+                    "args": {"duration": 2},
+                    "request_id": f"stress-{i}"
+                }
+                await websocket.send(json.dumps(start_msg))
+            
+            results_received = 0
+            tasks_started = 0
+            
+            async for message in websocket:
+                data = json.loads(message)
+                mtype = data['type']
+                
+                if mtype == 'task_started':
+                    tasks_started += 1
+                elif mtype == 'result':
+                    results_received += 1
+                elif mtype == 'error':
+                    print(f"Error during stress test: {data['payload']}")
+                
+                if results_received == num_tasks:
+                    print(f"All {num_tasks} concurrent tasks completed successfully!")
+                    break
+            
+            if tasks_started == num_tasks and results_received == num_tasks:
+                print("Concurrency stress verification SUCCESS")
+            else:
+                print(f"Concurrency stress verification FAILED: started={tasks_started}, finished={results_received}")
+                
+    except Exception as e:
+        print(f"WS Error in run_ws_stress_concurrency: {e}")
+
 async def main():
     await run_ws_full()
     await run_ws_interactive()
     await run_ws_list_tools()
+    await run_ws_robustness()
+    await run_ws_stress_concurrency()
 
 if __name__ == "__main__":
     asyncio.run(main())
