@@ -9,7 +9,7 @@ interface ProgressPayload {
 
 interface AgentEvent {
   call_id: string
-  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list'
+  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'connected' | 'stop_success' | 'input_success' | 'tools_list'
   payload: any
   timestamp?: number
   request_id?: string
@@ -96,6 +96,7 @@ export class WebSocketManager {
         this.startHeartbeat()
         this.reconnectAttempts = 0
         this.connectionPromise = null
+        this.notifyStatusToAll('connected')
         resolve()
       }
 
@@ -162,7 +163,7 @@ export class WebSocketManager {
     return this.connectionPromise
   }
 
-  private notifyStatusToAll(type: 'reconnecting') {
+  private notifyStatusToAll(type: 'reconnecting' | 'connected') {
     for (const [callId, callback] of this.subscribers.entries()) {
         callback({
             call_id: callId,
@@ -522,6 +523,12 @@ export function useAgentStream() {
         state.status = 'reconnecting'
         state.isConnected = false
         state.logs.push('WebSocket connection lost. Reconnecting...')
+    } else if (data.type === 'connected') {
+        state.isConnected = true
+        if (state.status === 'reconnecting') {
+            state.status = 'connected'
+            state.logs.push('WebSocket connection restored.')
+        }
     } else if (data.type === 'stop_success') {
         state.logs.push('Stop command acknowledged by server.')
         // stop_success is the final acknowledgement for a stop command
