@@ -23,6 +23,8 @@ WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 # STALE_TASK_MAX_AGE: Maximum age (seconds) of an unconsumed task before it is cleaned up.
 STALE_TASK_MAX_AGE = 300.0
+# WS_MESSAGE_SIZE_LIMIT: Maximum allowed size (bytes) for an incoming WebSocket message.
+WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 
 # CORS Configuration
 # Defaults to "*" for development but can be restricted via environment variable.
@@ -245,6 +247,16 @@ async def websocket_endpoint(websocket: WebSocket):
             try:
                 # Add a heartbeat timeout (client pings periodically)
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=WS_HEARTBEAT_TIMEOUT)
+                
+                # Check message size
+                if len(data) > WS_MESSAGE_SIZE_LIMIT:
+                    logger.warning(f"WebSocket message exceeded size limit: {len(data)} bytes")
+                    await safe_send_json({
+                        "type": "error",
+                        "payload": {"detail": f"Message too large (max {WS_MESSAGE_SIZE_LIMIT} bytes)"}
+                    })
+                    continue
+
                 message = json.loads(data)
                 if not isinstance(message, dict):
                     logger.warning(f"Received non-dictionary message over WebSocket: {type(message)}")
