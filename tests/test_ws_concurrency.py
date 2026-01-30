@@ -8,6 +8,10 @@ from fastapi.testclient import TestClient
 # Add the project root to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Set API key for tests before importing app
+API_KEY = "test_secret_key"
+os.environ["BRIDGE_API_KEY"] = API_KEY
+
 from backend.app.main import app
 
 def test_websocket_ping_pong():
@@ -15,7 +19,7 @@ def test_websocket_ping_pong():
     Tests that the WebSocket endpoint responds to ping with pong.
     """
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         websocket.send_json({"type": "ping"})
         data = websocket.receive_json()
         assert data["type"] == "pong"
@@ -25,7 +29,7 @@ def test_websocket_concurrency():
     Test that multiple tasks can run concurrently over a single WebSocket connection.
     """
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         num_tasks = 5
         call_ids = []
         
@@ -73,7 +77,7 @@ def test_websocket_interleaved_stop():
     Test starting two tasks and stopping one while the other continues.
     """
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         # Start Task A
         websocket.send_json({
             "type": "start",
@@ -126,7 +130,7 @@ def test_websocket_concurrent_input():
     Tests that multiple tasks can wait for and receive input concurrently.
     """
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         # Start 2 interactive tasks
         call_ids = []
         for i in range(2):

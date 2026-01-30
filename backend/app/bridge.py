@@ -50,7 +50,8 @@ class ProgressEvent(BaseModel):
         description="The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, 'error' signifies a failure, and 'input_request' prompts the user for information.",
         examples=["progress", "result", "error", "input_request"]
     )
-    payload: Union[ProgressPayload, Dict[str, Any]] = Field(
+    timestamp: float = Field(default_factory=time.time, description="Unix timestamp of when the event was created.")
+    payload: Any = Field(
         ..., 
         description="The actual data payload. Contains a ProgressPayload object for 'progress' types, or the final result/error details.",
     )
@@ -66,7 +67,11 @@ class InputManager:
             self._pending_inputs[call_id] = future
         
         logger.info(f"Task {call_id} waiting for input: {prompt}", extra={"call_id": call_id, "prompt": prompt})
-        return await future
+        try:
+            return await future
+        finally:
+            with self._lock:
+                self._pending_inputs.pop(call_id, None)
 
     def provide_input(self, call_id: str, value: Any):
         with self._lock:
@@ -83,7 +88,7 @@ input_manager = InputManager()
 class ToolRegistry:
     def __init__(self):
         self._tools: Dict[str, Callable] = {}
-        # Stores call_id -> {"gen": gen, "tool_name": str, "created_at": timestamp, "consumed": bool}
+        # Stores call_id -> {"gen": gen, "tool_name": str, "created_at": timestamp, "consumed": bool, "running_task": Optional[asyncio.Task]}
         self._active_tasks: Dict[str, Dict[str, Any]] = {}
         self._lock = threading.Lock()
 
@@ -96,7 +101,7 @@ class ToolRegistry:
                 logger.warning(f"Tool {tool_name} is not an async generator function. It might fail during execution.")
             
             # Apply pydantic validation to the tool
-            validated_func = validate_call(func)
+            from pydantic import ConfigDict; validated_func = validate_call(func, config=ConfigDict(extra='ignore'))
             with self._lock:
                 self._tools[tool_name] = validated_func
             logger.info(f"Tool registered: {tool_name}", extra={"tool_name": tool_name})
@@ -117,14 +122,24 @@ class ToolRegistry:
             raise TypeError(f"Tool {tool_name} did not return an async generator. Got {type(gen)}")
 
         with self._lock:
+            if call_id in self._active_tasks:
+                raise ValueError(f"Task with call_id {call_id} already exists")
             self._active_tasks[call_id] = {
                 "gen": gen,
                 "tool_name": tool_name,
                 "created_at": time.time(),
-                "consumed": False
+                "consumed": False,
+                "running_task": None
             }
             ACTIVE_TASKS.labels(tool_name=tool_name).inc()
         logger.debug(f"Task stored in registry: {call_id}", extra={"call_id": call_id, "tool_name": tool_name})
+
+    def set_task_object(self, call_id: str, task: asyncio.Task):
+        """Sets the running asyncio task for an active session."""
+        with self._lock:
+            if call_id in self._active_tasks:
+                self._active_tasks[call_id]["running_task"] = task
+                logger.debug(f"Task object set for {call_id}", extra={"call_id": call_id})
 
     def get_task(self, call_id: str) -> Optional[Dict[str, Any]]:
         """Retrieves the task data and marks it as consumed."""
@@ -167,6 +182,11 @@ class ToolRegistry:
             logger.info(f"Cleaning up {len(tasks)} active tasks during shutdown")
         
         for call_id, task_data in tasks:
+            running_task = task_data.get("running_task")
+            if running_task and not running_task.done():
+                running_task.cancel()
+                continue # The task's finally block will handle cleanup
+
             gen = task_data["gen"]
             tool_name = task_data["tool_name"]
             try:
@@ -184,17 +204,22 @@ class ToolRegistry:
         with self._lock:
             for call_id, task_data in self._active_tasks.items():
                 if not task_data["consumed"] and now - task_data["created_at"] > max_age_seconds:
-                    stale_tasks.append((call_id, task_data["gen"], task_data["tool_name"]))
+                    stale_tasks.append((call_id, task_data))
         
         if not stale_tasks:
             return
 
         logger.info(f"Cleaning up {len(stale_tasks)} stale tasks")
-        for call_id, gen, tool_name in stale_tasks:
+        for call_id, task_data in stale_tasks:
+            running_task = task_data.get("running_task")
+            if running_task and not running_task.done():
+                running_task.cancel()
+                continue
+
             try:
-                await gen.aclose()
+                await task_data["gen"].aclose()
             except Exception as e:
-                logger.error(f"Error closing stale generator {call_id}: {e}", extra={"call_id": call_id, "tool_name": tool_name})
+                logger.error(f"Error closing stale generator {call_id}: {e}", extra={"call_id": call_id, "tool_name": task_data["tool_name"]})
             finally:
                 self.remove_task(call_id)
                 STALE_TASKS_CLEANED_TOTAL.inc()

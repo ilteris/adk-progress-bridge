@@ -8,6 +8,10 @@ from fastapi.testclient import TestClient
 # Add the project root to sys.path to import backend
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Set API key for tests before importing app
+API_KEY = "test_secret_key"
+os.environ["BRIDGE_API_KEY"] = API_KEY
+
 from backend.app.main import app
 from backend.app.bridge import registry
 
@@ -17,7 +21,7 @@ def test_websocket_marks_consumed():
     in the registry to prevent it from being reaped by the stale cleanup loop.
     """
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         # 1. Start a task
         websocket.send_json({
             "type": "start",
@@ -46,7 +50,7 @@ def test_websocket_not_reaped_by_cleanup():
     Verifies that a WebSocket task is NOT reaped by cleanup_stale_tasks.
     """
     client = TestClient(app)
-    with client.websocket_connect("/ws") as websocket:
+    with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
         # 1. Start a task
         websocket.send_json({
             "type": "start",
