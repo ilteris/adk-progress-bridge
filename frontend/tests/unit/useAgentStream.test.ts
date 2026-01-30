@@ -3,6 +3,7 @@ import { useAgentStream, wsManager } from '../../src/composables/useAgentStream'
 
 let lastWebSocket: MockWebSocket | null = null
 let wsInstanceCount = 0
+let uuidCounter = 0
 
 class MockWebSocket extends EventTarget {
   static CONNECTING = 0
@@ -37,7 +38,7 @@ class MockWebSocket extends EventTarget {
         setTimeout(() => {
             this.triggerMessage({
                 type: 'task_started',
-                call_id: 'ws-call-id-' + parsed.tool_name,
+                call_id: parsed.call_id || ('ws-call-id-' + parsed.tool_name),
                 request_id: parsed.request_id
             })
         }, 10)
@@ -90,6 +91,8 @@ global.WebSocket = MockWebSocket as any
 
 describe('useAgentStream', () => {
   beforeEach(() => {
+    uuidCounter = 0
+    vi.stubGlobal('crypto', { randomUUID: () => `ws-call-id-tool_${++uuidCounter}` })
     lastWebSocket = null
     wsInstanceCount = 0
     wsManager.reset()
@@ -147,20 +150,20 @@ describe('useAgentStream', () => {
       await vi.waitFor(() => expect(state.status).toBe('connected'))
 
       lastWebSocket?.triggerMessage({
-        call_id: 'ws-call-id-test_tool',
+        call_id: 'ws-call-id-tool_1',
         type: 'progress',
         payload: { step: 'Started', pct: 0 }
       })
 
       lastWebSocket?.triggerMessage({
-        call_id: 'ws-call-id-test_tool',
+        call_id: 'ws-call-id-tool_1',
         type: 'result',
         payload: { ok: true }
       })
 
       expect(state.isConnected).toBe(true)
       expect(state.status).toBe('completed')
-      expect(state.callId).toBe('ws-call-id-test_tool')
+      expect(state.callId).toBe('ws-call-id-tool_1')
     })
 
     it('reuses existing WebSocket connection', async () => {
@@ -191,7 +194,7 @@ describe('useAgentStream', () => {
       runTool('test_tool')
       await vi.waitFor(() => expect(state.status).toBe('connected'))
       
-      lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-test_tool', type: 'progress', payload: { step: 'Started', pct: 0 } })
+      lastWebSocket?.triggerMessage({ call_id: 'ws-call-id-tool_1', type: 'progress', payload: { step: 'Started', pct: 0 } })
       
       lastWebSocket?.triggerClose()
       
@@ -214,7 +217,7 @@ describe('useAgentStream', () => {
       
       // Should still be subscribed until stop_success
       lastWebSocket?.triggerMessage({
-        call_id: 'ws-call-id-test_tool',
+        call_id: 'ws-call-id-tool_1',
         type: 'stop_success',
         payload: {},
         request_id: 'req-123'
@@ -233,7 +236,7 @@ describe('useAgentStream', () => {
         const unsubscribeSpy = vi.spyOn(wsManager, 'unsubscribe')
         reset()
         
-        expect(unsubscribeSpy).toHaveBeenCalledWith('ws-call-id-test_tool')
+        expect(unsubscribeSpy).toHaveBeenCalledWith('ws-call-id-tool_1')
         expect(state.callId).toBeNull()
     })
   })
