@@ -1,6 +1,16 @@
+import sys
+import os
 import pytest
 import asyncio
 from fastapi.testclient import TestClient
+
+# Add the project root to sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Set API key for tests before importing app
+API_KEY = "test_secret_key"
+os.environ["BRIDGE_API_KEY"] = API_KEY
+
 from backend.app.main import app
 from backend.app.bridge import registry, progress_tool, ProgressPayload
 
@@ -11,9 +21,8 @@ async def test_ws_non_dict_result():
         yield ProgressPayload(step="test", pct=50)
         yield "Final String Result"
 
-    from fastapi.testclient import TestClient
     with TestClient(app) as client:
-        with client.websocket_connect("/ws?api_key=test-key") as websocket:
+        with client.websocket_connect(f"/ws?api_key={API_KEY}") as websocket:
             websocket.send_json({"type": "start", "tool_name": "non_dict_tool"})
             
             # task_started
