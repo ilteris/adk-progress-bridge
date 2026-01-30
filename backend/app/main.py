@@ -2,6 +2,7 @@ import asyncio
 import json
 import uuid
 import time
+import os
 from typing import Dict, List, Optional, Any
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
@@ -22,6 +23,10 @@ WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 # STALE_TASK_MAX_AGE: Maximum age (seconds) of an unconsumed task before it is cleaned up.
 STALE_TASK_MAX_AGE = 300.0
+
+# CORS Configuration
+# Defaults to "*" for development but can be restricted via environment variable.
+ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -52,7 +57,7 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
