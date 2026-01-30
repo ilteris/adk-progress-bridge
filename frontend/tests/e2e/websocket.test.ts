@@ -92,13 +92,42 @@ test('websocket dynamic tool fetching', async ({ page }) => {
   
   // Initially on SSE (REST fetch)
   const toolSelect = page.locator('#toolSelect');
-  // Real backend has 7 tools
-  await expect(toolSelect.locator('option')).toHaveCount(7);
+  // Real backend now has 8 tools (added dynamic_echo_tool)
+  await expect(toolSelect.locator('option')).toHaveCount(8);
   
   // Toggle to WS
   await page.locator('#useWS').check();
   
   // Should still have options (re-fetched via WS)
-  await expect(toolSelect.locator('option')).toHaveCount(7);
+  await expect(toolSelect.locator('option')).toHaveCount(8);
   await expect(toolSelect).toContainText('Long Audit');
+});
+
+test('websocket parameter flow', async ({ page }) => {
+  await page.goto('http://localhost:5173');
+  
+  // Enable WebSockets
+  await page.locator('#useWS').check();
+  
+  // Select Dynamic Echo Tool
+  await page.locator('#toolSelect').selectOption('dynamic_echo_tool');
+  
+  // Fill custom message and repeat
+  const msgInput = page.locator('#echoMessage');
+  const repeatInput = page.locator('#echoRepeat');
+  
+  await msgInput.fill('E2E Test Message');
+  await repeatInput.fill('2');
+  
+  // Start task
+  await page.getByRole('button', { name: 'Start Task' }).click();
+  
+  // Wait for progress
+  await expect(page.getByText('Echoing 1/2')).toBeVisible();
+  await expect(page.getByText('Message: E2E Test Message')).toBeVisible();
+  
+  // Wait for completion
+  await expect(page.locator('.alert-success')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('pre')).toContainText('"echoed": "E2E Test Message"');
+  await expect(page.locator('pre')).toContainText('"count": 2');
 });

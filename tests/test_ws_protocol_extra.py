@@ -100,3 +100,32 @@ def test_websocket_start_invalid_args():
         assert data["request_id"] == "req_invalid_args"
         # FastAPI/Pydantic validation error or tool initialization error
         assert "payload" in data
+
+def test_websocket_dynamic_echo():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "type": "start",
+            "tool_name": "dynamic_echo_tool",
+            "args": {"message": "Test Echo", "repeat": 2},
+            "request_id": "req_echo"
+        })
+        
+        data = websocket.receive_json()
+        assert data["type"] == "task_started"
+        
+        # Receive progress
+        p1 = websocket.receive_json()
+        assert p1["type"] == "progress"
+        assert p1["payload"]["step"] == "Echoing 1/2"
+        assert p1["payload"]["log"] == "Message: Test Echo"
+        
+        p2 = websocket.receive_json()
+        assert p2["type"] == "progress"
+        assert p2["payload"]["step"] == "Echoing 2/2"
+        
+        # Receive result
+        res = websocket.receive_json()
+        assert res["type"] == "result"
+        assert res["payload"]["echoed"] == "Test Echo"
+        assert res["payload"]["count"] == 2

@@ -201,3 +201,20 @@ async def large_payload_tool(**kwargs):
     """
     yield ProgressPayload(step="Received large payload", pct=100, log=f"Args keys: {list(kwargs.keys())}")
     yield {"status": "success", "received_keys": len(kwargs)}
+
+@progress_tool(name="dynamic_echo_tool")
+async def dynamic_echo_tool(message: str = "Hello", repeat: int = 3):
+    """
+    Echoes a message multiple times with progress.
+    """
+    for i in range(repeat):
+        pct = int(((i + 1) / repeat) * 100)
+        logger.info(f"Echoing: {message} ({i+1}/{repeat})")
+        yield ProgressPayload(
+            step=f"Echoing {i+1}/{repeat}",
+            pct=pct,
+            log=f"Message: {message}"
+        )
+        await asyncio.sleep(0.5)
+    
+    yield {"status": "success", "echoed": message, "count": repeat}

@@ -7,6 +7,10 @@ const auditDuration = ref(10)
 const docCount = ref(3)
 const reportCount = ref(4)
 const failAt = ref(50)
+const scanTarget = ref('all')
+const echoMessage = ref('Hello Progress Bridge!')
+const echoRepeat = ref(5)
+const largePayloadCount = ref(10)
 const selectedTool = ref('long_audit')
 const userInput = ref('')
 const availableTools = ref<{ id: string, name: string }[]>([])
@@ -52,6 +56,15 @@ const startTask = () => {
     args = { reports: reportCount.value }
   } else if (selectedTool.value === 'brittle_process') {
     args = { fail_at: failAt.value }
+  } else if (selectedTool.value === 'security_scan') {
+    args = { target: scanTarget.value }
+  } else if (selectedTool.value === 'dynamic_echo_tool') {
+    args = { message: echoMessage.value, repeat: echoRepeat.value }
+  } else if (selectedTool.value === 'large_payload_tool') {
+    // Generate some keys for testing
+    for (let i = 0; i < largePayloadCount.value; i++) {
+      args[`key_${i}`] = `value_${i}`
+    }
   }
   
   runTool(selectedTool.value, args)
@@ -152,6 +165,54 @@ const handleReset = () => {
                 min="0" 
                 max="100"
                 step="10"
+                :disabled="state.isStreaming"
+              >
+            </div>
+
+            <div class="col-md-4" v-if="selectedTool === 'security_scan'">
+              <label for="scanTarget" class="form-label">Scan Target:</label>
+              <input 
+                type="text" 
+                id="scanTarget" 
+                v-model="scanTarget" 
+                class="form-control" 
+                :disabled="state.isStreaming"
+              >
+            </div>
+
+            <div class="col-md-4" v-if="selectedTool === 'dynamic_echo_tool'">
+              <label for="echoMessage" class="form-label">Message:</label>
+              <input 
+                type="text" 
+                id="echoMessage" 
+                v-model="echoMessage" 
+                class="form-control" 
+                :disabled="state.isStreaming"
+              >
+            </div>
+
+            <div class="col-md-2" v-if="selectedTool === 'dynamic_echo_tool'">
+              <label for="echoRepeat" class="form-label">Repeat:</label>
+              <input 
+                type="number" 
+                id="echoRepeat" 
+                v-model.number="echoRepeat" 
+                class="form-control" 
+                min="1" 
+                max="20"
+                :disabled="state.isStreaming"
+              >
+            </div>
+
+            <div class="col-md-4" v-if="selectedTool === 'large_payload_tool'">
+              <label for="payloadCount" class="form-label">Keys to send:</label>
+              <input 
+                type="number" 
+                id="payloadCount" 
+                v-model.number="largePayloadCount" 
+                class="form-control" 
+                min="1" 
+                max="100"
                 :disabled="state.isStreaming"
               >
             </div>
