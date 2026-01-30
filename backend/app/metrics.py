@@ -20,6 +20,11 @@ ACTIVE_TASKS = Gauge(
     ["tool_name"]
 )
 
+WS_CONNECTIONS_ACTIVE = Gauge(
+    "adk_ws_connections_active",
+    "Number of active WebSocket connections"
+)
+
 STALE_TASKS_CLEANED_TOTAL = Counter(
     "adk_stale_tasks_cleaned_total",
     "Total number of stale tasks cleaned up from the registry"
