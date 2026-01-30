@@ -3,7 +3,10 @@ import { ref, onMounted, watch } from 'vue'
 import { useAgentStream } from '../composables/useAgentStream'
 
 const { state, runTool, stopTool, sendInput, reset, fetchTools: fetchToolsFromComposable } = useAgentStream()
-const auditDuration = ref(5)
+const auditDuration = ref(10)
+const docCount = ref(3)
+const reportCount = ref(4)
+const failAt = ref(50)
 const selectedTool = ref('long_audit')
 const userInput = ref('')
 const availableTools = ref<{ id: string, name: string }[]>([])
@@ -40,7 +43,17 @@ onMounted(() => {
 })
 
 const startTask = () => {
-  const args = selectedTool.value === 'long_audit' ? { duration: auditDuration.value } : {}
+  let args = {}
+  if (selectedTool.value === 'long_audit') {
+    args = { duration: auditDuration.value }
+  } else if (selectedTool.value === 'multi_stage_analysis') {
+    args = { documents: docCount.value }
+  } else if (selectedTool.value === 'parallel_report_generation') {
+    args = { reports: reportCount.value }
+  } else if (selectedTool.value === 'brittle_process') {
+    args = { fail_at: failAt.value }
+  }
+  
   runTool(selectedTool.value, args)
 }
 
@@ -89,6 +102,7 @@ const handleReset = () => {
               </select>
             </div>
             
+            <!-- Dynamic Parameters -->
             <div class="col-md-4" v-if="selectedTool === 'long_audit'">
               <label for="duration" class="form-label">Duration (seconds):</label>
               <input 
@@ -98,6 +112,46 @@ const handleReset = () => {
                 class="form-control" 
                 min="1" 
                 max="60"
+                :disabled="state.isStreaming"
+              >
+            </div>
+
+            <div class="col-md-4" v-if="selectedTool === 'multi_stage_analysis'">
+              <label for="docs" class="form-label">Documents:</label>
+              <input 
+                type="number" 
+                id="docs" 
+                v-model.number="docCount" 
+                class="form-control" 
+                min="1" 
+                max="10"
+                :disabled="state.isStreaming"
+              >
+            </div>
+
+            <div class="col-md-4" v-if="selectedTool === 'parallel_report_generation'">
+              <label for="reports" class="form-label">Reports:</label>
+              <input 
+                type="number" 
+                id="reports" 
+                v-model.number="reportCount" 
+                class="form-control" 
+                min="1" 
+                max="10"
+                :disabled="state.isStreaming"
+              >
+            </div>
+
+            <div class="col-md-4" v-if="selectedTool === 'brittle_process'">
+              <label for="failAt" class="form-label">Fail at %:</label>
+              <input 
+                type="number" 
+                id="failAt" 
+                v-model.number="failAt" 
+                class="form-control" 
+                min="0" 
+                max="100"
+                step="10"
                 :disabled="state.isStreaming"
               >
             </div>
