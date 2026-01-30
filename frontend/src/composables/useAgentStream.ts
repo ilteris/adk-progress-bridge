@@ -38,19 +38,19 @@ const WS_BASE_URL = API_BASE_URL.replace('http', 'ws')
 // Support VITE_BRIDGE_API_KEY for authenticated requests
 const BRIDGE_API_KEY = import.meta.env.VITE_BRIDGE_API_KEY || ''
 
-// Configuration Constants for WebSocket behavior
+// Configuration Constants for WebSocket behavior (Configurable via Environment Variables)
 // WS_HEARTBEAT_INTERVAL: Frequency (ms) to send a ping to the server to keep connection alive.
-const WS_HEARTBEAT_INTERVAL = 30000
+const WS_HEARTBEAT_INTERVAL = Number(import.meta.env.VITE_WS_HEARTBEAT_INTERVAL) || 30000
 // WS_RECONNECT_MAX_ATTEMPTS: Maximum number of times to try reconnecting before giving up.
-const WS_RECONNECT_MAX_ATTEMPTS = 10
+const WS_RECONNECT_MAX_ATTEMPTS = Number(import.meta.env.VITE_WS_RECONNECT_MAX_ATTEMPTS) || 10
 // WS_REQUEST_TIMEOUT: Max time (ms) to wait for a response to start/list_tools commands.
-const WS_REQUEST_TIMEOUT = 5000
+const WS_REQUEST_TIMEOUT = Number(import.meta.env.VITE_WS_REQUEST_TIMEOUT) || 5000
 // WS_RECONNECT_INITIAL_DELAY: Initial delay (ms) for exponential backoff during reconnection.
-const WS_RECONNECT_INITIAL_DELAY = 1000
+const WS_RECONNECT_INITIAL_DELAY = Number(import.meta.env.VITE_WS_RECONNECT_INITIAL_DELAY) || 1000
 // WS_RECONNECT_MAX_DELAY: Maximum delay (ms) between reconnection attempts.
-const WS_RECONNECT_MAX_DELAY = 30000
+const WS_RECONNECT_MAX_DELAY = Number(import.meta.env.VITE_WS_RECONNECT_MAX_DELAY) || 30000
 // WS_BUFFER_SIZE: Number of messages to buffer if they arrive before a subscriber is ready.
-const WS_BUFFER_SIZE = 1000
+const WS_BUFFER_SIZE = Number(import.meta.env.VITE_WS_BUFFER_SIZE) || 1000
 
 /**
  * Shared WebSocket Manager to support multiple concurrent tasks over a single connection.
