@@ -20,7 +20,7 @@ export default defineConfig({
   // Run your local dev server before starting the tests
   webServer: [
     {
-      command: 'python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000',
+      command: '../venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000',
       cwd: '../backend',
       port: 8000,
       reuseExistingServer: !process.env.CI,
