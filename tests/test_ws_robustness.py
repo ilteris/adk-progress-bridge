@@ -78,7 +78,8 @@ def test_websocket_message_size_limit():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
         # Create a message larger than 1MB (default limit)
-        large_payload = "a" * (1024 * 1024 + 100)
+        from backend.app.main import WS_MESSAGE_SIZE_LIMIT
+        large_payload = "a" * (WS_MESSAGE_SIZE_LIMIT + 100)
         large_message = json.dumps({"type": "ping", "data": large_payload})
         
         websocket.send_text(large_message)
