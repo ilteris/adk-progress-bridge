@@ -15,6 +15,10 @@ from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
 from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
 
+# Configuration Constants
+WS_HEARTBEAT_TIMEOUT = 60.0
+CLEANUP_INTERVAL = 60.0
+STALE_TASK_MAX_AGE = 300.0
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Start stale task cleanup in the background
@@ -29,8 +33,8 @@ async def lifespan(app: FastAPI):
 async def cleanup_background_task():
     try:
         while True:
-            await asyncio.sleep(60)
-            await registry.cleanup_stale_tasks(max_age_seconds=300)
+            await asyncio.sleep(CLEANUP_INTERVAL)
+            await registry.cleanup_stale_tasks(max_age_seconds=STALE_TASK_MAX_AGE)
     except asyncio.CancelledError:
         logger.info("Background cleanup task cancelled")
 
@@ -231,7 +235,7 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             try:
                 # Add a 60-second timeout for the heartbeat (client pings every 30s)
-                data = await asyncio.wait_for(websocket.receive_text(), timeout=60.0)
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=WS_HEARTBEAT_TIMEOUT)
                 message = json.loads(data)
                 if not isinstance(message, dict):
                     logger.warning(f"Received non-dictionary message over WebSocket: {type(message)}")
