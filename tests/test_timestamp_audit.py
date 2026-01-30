@@ -86,8 +86,13 @@ def test_websocket_stop_and_input_timestamps():
             "request_id": "req_stop_1"
         })
         
-        data = websocket.receive_json() # task_started
-        call_id = data["call_id"]
+        # Wait for task_started
+        while True:
+            data = websocket.receive_json()
+            if data["type"] == "task_started":
+                assert data["request_id"] == "req_stop_1"
+                call_id = data["call_id"]
+                break
         
         websocket.send_json({
             "type": "stop",
@@ -110,8 +115,14 @@ def test_websocket_stop_and_input_timestamps():
             "request_id": "req_input_1"
         })
         
-        data = websocket.receive_json() # task_started
-        call_id = data["call_id"]
+        # We must wait for task_started specifically because there might be leftover messages
+        while True:
+            data = websocket.receive_json()
+            assert "timestamp" in data
+            if data["type"] == "task_started":
+                assert data["request_id"] == "req_input_1"
+                call_id = data["call_id"]
+                break
         
         # Wait for input_request
         while True:

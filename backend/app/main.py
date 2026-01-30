@@ -374,12 +374,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     if call_id in active_tasks:
                         logger.info(f"Stopping task {call_id} via WebSocket request", extra={"call_id": call_id})
                         active_tasks[call_id].cancel()
-                        # Final progress update
-                        await safe_send_json({
-                            "call_id": call_id,
-                            "type": "progress",
-                            "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}
-                        })
                         # Command acknowledgment
                         await safe_send_json({
                             "type": "stop_success",
