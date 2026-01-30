@@ -38,6 +38,11 @@ const WS_BASE_URL = API_BASE_URL.replace('http', 'ws')
 // Support VITE_BRIDGE_API_KEY for authenticated requests
 const BRIDGE_API_KEY = import.meta.env.VITE_BRIDGE_API_KEY || ''
 
+// Constants
+const WS_HEARTBEAT_INTERVAL = 30000
+const WS_RECONNECT_MAX_ATTEMPTS = 10
+const WS_REQUEST_TIMEOUT = 5000
+
 /**
  * Shared WebSocket Manager to support multiple concurrent tasks over a single connection.
  * Enhanced with automatic reconnection and heartbeat support.
@@ -50,7 +55,7 @@ export class WebSocketManager {
   private heartbeatInterval: any = null
   private reconnectTimeout: any = null
   private reconnectAttempts: number = 0
-  private maxReconnectAttempts: number = 10
+  private maxReconnectAttempts: number = WS_RECONNECT_MAX_ATTEMPTS
   private isManuallyClosed: boolean = false
 
   // For testing
@@ -215,7 +220,7 @@ export class WebSocketManager {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify({ type: 'ping' }))
       }
-    }, 30000)
+    }, WS_HEARTBEAT_INTERVAL)
   }
 
   private stopHeartbeat() {
@@ -241,7 +246,7 @@ export class WebSocketManager {
     }
   }
 
-  private async sendWithCorrelation(data: any, timeoutMs: number = 5000): Promise<any> {
+  private async sendWithCorrelation(data: any, timeoutMs: number = WS_REQUEST_TIMEOUT): Promise<any> {
       await this.connect()
       const requestId = Math.random().toString(36).substring(2, 11)
       data.request_id = requestId
