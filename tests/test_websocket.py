@@ -173,9 +173,10 @@ def test_websocket_list_tools():
 def test_websocket_ping_pong():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
-        websocket.send_json({"type": "ping"})
+        websocket.send_json({"type": "ping", "request_id": "ping_req_1"})
         data = websocket.receive_json()
         assert data["type"] == "pong"
+        assert data.get("request_id") == "ping_req_1"
 
 def test_websocket_invalid_json():
     client = TestClient(app)
