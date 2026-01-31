@@ -412,6 +412,42 @@ PROCESS_CHILDREN_COUNT = Gauge(
     "Number of child processes"
 )
 
+# v343 Beyond Singularity Metrics
+SYSTEM_CPU_IOWAIT = Gauge(
+    "adk_system_cpu_iowait_percent",
+    "Time spent waiting for I/O to complete"
+)
+
+SYSTEM_CPU_IRQ = Gauge(
+    "adk_system_cpu_irq_percent",
+    "Time spent servicing hardware interrupts"
+)
+
+SYSTEM_CPU_SOFTIRQ = Gauge(
+    "adk_system_cpu_softirq_percent",
+    "Time spent servicing software interrupts"
+)
+
+SYSTEM_MEMORY_SLAB = Gauge(
+    "adk_system_memory_slab_bytes",
+    "In-kernel data structures cache"
+)
+
+PROCESS_MEMORY_LIB = Gauge(
+    "adk_process_memory_lib_bytes",
+    "Memory used by shared libraries"
+)
+
+PROCESS_MEMORY_DIRTY = Gauge(
+    "adk_process_memory_dirty_bytes",
+    "Memory that has been modified and must be written to disk"
+)
+
+PROCESS_ENV_VAR_COUNT = Gauge(
+    "adk_process_env_var_count",
+    "Number of environment variables for the process"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

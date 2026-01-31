@@ -51,7 +51,7 @@ from .metrics import (
     PROCESS_MEMORY_SHARED_BYTES, PROCESS_MEMORY_TEXT_BYTES, PROCESS_MEMORY_DATA_BYTES,
     PROCESS_NUM_THREADS,
     SYSTEM_CPU_STEAL, SYSTEM_CPU_GUEST, SYSTEM_MEMORY_BUFFERS, SYSTEM_MEMORY_CACHED,
-    SYSTEM_DISK_PARTITIONS_COUNT, SYSTEM_USERS_COUNT, PROCESS_CHILDREN_COUNT
+    SYSTEM_DISK_PARTITIONS_COUNT, SYSTEM_USERS_COUNT, PROCESS_CHILDREN_COUNT, SYSTEM_CPU_IOWAIT, SYSTEM_CPU_IRQ, SYSTEM_CPU_SOFTIRQ, SYSTEM_MEMORY_SLAB, PROCESS_MEMORY_LIB, PROCESS_MEMORY_DIRTY, PROCESS_ENV_VAR_COUNT
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -60,10 +60,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.3.2"
+APP_VERSION = "1.3.3"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v342-ascension-singularity"
-OPERATIONAL_APEX = "ASCENSION SINGULARITY"
+GIT_COMMIT = "v343-beyond-singularity"
+OPERATIONAL_APEX = "BEYOND SINGULARITY"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -398,6 +398,48 @@ def get_process_children_count():
             pass
     return 0
 
+# v343 Beyond Singularity Helpers
+def get_system_cpu_times_beyond():
+    if psutil:
+        try:
+            times = psutil.cpu_times_percent(interval=None)
+            iowait = getattr(times, "iowait", 0.0)
+            irq = getattr(times, "irq", 0.0)
+            softirq = getattr(times, "softirq", 0.0)
+            return iowait, irq, softirq
+        except:
+            pass
+    return 0.0, 0.0, 0.0
+
+def get_system_memory_beyond():
+    if psutil:
+        try:
+            mem = psutil.virtual_memory()
+            slab = getattr(mem, "slab", 0)
+            return slab
+        except:
+            pass
+    return 0
+
+def get_process_memory_beyond():
+    if _process:
+        try:
+            mem = _process.memory_info()
+            lib = getattr(mem, "lib", 0)
+            dirty = getattr(mem, "dirty", 0)
+            return lib, dirty
+        except:
+            pass
+    return 0, 0
+
+def get_process_env_var_count():
+    if _process:
+        try:
+            return len(_process.environ())
+        except:
+            pass
+    return 0
+
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
     hours, rem = divmod(rem, 3600)
@@ -709,6 +751,20 @@ async def health_check():
     p_children_count = get_process_children_count()
     PROCESS_CHILDREN_COUNT.set(p_children_count)
 
+    # v343 metrics
+    s_iowait, s_irq, s_softirq = get_system_cpu_times_beyond()
+    SYSTEM_CPU_IOWAIT.set(s_iowait)
+    SYSTEM_CPU_IRQ.set(s_irq)
+    SYSTEM_CPU_SOFTIRQ.set(s_softirq)
+    m_slab = get_system_memory_beyond()
+    SYSTEM_MEMORY_SLAB.set(m_slab)
+    p_lib, p_dirty = get_process_memory_beyond()
+    PROCESS_MEMORY_LIB.set(p_lib)
+    PROCESS_MEMORY_DIRTY.set(p_dirty)
+    p_env_count = get_process_env_var_count()
+    PROCESS_ENV_VAR_COUNT.set(p_env_count)
+
+
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
     for t in active_tasks_list:
@@ -742,7 +798,10 @@ async def health_check():
             "system_percent": sys_cpu,
             "idle_percent": idle_p,
             "steal_percent": s_steal,
-            "guest_percent": s_guest
+            "guest_percent": s_guest,
+            "iowait_percent": s_iowait,
+            "irq_percent": s_irq,
+            "softirq_percent": s_softirq
         },
         "system_cpu_stats": {
             "interrupts": s_ints,
@@ -805,7 +864,8 @@ async def health_check():
             "active_bytes": m_active,
             "inactive_bytes": m_inactive,
             "buffers_bytes": m_buffers,
-            "cached_bytes": m_cached
+            "cached_bytes": m_cached,
+            "slab_bytes": m_slab
         },
         "system_memory_extended": { # backward compatibility
             "used_bytes": sys_mem_used,
@@ -825,8 +885,11 @@ async def health_check():
         "process_memory_advanced": {
             "shared_bytes": p_shared,
             "text_bytes": p_text,
-            "data_bytes": p_data
+            "data_bytes": p_data,
+            "lib_bytes": p_lib,
+            "dirty_bytes": p_dirty
         },
+        "process_env_var_count": p_env_count,
         "process_num_threads": p_num_threads,
         "process_children_count": p_children_count,
         "system_network_packets": {
@@ -966,6 +1029,18 @@ async def metrics():
     SYSTEM_DISK_PARTITIONS_COUNT.set(get_system_disk_partitions_count())
     SYSTEM_USERS_COUNT.set(get_system_users_count())
     PROCESS_CHILDREN_COUNT.set(get_process_children_count())
+
+    # v343 Beyond Singularity
+    bw_iowait, bw_irq, bw_softirq = get_system_cpu_times_beyond()
+    SYSTEM_CPU_IOWAIT.set(bw_iowait)
+    SYSTEM_CPU_IRQ.set(bw_irq)
+    SYSTEM_CPU_SOFTIRQ.set(bw_softirq)
+    SYSTEM_MEMORY_SLAB.set(get_system_memory_beyond())
+    bw_lib, bw_dirty = get_process_memory_beyond()
+    PROCESS_MEMORY_LIB.set(bw_lib)
+    PROCESS_MEMORY_DIRTY.set(bw_dirty)
+    PROCESS_ENV_VAR_COUNT.set(get_process_env_var_count())
+
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

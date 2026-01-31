@@ -30,8 +30,8 @@ Manages bi-directional input for tasks that require user interaction.
 *   **REST Flow (SSE):**
     *   `GET /tools`: Returns a list of all registered tool names.
     *   `GET /tasks`: Returns a list of all currently active task sessions in the registry.
-    *   `GET /health`: Returns system health status, version (**1.2.9**), git commit, uptime, CPU count, thread count, active WebSocket connections, **WebSocket messages received/sent counters**, load average, active task count, total tasks started, memory usage, CPU usage, **Open File Descriptors count**, **Thread count**, **Network Throughput (Bytes/sec)**, **Context Switches (Voluntary/Involuntary)**, **Task Success Rate %**, and configuration parameters (heartbeat timeout, cleanup interval, max concurrent tasks, etc.). and `adk_build_info` metric. Includes comprehensive system metrics: Disk usage, Swap memory, Page faults, Network packets, CPU frequency, Disk I/O, and **Process-specific IO counters**.
-    *   `GET /version`: Returns current API version (**1.2.9**), git commit hash, and operational status (e.g., "SUPREME ABSOLUTE APEX OMEGA ULTRA").
+    *   `GET /health`: Returns system health status, version (**1.3.3**), git commit, uptime, CPU count, thread count, active WebSocket connections, **WebSocket messages received/sent counters**, load average, active task count, total tasks started, memory usage, CPU usage, **Open File Descriptors count**, **Thread count**, **Network Throughput (Bytes/sec)**, **Context Switches (Voluntary/Involuntary)**, **Task Success Rate %**, and configuration parameters (heartbeat timeout, cleanup interval, max concurrent tasks, etc.). and `adk_build_info` metric. Includes comprehensive system metrics: Disk usage, Swap memory, Page faults, Network packets, CPU frequency, Disk I/O, and **Process-specific IO counters**.
+    *   `GET /version`: Returns current API version (**1.3.3**), git commit hash, and operational status (e.g., "SUPREME ABSOLUTE APEX OMEGA ULTRA").
     *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id`. Returns 503 if `MAX_CONCURRENT_TASKS` (100) is reached.
     *   `GET /stream/{call_id}`: SSE endpoint for progress streaming.
     *   `POST /stop_task/{call_id}`: Manual termination.
@@ -107,4 +107,4 @@ All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` hea
 6.  **Message Buffering:** The frontend buffers incoming WebSocket messages that arrive before the UI has fully subscribed to a task, preventing race conditions.
 7.  **Operational Visibility:** Enhanced health monitoring with real-time tracking of active WebSocket connections, total message throughput (**Bytes/sec**), and resource utilization (CPU, Memory, FDs, Threads, **Context Switches**).
 8.  **Concurrency Management:** Backend enforces a hard limit on the number of concurrent task generators in the registry to protect server resources.
-9.  **Supreme Observability:** Version 1.2.9 (v339) introduces **Omega Plus Ultra** tier observability, including system-wide swap memory metrics and **Process-specific IO counters** (Read/Write bytes and counts).
+9.  **Supreme Observability:** Version 1.3.3 (v343) introduces **Beyond Singularity** tier observability, including System CPU IOWait/IRQ/SoftIRQ, System Memory Slab, Process Shared Library/Dirty memory, and Environment Variable count tracking.
