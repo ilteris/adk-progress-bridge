@@ -44,7 +44,7 @@ async def cleanup_background_task():
 app = FastAPI(
     title="ADK Progress Bridge",
     description="A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
-    version="1.0.0",
+    version="1.0.1",
     lifespan=lifespan
 )
 
@@ -174,6 +174,9 @@ async def stop_task(
         await registry.remove_task(actual_call_id)
     return {"status": "stop signal sent"}
 
+@app.get("/version") 
+async def get_version(): 
+    return {"version": "1.0.1", "status": "God Tier"} 
 @app.get("/metrics")
 async def metrics():
     from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
