@@ -140,3 +140,19 @@ def test_websocket_input_missing_value():
         assert data["type"] == "error"
         assert data["request_id"] == "input_missing_value"
         assert "No task waiting for input" in data["payload"]["detail"]
+
+def test_websocket_message_size_limit_and_recover():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        # 1. Send large message
+        large_payload = "a" * (1024 * 1024 + 100)
+        websocket.send_text(json.dumps({"type": "ping", "data": large_payload}))
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert "Message too large" in data["payload"]["detail"]
+        
+        # 2. Send normal message to verify recovery
+        websocket.send_json({"type": "ping"})
+        data = websocket.receive_json()
+        assert data["type"] == "pong"
