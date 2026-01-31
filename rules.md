@@ -19,6 +19,8 @@
 The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 
 #### SSE Flow (Uni-directional)
+- `GET /health`: Returns system health status, version, git commit, uptime, CPU count, load average, active task count, total tasks started, and memory usage. 
+- `GET /version`: Returns API version, git commit hash, and operational status.
 - `GET /tools`: Returns a list of all registered tool names.
 - `POST /start_task/{tool_name}`: Initiates a tool, returns `{ call_id }`.
 - `GET /stream/{call_id}`: SSE endpoint for progress streaming.
@@ -28,8 +30,8 @@ The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 #### WebSocket Flow (Bi-directional)
 - `WS /ws`: Bi-directional connection for task control and streaming.
 - Message `{"type": "list_tools", "request_id": "..."}` -> Server responds with `{"type": "tools_list", "tools": [...], "request_id": "..."}`.
-- Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task.
-- Server responds with `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` to confirm start.
+- Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task -> Server responds with `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` to confirm start.
+- Message `{"type": "subscribe", "call_id": "...", "request_id": "..."}` subscribes to an existing task -> Server responds with `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` followed by the event stream.
 - Message `{"type": "stop", "call_id": "...", "request_id": "..."}` stops a task -> Server responds with `{"type": "stop_success", "call_id": "...", "request_id": "..."}`.
 - Message `{"type": "input", "call_id": "...", "value": "...", "request_id": "..."}` provides interactive input -> Server responds with `{"type": "input_success", "call_id": "...", "request_id": "..."}`.
 - Message `{"type": "ping"}` -> Server responds with `{"type": "pong"}`.
@@ -60,7 +62,14 @@ The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 - CORS must be enabled for local development.
 - Support API Key authentication via `X-API-Key` header or `api_key` query parameter.
 
-## 5. Testing & Verification
+## 5. Robustness
+- **Message Size Limit**: WebSocket messages are limited to 1MB.
+- **Heartbeats**: Bi-directional ping/pong every 30-60 seconds.
+- **Reconnection**: Frontend must implement exponential backoff reconnection.
+- **Thread Safety**: Concurrent WebSocket writes must be protected by a lock.
+
+## 6. Testing & Verification
 - Use `verify_stream.py` for manual SSE testing.
 - Use `verify_websocket.py` for manual WebSocket testing.
 - Frontend composables should be testable in isolation using Vitest.
+- Robustness tests (concurrency, timeouts, size limits) MUST be included in the backend test suite.
