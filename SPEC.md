@@ -30,9 +30,9 @@ Manages bi-directional input for tasks that require user interaction.
 *   **REST Flow (SSE):**
     *   `GET /tools`: Returns a list of all registered tool names.
     *   `GET /tasks`: Returns a list of all currently active task sessions in the registry.
-    *   `GET /health`: Returns system health status, version (**1.1.3**), git commit, uptime, CPU count, thread count, active WebSocket connections, **WebSocket messages received/sent counters**, load average, active task count, total tasks started, memory usage, and configuration parameters (heartbeat timeout, cleanup interval, etc.). and `adk_build_info` metric
-    *   `GET /version`: Returns current API version (**1.1.3**), git commit hash, and operational status (e.g., "SUPREME ABSOLUTE APEX").
-    *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id`.
+    *   `GET /health`: Returns system health status, version (**1.1.4**), git commit, uptime, CPU count, thread count, active WebSocket connections, **WebSocket messages received/sent counters**, load average, active task count, total tasks started, memory usage, and configuration parameters (heartbeat timeout, cleanup interval, max concurrent tasks, etc.). and `adk_build_info` metric
+    *   `GET /version`: Returns current API version (**1.1.4**), git commit hash, and operational status (e.g., "SUPREME ABSOLUTE APEX").
+    *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id`. Returns 503 if `MAX_CONCURRENT_TASKS` (100) is reached.
     *   `GET /stream/{call_id}`: SSE endpoint for progress streaming.
     *   `POST /stop_task/{call_id}`: Manual termination.
     *   `POST /provide_input`: REST fallback for providing input for SSE tasks.
@@ -42,7 +42,7 @@ Manages bi-directional input for tasks that require user interaction.
         *   Response: `{"type": "tools_list", "tools": [...], "request_id": "..."}`
     *   Message `{"type": "list_active_tasks", "request_id": "..."}` requests all currently active task sessions.
         *   Response: `{"type": "active_tasks_list", "tasks": [...], "request_id": "..."}`
-    *   Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task.
+    *   Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task. Returns error if `MAX_CONCURRENT_TASKS` is reached.
         *   Response: `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}`
     *   Message `{"type": "subscribe", "call_id": "...", "request_id": "..."}` subscribes to an existing task.
         *   Response: `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` followed by stream.
@@ -106,3 +106,4 @@ All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` hea
 5.  **Thread-Safe Writes:** The backend uses an `asyncio.Lock` to ensure WebSocket frames are not interleaved during concurrent task streaming.
 6.  **Message Buffering:** The frontend buffers incoming WebSocket messages that arrive before the UI has fully subscribed to a task, preventing race conditions.
 7.  **Operational Visibility:** Enhanced health monitoring with real-time tracking of active WebSocket connections and total message throughput.
+8.  **Concurrency Management:** Backend enforces a hard limit on the number of concurrent task generators in the registry to protect server resources.

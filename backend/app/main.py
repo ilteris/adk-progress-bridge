@@ -27,9 +27,10 @@ WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
-APP_VERSION = "1.1.3"
+MAX_CONCURRENT_TASKS = 100
+APP_VERSION = "1.1.4"
 APP_START_TIME = time.time()
-GIT_COMMIT = "6e9b58a"
+GIT_COMMIT = "7e023a1"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -109,6 +110,12 @@ async def start_task(
     request: Optional[TaskStartRequest] = None, 
     authenticated: bool = Depends(verify_api_key)
 ):
+    if registry.active_task_count >= MAX_CONCURRENT_TASKS:
+        raise HTTPException(
+            status_code=503, 
+            detail=f"Server busy: Maximum concurrent tasks ({MAX_CONCURRENT_TASKS}) reached."
+        )
+
     tool = registry.get_tool(tool_name)
     if not tool:
         raise HTTPException(status_code=404, detail=f"Tool not found: {tool_name}")
@@ -245,6 +252,7 @@ async def health_check():
             "cleanup_interval": CLEANUP_INTERVAL,
             "stale_task_max_age": STALE_TASK_MAX_AGE,
             "ws_message_size_limit": WS_MESSAGE_SIZE_LIMIT,
+            "max_concurrent_tasks": MAX_CONCURRENT_TASKS,
             "allowed_origins": ALLOWED_ORIGINS
         }
     }
@@ -369,6 +377,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
                 continue
             if msg_type == "start":
+                if registry.active_task_count >= MAX_CONCURRENT_TASKS:
+                    await safe_send_json({
+                        "type": "error",
+                        "request_id": request_id,
+                        "payload": {"detail": f"Server busy: Maximum concurrent tasks ({MAX_CONCURRENT_TASKS}) reached."}
+                    })
+                    continue
+
                 tool_name = message.get("tool_name")
                 args = message.get("args", {})
                 tool = registry.get_tool(tool_name)

@@ -2,15 +2,15 @@ import pytest
 import json
 import asyncio
 from fastapi.testclient import TestClient
-from backend.app.main import app
+from backend.app.main import app, APP_VERSION, GIT_COMMIT
 
 def test_health_v324_metadata():
     client = TestClient(app)
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "1.1.3"
-    assert data["git_commit"] == "6e9b58a"
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT
     assert data["operational_apex"] == "SUPREME ABSOLUTE APEX"
 
 def test_version_v324():
@@ -18,8 +18,8 @@ def test_version_v324():
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "1.1.3"
-    assert data["git_commit"] == "6e9b58a"
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT
 
 def test_list_active_tasks_rest():
     client = TestClient(app)
