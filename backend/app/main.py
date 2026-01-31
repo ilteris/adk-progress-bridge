@@ -82,7 +82,8 @@ from .metrics import (
     PROCESS_LIMIT_NOFILE_SOFT, PROCESS_LIMIT_NOFILE_HARD,
     PROCESS_LIMIT_AS_SOFT, PROCESS_LIMIT_AS_HARD,
     SYSTEM_LOAD_5M_PERCENT, SYSTEM_LOAD_15M_PERCENT,
-    PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT, PROCESS_LIMIT_AS_UTILIZATION_PERCENT
+    PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT, PROCESS_LIMIT_AS_UTILIZATION_PERCENT,
+    PROCESS_IO_READ_THROUGHPUT_BPS, PROCESS_IO_WRITE_THROUGHPUT_BPS
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -91,10 +92,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.4.5"
+APP_VERSION = "1.4.6"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v355-the-singularity"
-OPERATIONAL_APEX = "THE SINGULARITY"
+GIT_COMMIT = "v356-the-omega"
+OPERATIONAL_APEX = "THE OMEGA"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -105,6 +106,11 @@ async def lifespan(app: FastAPI):
     app.state.last_throughput_time = time.time()
     app.state.last_bytes_received = 0
     app.state.last_bytes_sent = 0
+    
+    # v356 process IO throughput state
+    app.state.last_io_time = time.time()
+    app.state.last_proc_read_bytes = 0
+    app.state.last_proc_write_bytes = 0
     
     cleanup_task = asyncio.create_task(cleanup_background_task())
     logger.info("Background cleanup task started")
@@ -1140,6 +1146,23 @@ async def get_health_data():
     as_util = (vms / p_limits["as_soft"] * 100) if "as_soft" in p_limits and p_limits["as_soft"] > 0 else 0.0
     PROCESS_LIMIT_AS_UTILIZATION_PERCENT.set(as_util)
 
+    # v356 THE OMEGA
+    last_io_time = getattr(app.state, "last_io_time", APP_START_TIME)
+    last_p_rb = getattr(app.state, "last_proc_read_bytes", 0)
+    last_p_wb = getattr(app.state, "last_proc_write_bytes", 0)
+    
+    io_dt = now - last_io_time
+    if io_dt >= 1.0:
+        p_io_read_bps = (p_io_rb - last_p_rb) / io_dt
+        p_io_write_bps = (p_io_wb - last_p_wb) / io_dt
+        PROCESS_IO_READ_THROUGHPUT_BPS.set(p_io_read_bps)
+        PROCESS_IO_WRITE_THROUGHPUT_BPS.set(p_io_write_bps)
+        app.state.last_io_time = now
+        app.state.last_proc_read_bytes = p_io_rb
+        app.state.last_proc_write_bytes = p_io_wb
+    else:
+        p_io_read_bps = int(PROCESS_IO_READ_THROUGHPUT_BPS._value.get())
+        p_io_write_bps = int(PROCESS_IO_WRITE_THROUGHPUT_BPS._value.get())
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -1286,7 +1309,9 @@ async def get_health_data():
             "read_bytes": p_io_rb,
             "write_bytes": p_io_wb,
             "read_count": p_io_rc,
-            "write_count": p_io_wc
+            "write_count": p_io_wc,
+            "read_throughput_bps": p_io_read_bps,
+            "write_throughput_bps": p_io_write_bps
         },
         "process_cpu_usage": {
             "user_seconds": proc_user_cpu,
@@ -1721,6 +1746,23 @@ async def metrics():
     if "as_soft" in p_limits and p_limits["as_soft"] > 0:
         rss, vms = get_process_memory_bytes()
         PROCESS_LIMIT_AS_UTILIZATION_PERCENT.set((vms / p_limits["as_soft"]) * 100)
+
+    # v356 THE OMEGA
+    now = time.time()
+    last_io_time = getattr(app.state, "last_io_time", APP_START_TIME)
+    p_io_rb, p_io_wb, _, _ = get_process_io_counters()
+    last_p_rb = getattr(app.state, "last_proc_read_bytes", 0)
+    last_p_wb = getattr(app.state, "last_proc_write_bytes", 0)
+    
+    io_dt = now - last_io_time
+    if io_dt >= 1.0:
+        p_io_read_bps = (p_io_rb - last_p_rb) / io_dt
+        p_io_write_bps = (p_io_wb - last_p_wb) / io_dt
+        PROCESS_IO_READ_THROUGHPUT_BPS.set(p_io_read_bps)
+        PROCESS_IO_WRITE_THROUGHPUT_BPS.set(p_io_write_bps)
+        app.state.last_io_time = now
+        app.state.last_proc_read_bytes = p_io_rb
+        app.state.last_proc_write_bytes = p_io_wb
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
@@ -1854,7 +1896,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             "payload": {"detail": f"Server busy: Maximum concurrent tasks ({MAX_CONCURRENT_TASKS}) reached."}
                         })
                     else:
-                        tool_name = message.get("tool_name")
+                        tool_name = tool_name = message.get("tool_name")
                         args = message.get("args", {})
                         tool = registry.get_tool(tool_name)
                         if not tool:
@@ -1998,21 +2040,15 @@ async def run_ws_generator(send_fn, call_id: str, tool_name: str, gen, active_ta
     except asyncio.CancelledError:
         status = "cancelled"
         logger.info(f"WS task {call_id} cancelled")
-        await gen.aclose()
     except Exception as e:
         status = "error"
-        logger.error(f"Error during WS task {call_id}: {e}")
-        event = ProgressEvent(call_id=call_id, type="error", payload={"detail": str(e)})
-        try:
-            await send_fn(event.model_dump())
-        except:
-            pass
+        logger.error(f"WS task {call_id} error: {e}")
+        await send_fn({"type": "error", "call_id": call_id, "payload": {"detail": str(e)}})
     finally:
         duration = time.perf_counter() - start_time
         TASK_DURATION.labels(tool_name=tool_name).observe(duration)
         TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
-        await registry.remove_task(call_id)
-        active_tasks.pop(call_id, None)
+        if call_id in active_tasks:
+            del active_tasks[call_id]
         logger.info(f"WS task finished: {call_id} (duration: {duration:.2f}s, status: {status})")
-
 from . import dummy_tool

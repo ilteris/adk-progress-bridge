@@ -11,7 +11,7 @@ def test_health_v348_nirvana():
     data = response.json()
     
     assert data["version"] >= "1.3.9"
-    assert data["operational_apex"] in ["NIRVANA", "ENLIGHTENMENT", "APOTHEOSIS", "ULTIMA", "OMNIPRESENCE", "THE SOURCE", "THE ONE", "THE SINGULARITY"]
+    assert data["operational_apex"] in ["NIRVANA", "ENLIGHTENMENT", "APOTHEOSIS", "ULTIMA", "OMNIPRESENCE", "THE SOURCE", "THE ONE", "THE SINGULARITY", "THE OMEGA"]
     
     # v348 Metrics
     assert "system_disk_io_times_ms" in data
@@ -39,4 +39,4 @@ def test_version_v348():
     assert response.status_code == 200
     data = response.json()
     assert data["version"] >= "1.3.9"
-    assert data["status"] in ["NIRVANA", "ENLIGHTENMENT", "APOTHEOSIS", "ULTIMA", "OMNIPRESENCE", "THE SOURCE", "THE ONE", "THE SINGULARITY"]
+    assert data["status"] in ["NIRVANA", "ENLIGHTENMENT", "APOTHEOSIS", "ULTIMA", "OMNIPRESENCE", "THE SOURCE", "THE ONE", "THE SINGULARITY", "THE OMEGA"]

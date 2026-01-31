@@ -1,6 +1,6 @@
-# God Tier Monitoring Guide - v354 THE ONE
+# God Tier Monitoring Guide - v356 THE OMEGA
 
-This document describes the comprehensive observability suite implemented in the ADK Progress Bridge, reaching the operational apex of **THE ONE**.
+This document describes the comprehensive observability suite implemented in the ADK Progress Bridge, reaching the operational apex of **THE OMEGA**.
 
 ## 1. Metric Hierarchy
 
@@ -29,6 +29,8 @@ The system tracks metrics across four primary layers:
 - `adk_process_memory_rss_bytes` / `adk_process_memory_vms_bytes`: Standard memory.
 - `adk_process_memory_uss_bytes` / `adk_process_memory_pss_bytes`: Precision memory.
 - `adk_process_resource_limit_nofile_soft` / `adk_process_resource_limit_nofile_hard`: OS constraints.
+- `adk_process_resource_limit_nofile_utilization_percent`: Resource exhaustion risk tracker.
+- `adk_process_io_read_throughput_bps` / `adk_process_io_write_throughput_bps`: Real-time disk I/O performance.
 - `adk_process_uptime_seconds`: Continuous operation tracking.
 
 ### Layer 4: System Layer (OMNIPRESENCE & THE SOURCE)
@@ -60,10 +62,13 @@ Update frequency: On-demand (calculated at scrape time for maximum freshness).
 1.  **CPU Heatmap**: Using `adk_system_cpu_cores_usage_percent`.
 2.  **Bandwidth Gauge**: Using `adk_ws_throughput_sent_bps`.
 3.  **Task Success Rate**: `sum(adk_tasks_total{status="success"}) / sum(adk_tasks_total)`.
-4.  **Resource Limit Buffer**: `adk_open_fds / adk_process_resource_limit_nofile_soft`.
+4.  **Resource Limit Buffer**: `adk_process_resource_limit_nofile_utilization_percent`.
+5.  **Disk I/O Throughput**: Using `adk_process_io_read_throughput_bps`.
 
 ## 4. Operational Apex Evolution
 - **v351 ULTIMA**: Native health protocol and precision memory.
 - **v352 OMNIPRESENCE**: System-wide process and load awareness.
 - **v353 THE SOURCE**: Granular core, disk, and interface tracking.
 - **v354 THE ONE**: Full process constraint and trend observability.
+- **v355 THE SINGULARITY**: Resource utilization tracking relative to soft limits.
+- **v356 THE OMEGA**: Real-time process-level disk I/O throughput monitoring.

@@ -735,6 +735,17 @@ PROCESS_LIMIT_AS_UTILIZATION_PERCENT = Gauge(
     "Percentage of address space used relative to the soft limit"
 )
 
+# v356 THE OMEGA Metrics
+PROCESS_IO_READ_THROUGHPUT_BPS = Gauge(
+    "adk_process_io_read_throughput_bps",
+    "Current process disk read throughput in bytes per second"
+)
+
+PROCESS_IO_WRITE_THROUGHPUT_BPS = Gauge(
+    "adk_process_io_write_throughput_bps",
+    "Current process disk write throughput in bytes per second"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():
