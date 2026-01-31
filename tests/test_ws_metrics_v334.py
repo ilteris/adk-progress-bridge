@@ -1,8 +1,7 @@
-
 import pytest
 import time
 from fastapi.testclient import TestClient
-from backend.app.main import app
+from backend.app.main import app, APP_VERSION, GIT_COMMIT
 
 client = TestClient(app)
 
@@ -13,8 +12,8 @@ def test_health_v334_metrics():
     data = response.json()
     
     # Version checks
-    assert data["version"] == "1.2.4"
-    assert data["git_commit"] == "v334-supreme"
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT
     
     # New metrics in v334
     assert "disk_usage_percent" in data
@@ -41,12 +40,12 @@ def test_prometheus_v334_metrics():
     assert "adk_page_faults_major" in content
     
     # Verify build info
-    assert 'adk_build_info{git_commit="v334-supreme",version="1.2.4"}' in content
+    assert f'adk_build_info{{git_commit="{GIT_COMMIT}",version="{APP_VERSION}"}}' in content
 
 def test_version_v334():
     """Verify version endpoint."""
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "1.2.4"
-    assert data["git_commit"] == "v334-supreme"
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT

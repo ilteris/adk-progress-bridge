@@ -139,6 +139,32 @@ PAGE_FAULTS_MAJOR = Gauge(
     "Number of major page faults"
 )
 
+# v335 Supreme Metrics
+SYSTEM_CPU_COUNT = Gauge(
+    "adk_system_cpu_count",
+    "Total number of CPUs in the system"
+)
+
+SYSTEM_BOOT_TIME = Gauge(
+    "adk_system_boot_time_seconds",
+    "System boot time in seconds since epoch"
+)
+
+SWAP_MEMORY_USAGE_PERCENT = Gauge(
+    "adk_swap_memory_usage_percent",
+    "System swap memory usage percentage"
+)
+
+SYSTEM_NETWORK_BYTES_SENT = Gauge(
+    "adk_system_network_bytes_sent",
+    "Total system bytes sent over the network"
+)
+
+SYSTEM_NETWORK_BYTES_RECV = Gauge(
+    "adk_system_network_bytes_recv",
+    "Total system bytes received over the network"
+)
+
 TOTAL_TASKS_STARTED = Counter(
     "adk_total_tasks_started_total",
     "Total number of tasks started since application launch"

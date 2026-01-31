@@ -31,7 +31,9 @@ from .metrics import (
     CPU_USAGE_PERCENT, PEAK_ACTIVE_WS_CONNECTIONS, OPEN_FDS, THREAD_COUNT,
     WS_THROUGHPUT_RECEIVED_BPS, WS_THROUGHPUT_SENT_BPS,
     CONTEXT_SWITCHES_VOLUNTARY, CONTEXT_SWITCHES_INVOLUNTARY,
-    DISK_USAGE_PERCENT, SYSTEM_MEMORY_AVAILABLE, PAGE_FAULTS_MINOR, PAGE_FAULTS_MAJOR
+    DISK_USAGE_PERCENT, SYSTEM_MEMORY_AVAILABLE, PAGE_FAULTS_MINOR, PAGE_FAULTS_MAJOR,
+    SYSTEM_CPU_COUNT, SYSTEM_BOOT_TIME, SWAP_MEMORY_USAGE_PERCENT,
+    SYSTEM_NETWORK_BYTES_SENT, SYSTEM_NETWORK_BYTES_RECV
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -40,9 +42,9 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.2.4"
+APP_VERSION = "1.2.5"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v334-supreme"
+GIT_COMMIT = "v335-supreme"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -148,10 +150,26 @@ def get_page_faults():
     if psutil:
         try:
             mem = psutil.Process().memory_info()
-            # pfaults is for Windows/Linux, on Mac it might be different
             minor = getattr(mem, "pfaults", 0)
-            major = getattr(mem, "pageins", 0) # On Mac pageins is major
+            major = getattr(mem, "pageins", 0)
             return minor, major
+        except:
+            pass
+    return 0, 0
+
+def get_swap_memory_percent():
+    if psutil:
+        try:
+            return psutil.swap_memory().percent
+        except:
+            pass
+    return 0.0
+
+def get_network_io():
+    if psutil:
+        try:
+            io = psutil.net_io_counters()
+            return io.bytes_sent, io.bytes_recv
         except:
             pass
     return 0, 0
@@ -370,6 +388,17 @@ async def health_check():
     minor_pf, major_pf = get_page_faults()
     PAGE_FAULTS_MINOR.set(minor_pf)
     PAGE_FAULTS_MAJOR.set(major_pf)
+
+    # v335 metrics
+    cpu_count = psutil.cpu_count() if psutil else os.cpu_count()
+    SYSTEM_CPU_COUNT.set(cpu_count)
+    boot_time = psutil.boot_time() if psutil else 0
+    SYSTEM_BOOT_TIME.set(boot_time)
+    swap_percent = get_swap_memory_percent()
+    SWAP_MEMORY_USAGE_PERCENT.set(swap_percent)
+    net_sent, net_recv = get_network_io()
+    SYSTEM_NETWORK_BYTES_SENT.set(net_sent)
+    SYSTEM_NETWORK_BYTES_RECV.set(net_recv)
     
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -395,7 +424,7 @@ async def health_check():
         "python_version": sys.version, 
         "python_implementation": platform.python_implementation(),
         "system_platform": sys.platform, 
-        "cpu_count": os.cpu_count(),
+        "cpu_count": cpu_count,
         "cpu_usage_percent": cpu_percent,
         "thread_count": thread_count,
         "open_fds": open_fds,
@@ -406,6 +435,12 @@ async def health_check():
         "page_faults": {
             "minor": minor_pf,
             "major": major_pf
+        },
+        "swap_memory_usage_percent": swap_percent,
+        "boot_time_seconds": boot_time,
+        "network_io_total": {
+            "bytes_sent": net_sent,
+            "bytes_recv": net_recv
         },
         "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
         "peak_ws_connections": getattr(app.state, "peak_ws_connections", 0),
@@ -468,6 +503,13 @@ async def metrics():
     min_pf, maj_pf = get_page_faults()
     PAGE_FAULTS_MINOR.set(min_pf)
     PAGE_FAULTS_MAJOR.set(maj_pf)
+    
+    SYSTEM_CPU_COUNT.set(psutil.cpu_count() if psutil else os.cpu_count())
+    SYSTEM_BOOT_TIME.set(psutil.boot_time() if psutil else 0)
+    SWAP_MEMORY_USAGE_PERCENT.set(get_swap_memory_percent())
+    net_sent, net_recv = get_network_io()
+    SYSTEM_NETWORK_BYTES_SENT.set(net_sent)
+    SYSTEM_NETWORK_BYTES_RECV.set(net_recv)
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
