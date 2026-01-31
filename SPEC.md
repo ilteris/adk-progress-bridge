@@ -98,5 +98,5 @@ The bridge provides deep visibility into the host system performance:
 
 ## 6. Versioning & Identity
 - **APP_VERSION**: 1.7.2
-- **GIT_COMMIT**: v385-supreme-apex
-- **OPERATIONAL_APEX**: SUPREME APEX FIDELITY (v385)
+- **GIT_COMMIT**: v386-supreme-apex
+- **OPERATIONAL_APEX**: SUPREME APEX FIDELITY (v386)
