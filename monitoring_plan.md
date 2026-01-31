@@ -2,13 +2,15 @@
 
 ## 1. Metrics Enhancement
 - Add `STALE_TASKS_CLEANED_TOTAL` Counter to `backend/app/metrics.py`.
-- Add `TASK_PROGRESS_STEPS_TOTAL` Counter (labeled by `tool_name`) to `backend/app/metrics.py`.
+- Add `TASK_PROGRESS_STEPS_TOTAL` Counter
+- Add `ACTIVE_WS_CONNECTIONS` Gauge to `backend/app/metrics.py`. (labeled by `tool_name`) to `backend/app/metrics.py`.
 
 ## 2. Integration
 - Update `backend/app/bridge.py`:
     - Increment `STALE_TASKS_CLEANED_TOTAL` in `cleanup_stale_tasks`.
 - Update `backend/app/main.py`:
-    - Increment `TASK_PROGRESS_STEPS_TOTAL` in `event_generator` loop when `ProgressPayload` is yielded.
+    - Increment `TASK_PROGRESS_STEPS_TOTAL` in `event_generator` and `run_ws_generator`.
+- Increment/Decrement `ACTIVE_WS_CONNECTIONS` in `websocket_endpoint`. in `event_generator` loop when `ProgressPayload` is yielded.
 
 ## 3. Infrastructure
 - Create `prometheus.yml` to scrape the FastAPI `/metrics` endpoint.
