@@ -24,9 +24,9 @@ async def test_v360_health_metrics():
     assert response.status_code == 200
     data = response.json()
     
-    assert data["version"] == "1.5.0"
-    assert data["operational_apex"] == "THE ASCENSION"
-    assert data["git_commit"] == "v360-the-ascension"
+    assert data["version"] == "1.6.0"
+    assert data["operational_apex"] == "THE NEBULA"
+    assert data["git_commit"] == "v361-the-nebula"
     
     # Check interrupt rates
     assert "system_cpu_stats" in data
@@ -52,7 +52,7 @@ async def test_v360_prometheus_metrics():
     assert "adk_system_cpu_syscall_rate_per_sec" in content
     assert 'adk_ws_connection_errors_total{error_type="auth_failure"}' in content
     assert 'adk_ws_connection_errors_total{error_type="protocol_error"}' in content
-    assert 'adk_build_info{git_commit="v360-the-ascension",version="1.5.0"}' in content
+    assert 'adk_build_info{git_commit="v361-the-nebula",version="1.6.0"}' in content
 
 @pytest.mark.asyncio
 async def test_ws_auth_error_metric_v360(enable_auth):

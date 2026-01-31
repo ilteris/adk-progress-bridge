@@ -100,10 +100,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.5.0"
+APP_VERSION = "1.6.0"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v360-the-ascension"
-OPERATIONAL_APEX = "THE ASCENSION"
+GIT_COMMIT = "v361-the-nebula"
+OPERATIONAL_APEX = "THE NEBULA"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -2097,12 +2097,22 @@ async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
     call_id_var.set(call_id)
     tool_name_var.set(tool_name)
     start_time = time.perf_counter()
+    last_metrics_time = time.perf_counter()
     status = "success"
     try:
         async for item in gen:
+            now = time.perf_counter()
+            if now - last_metrics_time > 3.0:
+                try:
+                    
+                    metrics = await get_health_data()
+                    await send_func({"type": "system_metrics", "payload": metrics})
+                    last_metrics_time = now
+                except Exception as me:
+                    pass
             if isinstance(item, ProgressPayload):
                 TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                payload = item.dict() if hasattr(item, "dict") else item
+                payload = item.model_dump() if hasattr(item, "model_dump") else item
                 await send_func({"call_id": call_id, "type": "progress", "payload": payload})
             elif isinstance(item, dict) and item.get("type") == "input_request":
                 await send_func({"call_id": call_id, "type": "input_request", "payload": item["payload"]})
