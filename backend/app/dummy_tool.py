@@ -201,3 +201,58 @@ async def large_payload_tool(**kwargs):
     """
     yield ProgressPayload(step="Received large payload", pct=100, log=f"Args keys: {list(kwargs.keys())}")
     yield {"status": "success", "received_keys": len(kwargs)}
+
+@progress_tool(name="dynamic_echo_tool")
+async def dynamic_echo_tool(message: str = "Hello", repeat: int = 3):
+    """
+    Echoes a message multiple times with progress.
+    """
+    for i in range(repeat):
+        pct = int(((i + 1) / repeat) * 100)
+        logger.info(f"Echoing: {message} ({i+1}/{repeat})")
+        yield ProgressPayload(
+            step=f"Echoing {i+1}/{repeat}",
+            pct=pct,
+            log=f"Message: {message}"
+        )
+        await asyncio.sleep(0.5)
+    
+    yield {"status": "success", "echoed": message, "count": repeat}
+
+@progress_tool(name="multi_input_task")
+async def multi_input_task():
+    """
+    Demonstrates multiple interactive input points.
+    """
+    call_id = call_id_var.get()
+    
+    yield ProgressPayload(step="Phase 1", pct=20, log="Initiating conversation...")
+    
+    # First input
+    name_prompt = "What is your name?"
+    yield {
+        "type": "input_request",
+        "payload": {"prompt": name_prompt}
+    }
+    name = await input_manager.wait_for_input(call_id, name_prompt)
+    
+    yield ProgressPayload(step="Phase 2", pct=50, log=f"Hello {name}! Now, what is your favorite color?")
+    
+    # Second input
+    color_prompt = f"Okay {name}, what is your favorite color?"
+    yield {
+        "type": "input_request",
+        "payload": {"prompt": color_prompt}
+    }
+    color = await input_manager.wait_for_input(call_id, color_prompt)
+    
+    yield ProgressPayload(step="Finalizing", pct=90, log=f"Interesting choice, {color}...")
+    await asyncio.sleep(1)
+    
+    yield ProgressPayload(step="Complete", pct=100, log="All data collected.")
+    yield {
+        "status": "success",
+        "user_name": name,
+        "favorite_color": color,
+        "message": f"Collected {name}'s preference for {color}."
+    }
