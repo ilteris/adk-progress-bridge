@@ -102,3 +102,30 @@ test('websocket dynamic tool fetching', async ({ page }) => {
   await expect(toolSelect.locator('option')).toHaveCount(7);
   await expect(toolSelect).toContainText('Long Audit');
 });
+
+test('websocket clear console flow', async ({ page }) => {
+  await page.goto('http://localhost:5173');
+  
+  // Enable WebSockets
+  await page.locator('#useWS').check();
+  
+  // Start a task to generate some logs
+  await page.locator('#duration').fill('1');
+  await page.getByRole('button', { name: 'Start Task' }).click();
+  
+  // Wait for completion
+  await expect(page.getByTestId('status-badge')).toContainText('Done', { timeout: 15000 });
+  
+  // Verify logs exist
+  const consoleDiv = page.locator('.bg-dark.text-light');
+  const logEntries = consoleDiv.locator('div');
+  const logCount = await logEntries.count();
+  expect(logCount).toBeGreaterThan(1);
+  
+  // Click Clear
+  await page.getByRole('button', { name: 'Clear' }).click();
+  
+  // Verify logs are cleared (back to "No logs yet...")
+  await expect(logEntries).toHaveCount(1);
+  await expect(consoleDiv).toContainText('No logs yet...');
+});
