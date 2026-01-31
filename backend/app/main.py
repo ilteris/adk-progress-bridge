@@ -49,7 +49,9 @@ from .metrics import (
     SYSTEM_MEMORY_ACTIVE_BYTES, SYSTEM_MEMORY_INACTIVE_BYTES,
     SYSTEM_CPU_INTERRUPTS, SYSTEM_CPU_SOFT_INTERRUPTS, SYSTEM_CPU_SYSCALLS,
     PROCESS_MEMORY_SHARED_BYTES, PROCESS_MEMORY_TEXT_BYTES, PROCESS_MEMORY_DATA_BYTES,
-    PROCESS_NUM_THREADS
+    PROCESS_NUM_THREADS,
+    SYSTEM_CPU_STEAL, SYSTEM_CPU_GUEST, SYSTEM_MEMORY_BUFFERS, SYSTEM_MEMORY_CACHED,
+    SYSTEM_DISK_PARTITIONS_COUNT, SYSTEM_USERS_COUNT, PROCESS_CHILDREN_COUNT
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -58,10 +60,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.3.2"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v341-god-tier"
-OPERATIONAL_APEX = "GOD TIER OMEGA PLUS ULTRA"
+GIT_COMMIT = "v342-ascension-singularity"
+OPERATIONAL_APEX = "ASCENSION SINGULARITY"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -345,6 +347,53 @@ def get_process_num_threads():
     if _process:
         try:
             return _process.num_threads()
+        except:
+            pass
+    return 0
+
+# v342 Ascension Singularity Helpers
+def get_system_cpu_times_advanced():
+    if psutil:
+        try:
+            times = psutil.cpu_times_percent(interval=None)
+            steal = getattr(times, "steal", 0.0)
+            guest = getattr(times, "guest", 0.0)
+            return steal, guest
+        except:
+            pass
+    return 0.0, 0.0
+
+def get_system_memory_extended_plus():
+    if psutil:
+        try:
+            mem = psutil.virtual_memory()
+            buffers = getattr(mem, "buffers", 0)
+            cached = getattr(mem, "cached", 0)
+            return buffers, cached
+        except:
+            pass
+    return 0, 0
+
+def get_system_disk_partitions_count():
+    if psutil:
+        try:
+            return len(psutil.disk_partitions())
+        except:
+            pass
+    return 0
+
+def get_system_users_count():
+    if psutil:
+        try:
+            return len(psutil.users())
+        except:
+            pass
+    return 0
+
+def get_process_children_count():
+    if _process:
+        try:
+            return len(_process.children())
         except:
             pass
     return 0
@@ -646,6 +695,20 @@ async def health_check():
     p_num_threads = get_process_num_threads()
     PROCESS_NUM_THREADS.set(p_num_threads)
 
+    # v342 metrics
+    s_steal, s_guest = get_system_cpu_times_advanced()
+    SYSTEM_CPU_STEAL.set(s_steal)
+    SYSTEM_CPU_GUEST.set(s_guest)
+    m_buffers, m_cached = get_system_memory_extended_plus()
+    SYSTEM_MEMORY_BUFFERS.set(m_buffers)
+    SYSTEM_MEMORY_CACHED.set(m_cached)
+    d_part_count = get_system_disk_partitions_count()
+    SYSTEM_DISK_PARTITIONS_COUNT.set(d_part_count)
+    u_count = get_system_users_count()
+    SYSTEM_USERS_COUNT.set(u_count)
+    p_children_count = get_process_children_count()
+    PROCESS_CHILDREN_COUNT.set(p_children_count)
+
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
     for t in active_tasks_list:
@@ -677,7 +740,9 @@ async def health_check():
         "system_cpu_usage": {
             "user_percent": user_cpu,
             "system_percent": sys_cpu,
-            "idle_percent": idle_p
+            "idle_percent": idle_p,
+            "steal_percent": s_steal,
+            "guest_percent": s_guest
         },
         "system_cpu_stats": {
             "interrupts": s_ints,
@@ -738,7 +803,9 @@ async def health_check():
             "used_bytes": sys_mem_used,
             "free_bytes": sys_mem_free,
             "active_bytes": m_active,
-            "inactive_bytes": m_inactive
+            "inactive_bytes": m_inactive,
+            "buffers_bytes": m_buffers,
+            "cached_bytes": m_cached
         },
         "system_memory_extended": { # backward compatibility
             "used_bytes": sys_mem_used,
@@ -761,10 +828,13 @@ async def health_check():
             "data_bytes": p_data
         },
         "process_num_threads": p_num_threads,
+        "process_children_count": p_children_count,
         "system_network_packets": {
             "sent": sys_net_psent,
             "recv": sys_net_precv
         },
+        "system_disk_partitions_count": d_part_count,
+        "system_users_count": u_count,
         "registry_size": registry.active_task_count, 
         "peak_registry_size": registry.peak_active_tasks,
         "total_tasks_started": registry.total_tasks_started,
@@ -885,6 +955,17 @@ async def metrics():
     PROCESS_MEMORY_TEXT_BYTES.set(ptext)
     PROCESS_MEMORY_DATA_BYTES.set(pdata)
     PROCESS_NUM_THREADS.set(get_process_num_threads())
+
+    # v342
+    steal, guest = get_system_cpu_times_advanced()
+    SYSTEM_CPU_STEAL.set(steal)
+    SYSTEM_CPU_GUEST.set(guest)
+    mbuff, mcach = get_system_memory_extended_plus()
+    SYSTEM_MEMORY_BUFFERS.set(mbuff)
+    SYSTEM_MEMORY_CACHED.set(mcach)
+    SYSTEM_DISK_PARTITIONS_COUNT.set(get_system_disk_partitions_count())
+    SYSTEM_USERS_COUNT.set(get_system_users_count())
+    PROCESS_CHILDREN_COUNT.set(get_process_children_count())
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

@@ -376,6 +376,42 @@ PROCESS_NUM_THREADS = Gauge(
     "Number of threads used by the process"
 )
 
+# v342 Ascension Singularity Metrics
+SYSTEM_CPU_STEAL = Gauge(
+    "adk_system_cpu_steal_percent",
+    "Time spent in other operating systems when running in a virtualized environment"
+)
+
+SYSTEM_CPU_GUEST = Gauge(
+    "adk_system_cpu_guest_percent",
+    "Time spent running a virtual CPU for guest operating systems"
+)
+
+SYSTEM_MEMORY_BUFFERS = Gauge(
+    "adk_system_memory_buffers_bytes",
+    "System memory used for temporary storage of raw disk blocks"
+)
+
+SYSTEM_MEMORY_CACHED = Gauge(
+    "adk_system_memory_cached_bytes",
+    "System memory used for temporary storage of files read from disk"
+)
+
+SYSTEM_DISK_PARTITIONS_COUNT = Gauge(
+    "adk_system_disk_partitions_count",
+    "Total number of mounted disk partitions"
+)
+
+SYSTEM_USERS_COUNT = Gauge(
+    "adk_system_users_count",
+    "Number of active system users"
+)
+
+PROCESS_CHILDREN_COUNT = Gauge(
+    "adk_process_children_count",
+    "Number of child processes"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

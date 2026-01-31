@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from backend.app.main import app
+from backend.app.main import app, APP_VERSION, OPERATIONAL_APEX
 import time
 
 client = TestClient(app)
@@ -11,8 +11,8 @@ def test_v341_health_metrics():
     assert response.status_code == 200
     data = response.json()
     
-    assert data["version"] == "1.3.1"
-    assert data["operational_apex"] == "GOD TIER OMEGA PLUS ULTRA"
+    assert data["version"] == APP_VERSION
+    assert data["operational_apex"] == OPERATIONAL_APEX
     
     # System CPU Stats
     assert "system_cpu_stats" in data
@@ -50,5 +50,5 @@ def test_v341_version_endpoint():
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "1.3.1"
-    assert data["status"] == "GOD TIER OMEGA PLUS ULTRA"
+    assert data["version"] == APP_VERSION
+    assert data["status"] == OPERATIONAL_APEX
