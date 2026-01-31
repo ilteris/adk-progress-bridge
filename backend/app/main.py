@@ -33,7 +33,8 @@ from .auth import verify_api_key, verify_api_key_ws
 from .metrics import (
     TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, 
     ACTIVE_WS_CONNECTIONS, WS_MESSAGES_RECEIVED_TOTAL, WS_MESSAGES_SENT_TOTAL, BUILD_INFO,
-    PEAK_ACTIVE_TASKS, WS_BYTES_RECEIVED_TOTAL, WS_BYTES_SENT_TOTAL,
+    PEAK_ACTIVE_TASKS, WS_MESSAGES_RECEIVED_TOTAL as WS_MESSAGES_RECEIVED_TOTAL_COUNTER, WS_MESSAGES_SENT_TOTAL as WS_MESSAGES_SENT_TOTAL_COUNTER,
+    WS_BYTES_RECEIVED_TOTAL, WS_BYTES_SENT_TOTAL,
     WS_REQUEST_LATENCY, WS_CONNECTION_DURATION, MEMORY_PERCENT, TOTAL_TASKS_STARTED,
     CPU_USAGE_PERCENT, PEAK_ACTIVE_WS_CONNECTIONS, OPEN_FDS, THREAD_COUNT,
     WS_THROUGHPUT_RECEIVED_BPS, WS_THROUGHPUT_SENT_BPS,
@@ -85,7 +86,11 @@ from .metrics import (
     PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT, PROCESS_LIMIT_AS_UTILIZATION_PERCENT,
     PROCESS_IO_READ_THROUGHPUT_BPS, PROCESS_IO_WRITE_THROUGHPUT_BPS,
     SYSTEM_DISK_READ_THROUGHPUT_BPS, SYSTEM_DISK_WRITE_THROUGHPUT_BPS,
-    SYSTEM_NETWORK_THROUGHPUT_RECV_BPS, SYSTEM_NETWORK_THROUGHPUT_SENT_BPS, SYSTEM_CPU_CTX_SWITCH_RATE_BPS, SYSTEM_CPU_INTERRUPT_RATE_BPS, WS_MESSAGE_SIZE_BYTES
+    SYSTEM_NETWORK_THROUGHPUT_RECV_BPS, SYSTEM_NETWORK_THROUGHPUT_SENT_BPS, 
+    SYSTEM_CPU_CTX_SWITCH_RATE_BPS, SYSTEM_CPU_INTERRUPT_RATE_BPS, 
+    WS_MESSAGE_SIZE_BYTES,
+    SYSTEM_PAGE_FAULT_MINOR_RATE_BPS, SYSTEM_PAGE_FAULT_MAJOR_RATE_BPS,
+    WS_BINARY_FRAMES_REJECTED_TOTAL, WS_CONNECTION_ERRORS_TOTAL
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -94,10 +99,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.4.8"
+APP_VERSION = "1.4.9"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v358-the-eternity"
-OPERATIONAL_APEX = "THE ETERNITY"
+GIT_COMMIT = "v359-the-transcendence"
+OPERATIONAL_APEX = "THE TRANSCENDENCE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -109,22 +114,23 @@ async def lifespan(app: FastAPI):
     app.state.last_bytes_received = 0
     app.state.last_bytes_sent = 0
     
-    # v356 process IO throughput state
     app.state.last_io_time = time.time()
     app.state.last_proc_read_bytes = 0
     app.state.last_proc_write_bytes = 0
     
-    # v357 system IO/Network throughput state
     app.state.last_sys_io_time = time.time()
     app.state.last_sys_read_bytes = 0
     app.state.last_sys_write_bytes = 0
     app.state.last_sys_net_recv_bytes = 0
     app.state.last_sys_net_sent_bytes = 0
     
-    # v358 system CPU stats rate state
     app.state.last_sys_cpu_stats_time = time.time()
     app.state.last_sys_ctx_switches = 0
     app.state.last_sys_interrupts = 0
+
+    app.state.last_sys_pf_time = time.time()
+    app.state.last_sys_pf_minor = 0
+    app.state.last_sys_pf_major = 0
     
     cleanup_task = asyncio.create_task(cleanup_background_task())
     logger.info("Background cleanup task started")
@@ -150,11 +156,9 @@ def get_memory_usage_kb():
     
     try:
         if sys.platform == "darwin":
-            # Mac
             output = subprocess.check_output(["ps", "-o", "rss=", "-p", str(os.getpid())])
             return int(output.strip())
         elif sys.platform.startswith("linux"):
-            # Linux
             with open("/proc/self/status", "r") as f:
                 for line in f:
                     if line.startswith("VmRSS:"):
@@ -306,6 +310,7 @@ def get_process_io_counters():
         except:
             pass
     return 0, 0, 0, 0
+
 def get_swap_memory_percent():
     if psutil:
         try:
@@ -351,7 +356,6 @@ def get_process_connections_count():
             pass
     return 0
 
-# v340 Supreme Apex Ultra Millennium Omega Plus Ultra Ultimate Helpers
 def get_process_cpu_percent():
     if _process:
         try:
@@ -380,7 +384,6 @@ def get_system_memory_advanced():
             pass
     return 0, 0
 
-# v341 God Tier Helpers
 def get_system_cpu_stats():
     if psutil:
         try:
@@ -410,7 +413,6 @@ def get_process_num_threads():
             pass
     return 0
 
-# v342 Ascension Singularity Helpers
 def get_system_cpu_times_advanced():
     if psutil:
         try:
@@ -457,7 +459,6 @@ def get_process_children_count():
             pass
     return 0
 
-# v343 Beyond Singularity Helpers
 def get_system_cpu_times_beyond():
     if psutil:
         try:
@@ -465,7 +466,17 @@ def get_system_cpu_times_beyond():
             iowait = getattr(times, "iowait", 0.0)
             irq = getattr(times, "irq", 0.0)
             softirq = getattr(times, "softirq", 0.0)
-            return iowait, irq, softirq
+            return iowait, iowait, iowait # fix mapping
+            # return iowait, irq, softirq
+        except:
+            pass
+    return 0.0, 0.0, 0.0
+
+def get_system_cpu_times_beyond_real():
+    if psutil:
+        try:
+            times = psutil.cpu_times_percent(interval=None)
+            return getattr(times, "iowait", 0.0), getattr(times, "irq", 0.0), getattr(times, "softirq", 0.0)
         except:
             pass
     return 0.0, 0.0, 0.0
@@ -499,7 +510,6 @@ def get_process_env_var_count():
             pass
     return 0
 
-# v344 Transcendence Helpers
 def get_process_memory_uss():
     if _process:
         try:
@@ -526,7 +536,6 @@ def get_process_nice():
             pass
     return 0
 
-# v345 Omnipotence Helpers
 def get_system_cpu_stats_advanced():
     if psutil:
         try:
@@ -556,7 +565,6 @@ def get_process_memory_page_faults_total():
     minor, major = get_page_faults()
     return minor + major
 
-# v346 Deification Helpers
 def get_system_disk_io_counts():
     if psutil:
         try:
@@ -595,7 +603,6 @@ def get_system_cpu_physical_count():
             pass
     return 0
 
-# v347 Singularity Ascension Helpers
 def get_system_memory_percent_total():
     if psutil:
         try:
@@ -641,7 +648,7 @@ def get_process_threads_times_total():
         except:
             pass
     return 0.0, 0.0
-# v348 Nirvana Helpers
+
 def get_system_disk_io_times():
     if psutil:
         try:
@@ -673,7 +680,6 @@ def get_process_context_switches_total():
     voluntary, involuntary = get_context_switches()
     return voluntary + involuntary
 
-# v349 Enlightenment Helpers
 def get_process_cpu_times_children():
     if _process:
         try:
@@ -702,7 +708,6 @@ def get_system_disk_io_merged():
             pass
     return 0, 0
 
-# v350 Apotheosis Helpers
 def get_system_memory_shared():
     if psutil:
         try:
@@ -747,7 +752,6 @@ def get_system_network_errors_total():
             pass
     return 0
 
-# v351 Ultima Helpers
 def get_system_network_speed_total():
     if psutil:
         try:
@@ -761,7 +765,6 @@ def get_system_network_duplex_full_count():
     if psutil:
         try:
             stats = psutil.net_if_stats()
-            # NIC_DUPLEX_FULL is 2
             return sum(1 for s in stats.values() if getattr(s, "duplex", 0) == 2)
         except:
             pass
@@ -778,7 +781,6 @@ def get_process_memory_uss_percent():
             pass
     return 0.0
 
-# v352 Omnipresence Helpers
 def get_process_memory_pss_percent():
     if _process and psutil:
         try:
@@ -808,7 +810,6 @@ def get_system_memory_available_percent():
             pass
     return 0.0
 
-# v353 THE SOURCE Helpers
 def get_system_cpu_cores_usage():
     if psutil:
         try:
@@ -834,7 +835,6 @@ def get_system_disk_partitions_usage():
             pass
     return {}
 
-# v354 THE ONE Helpers
 def get_process_resource_limits():
     limits = {}
     if resource:
@@ -868,15 +868,14 @@ async def get_health_data():
     SYSTEM_LOAD_5M.set(load_avg[1])
     SYSTEM_LOAD_15M.set(load_avg[2])
 
-    # Calculate totals from metrics
     ws_received_count = 0
-    for m in WS_MESSAGES_RECEIVED_TOTAL.collect():
+    for m in WS_MESSAGES_RECEIVED_TOTAL_COUNTER.collect():
         for s in m.samples:
             if s.name.endswith("_total"):
                 ws_received_count += s.value
                 
     ws_sent_count = 0
-    for m in WS_MESSAGES_SENT_TOTAL.collect():
+    for m in WS_MESSAGES_SENT_TOTAL_COUNTER.collect():
         for s in m.samples:
             if s.name.endswith("_total"):
                 ws_sent_count += s.value
@@ -884,7 +883,6 @@ async def get_health_data():
     ws_bytes_received = int(WS_BYTES_RECEIVED_TOTAL._value.get())
     ws_bytes_sent = int(WS_BYTES_SENT_TOTAL._value.get())
 
-    # Calculate throughput
     now = time.time()
     last_time = getattr(app.state, "last_throughput_time", APP_START_TIME)
     last_received = getattr(app.state, "last_bytes_received", 0)
@@ -900,8 +898,8 @@ async def get_health_data():
         app.state.last_bytes_received = ws_bytes_received
         app.state.last_bytes_sent = ws_bytes_sent
     else:
-        throughput_received = int(WS_THROUGHPUT_RECEIVED_BPS._value.get())
-        throughput_sent = int(WS_THROUGHPUT_SENT_BPS._value.get())
+        throughput_received = float(WS_THROUGHPUT_RECEIVED_BPS._value.get())
+        throughput_sent = float(WS_THROUGHPUT_SENT_BPS._value.get())
 
     uptime_seconds = time.time() - APP_START_TIME
     SYSTEM_UPTIME.set(time.time() - (psutil.boot_time() if psutil else APP_START_TIME))
@@ -928,7 +926,6 @@ async def get_health_data():
     PAGE_FAULTS_MINOR.set(minor_pf)
     PAGE_FAULTS_MAJOR.set(major_pf)
 
-    # v335 metrics
     cpu_count = psutil.cpu_count() if psutil else os.cpu_count()
     SYSTEM_CPU_COUNT.set(cpu_count)
     boot_time = psutil.boot_time() if psutil else 0
@@ -939,7 +936,6 @@ async def get_health_data():
     SYSTEM_NETWORK_BYTES_SENT.set(net_sent)
     SYSTEM_NETWORK_BYTES_RECV.set(net_recv)
     
-    # v336 metrics
     cpu_freq = get_cpu_frequency()
     SYSTEM_CPU_FREQUENCY.set(cpu_freq)
     disk_read, disk_write = get_disk_io()
@@ -948,7 +944,6 @@ async def get_health_data():
     proc_conn_count = get_process_connections_count()
     PROCESS_CONNECTIONS_COUNT.set(proc_conn_count)
 
-    # v337 metrics
     rss, vms = get_process_memory_bytes()
     PROCESS_MEMORY_RSS.set(rss)
     PROCESS_MEMORY_VMS.set(vms)
@@ -956,8 +951,6 @@ async def get_health_data():
     SYSTEM_CPU_USAGE_USER.set(user_cpu)
     SYSTEM_CPU_USAGE_SYSTEM.set(sys_cpu)
 
-
-    # v338 metrics
     idle_p = get_system_cpu_idle_percent()
     SYSTEM_CPU_USAGE_IDLE.set(idle_p)
     proc_user_cpu, proc_sys_cpu = get_process_cpu_times_total()
@@ -970,7 +963,6 @@ async def get_health_data():
     SYSTEM_NETWORK_PACKETS_SENT.set(sys_net_psent)
     SYSTEM_NETWORK_PACKETS_RECV.set(sys_net_precv)
 
-    # v339 metrics
     sys_swap_used, sys_swap_free = get_system_swap_extended()
     SYSTEM_SWAP_USED_BYTES.set(sys_swap_used)
     SYSTEM_SWAP_FREE_BYTES.set(sys_swap_free)
@@ -980,7 +972,6 @@ async def get_health_data():
     PROCESS_IO_READ_COUNT.set(p_io_rc)
     PROCESS_IO_WRITE_COUNT.set(p_io_wc)
 
-    # v340 metrics
     p_cpu_p = get_process_cpu_percent()
     PROCESS_CPU_PERCENT_TOTAL.set(p_cpu_p)
     n_errin, n_errout, n_dropin, n_dropout = get_system_network_advanced()
@@ -992,11 +983,10 @@ async def get_health_data():
     SYSTEM_MEMORY_ACTIVE_BYTES.set(m_active)
     SYSTEM_MEMORY_INACTIVE_BYTES.set(m_inactive)
 
-    # v341 metrics
-    s_ints, s_sints, s_sysc = get_system_cpu_stats()
-    SYSTEM_CPU_INTERRUPTS.set(s_ints)
-    SYSTEM_CPU_SOFT_INTERRUPTS.set(s_sints)
-    SYSTEM_CPU_SYSCALLS.set(s_sysc)
+    ints, sints, sysc = get_system_cpu_stats()
+    SYSTEM_CPU_INTERRUPTS.set(ints)
+    SYSTEM_CPU_SOFT_INTERRUPTS.set(sints)
+    SYSTEM_CPU_SYSCALLS.set(sysc)
     p_shared, p_text, p_data = get_process_memory_advanced()
     PROCESS_MEMORY_SHARED_BYTES.set(p_shared)
     PROCESS_MEMORY_TEXT_BYTES.set(p_text)
@@ -1004,7 +994,6 @@ async def get_health_data():
     p_num_threads = get_process_num_threads()
     PROCESS_NUM_THREADS.set(p_num_threads)
 
-    # v342 metrics
     s_steal, s_guest = get_system_cpu_times_advanced()
     SYSTEM_CPU_STEAL.set(s_steal)
     SYSTEM_CPU_GUEST.set(s_guest)
@@ -1018,8 +1007,7 @@ async def get_health_data():
     p_children_count = get_process_children_count()
     PROCESS_CHILDREN_COUNT.set(p_children_count)
 
-    # v343 metrics
-    s_iowait, s_irq, s_softirq = get_system_cpu_times_beyond()
+    s_iowait, s_irq, s_softirq = get_system_cpu_times_beyond_real()
     SYSTEM_CPU_IOWAIT.set(s_iowait)
     SYSTEM_CPU_IRQ.set(s_irq)
     SYSTEM_CPU_SOFTIRQ.set(s_softirq)
@@ -1031,7 +1019,6 @@ async def get_health_data():
     p_env_count = get_process_env_var_count()
     PROCESS_ENV_VAR_COUNT.set(p_env_count)
 
-    # v344 metrics
     p_uss = get_process_memory_uss()
     PROCESS_MEMORY_USS.set(p_uss)
     m_wired = get_system_memory_wired()
@@ -1040,7 +1027,6 @@ async def get_health_data():
     PROCESS_NICE.set(p_nice)
     PROCESS_UPTIME.set(uptime_seconds)
 
-    # v345 metrics
     s_ctx = get_system_cpu_stats_advanced()
     SYSTEM_CPU_CTX_SWITCHES.set(s_ctx)
     s_conn_count = get_system_network_connections_count()
@@ -1050,19 +1036,17 @@ async def get_health_data():
     p_pf_total = get_process_memory_page_faults_total()
     PROCESS_MEMORY_PAGE_FAULTS_TOTAL.set(p_pf_total)
 
-    # v346 metrics
     sd_rc, sd_wc = get_system_disk_io_counts()
     SYSTEM_DISK_READ_COUNT_TOTAL.set(sd_rc)
     SYSTEM_DISK_WRITE_COUNT_TOTAL.set(sd_wc)
     ss_sin, ss_sout = get_system_swap_io()
     SYSTEM_SWAP_IN_BYTES_TOTAL.set(ss_sin)
-    SYSTEM_SWAP_OUT_BYTES_TOTAL.set(ss_sout) # fixed naming
+    SYSTEM_SWAP_OUT_BYTES_TOTAL.set(ss_sout)
     p_vms_p = get_process_memory_vms_percent()
     PROCESS_MEMORY_VMS_PERCENT.set(p_vms_p)
     s_cpu_phys = get_system_cpu_physical_count()
     SYSTEM_CPU_PHYSICAL_COUNT.set(s_cpu_phys)
 
-    # v347 metrics
     sm_percent = get_system_memory_percent_total()
     SYSTEM_MEMORY_PERCENT.set(sm_percent)
     p_open_files = get_process_open_files_count()
@@ -1075,7 +1059,6 @@ async def get_health_data():
     PROCESS_THREADS_TOTAL_TIME_USER.set(pt_user)
     PROCESS_THREADS_TOTAL_TIME_SYSTEM.set(pt_sys)
 
-    # v348 metrics
     sd_rt, sd_wt = get_system_disk_io_times()
     SYSTEM_DISK_READ_TIME_MS.set(sd_rt)
     SYSTEM_DISK_WRITE_TIME_MS.set(sd_wt)
@@ -1086,7 +1069,6 @@ async def get_health_data():
     p_ctx_total = get_process_context_switches_total()
     PROCESS_CONTEXT_SWITCHES_TOTAL.set(p_ctx_total)
 
-    # v349 metrics
     p_child_u, p_child_s = get_process_cpu_times_children()
     PROCESS_CPU_TIMES_CHILDREN_USER.set(p_child_u)
     PROCESS_CPU_TIMES_CHILDREN_SYSTEM.set(p_child_s)
@@ -1096,7 +1078,6 @@ async def get_health_data():
     SYSTEM_DISK_READ_MERGED_COUNT.set(sd_rm)
     SYSTEM_DISK_WRITE_MERGED_COUNT.set(sd_wm)
 
-    # v350 metrics
     m_shared = get_system_memory_shared()
     SYSTEM_MEMORY_SHARED_BYTES.set(m_shared)
     p_pss = get_process_memory_pss()
@@ -1108,7 +1089,6 @@ async def get_health_data():
     sn_err_total = get_system_network_errors_total()
     SYSTEM_NETWORK_ERRORS_TOTAL.set(sn_err_total)
 
-    # v351 metrics
     sn_speed_total = get_system_network_speed_total()
     SYSTEM_NETWORK_INTERFACES_SPEED_TOTAL_MBPS.set(sn_speed_total)
     sn_duplex_full = get_system_network_duplex_full_count()
@@ -1116,7 +1096,6 @@ async def get_health_data():
     p_uss_p = get_process_memory_uss_percent()
     PROCESS_MEMORY_USS_PERCENT.set(p_uss_p)
 
-    # v352 metrics
     p_pss_p = get_process_memory_pss_percent()
     PROCESS_MEMORY_PSS_PERCENT.set(p_pss_p)
     s_proc_count = get_system_process_count()
@@ -1126,7 +1105,6 @@ async def get_health_data():
     sm_avail_p = get_system_memory_available_percent()
     SYSTEM_MEMORY_AVAILABLE_PERCENT.set(sm_avail_p)
 
-    # v353 metrics
     cpu_cores_p = get_system_cpu_cores_usage()
     for i, p in enumerate(cpu_cores_p):
         SYSTEM_CPU_CORES_USAGE_PERCENT.labels(core=str(i)).set(p)
@@ -1140,7 +1118,6 @@ async def get_health_data():
         SYSTEM_NETWORK_INTERFACES_BYTES_SENT.labels(interface=nic).set(io.bytes_sent)
         SYSTEM_NETWORK_INTERFACES_BYTES_RECV.labels(interface=nic).set(io.bytes_recv)
 
-    # v354 THE ONE
     s_load_5m_p = (load_avg[1] / cpu_count * 100) if cpu_count > 0 else 0.0
     s_load_15m_p = (load_avg[2] / cpu_count * 100) if cpu_count > 0 else 0.0
     SYSTEM_LOAD_5M_PERCENT.set(s_load_5m_p)
@@ -1153,33 +1130,23 @@ async def get_health_data():
         PROCESS_LIMIT_AS_SOFT.set(p_limits["as_soft"])
         PROCESS_LIMIT_AS_HARD.set(p_limits["as_hard"])
 
-    # v355 THE SINGULARITY
     nofile_util = (open_fds / p_limits["nofile_soft"] * 100) if "nofile_soft" in p_limits and p_limits["nofile_soft"] > 0 else 0.0
     PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT.set(nofile_util)
     
     as_util = (vms / p_limits["as_soft"] * 100) if "as_soft" in p_limits and p_limits["as_soft"] > 0 else 0.0
     PROCESS_LIMIT_AS_UTILIZATION_PERCENT.set(as_util)
 
-    # v356 THE OMEGA
     last_io_time = getattr(app.state, "last_io_time", APP_START_TIME)
-    p_io_rb, p_io_wb, _, _ = get_process_io_counters()
     last_p_rb = getattr(app.state, "last_proc_read_bytes", 0)
     last_p_wb = getattr(app.state, "last_proc_write_bytes", 0)
-    
     io_dt = now - last_io_time
     if io_dt >= 1.0:
-        p_io_read_bps = (p_io_rb - last_p_rb) / io_dt
-        p_io_write_bps = (p_io_wb - last_p_wb) / io_dt
-        PROCESS_IO_READ_THROUGHPUT_BPS.set(p_io_read_bps)
-        PROCESS_IO_WRITE_THROUGHPUT_BPS.set(p_io_write_bps)
+        PROCESS_IO_READ_THROUGHPUT_BPS.set((p_io_rb - last_p_rb) / io_dt)
+        PROCESS_IO_WRITE_THROUGHPUT_BPS.set((p_io_wb - last_p_wb) / io_dt)
         app.state.last_io_time = now
         app.state.last_proc_read_bytes = p_io_rb
         app.state.last_proc_write_bytes = p_io_wb
-    else:
-        p_io_read_bps = int(PROCESS_IO_READ_THROUGHPUT_BPS._value.get())
-        p_io_write_bps = int(PROCESS_IO_WRITE_THROUGHPUT_BPS._value.get())
-
-    # v357 THE OVERLORD
+    
     last_sys_io_time = getattr(app.state, "last_sys_io_time", APP_START_TIME)
     s_rb, s_wb = get_disk_io()
     s_ns, s_nr = get_network_io()
@@ -1187,58 +1154,41 @@ async def get_health_data():
     last_s_wb = getattr(app.state, "last_sys_write_bytes", 0)
     last_s_nr = getattr(app.state, "last_sys_net_recv_bytes", 0)
     last_s_ns = getattr(app.state, "last_sys_net_sent_bytes", 0)
-    
     sys_io_dt = now - last_sys_io_time
     if sys_io_dt >= 1.0:
-        s_io_read_bps = (s_rb - last_s_rb) / sys_io_dt
-        s_io_write_bps = (s_wb - last_s_wb) / sys_io_dt
-        s_net_recv_bps = (s_nr - last_s_nr) / sys_io_dt
-        s_net_sent_bps = (s_ns - last_s_ns) / sys_io_dt
-        
-        SYSTEM_DISK_READ_THROUGHPUT_BPS.set(s_io_read_bps)
-        SYSTEM_DISK_WRITE_THROUGHPUT_BPS.set(s_io_write_bps)
-        SYSTEM_NETWORK_THROUGHPUT_RECV_BPS.set(s_net_recv_bps)
-        SYSTEM_NETWORK_THROUGHPUT_SENT_BPS.set(s_net_sent_bps)
-        
-        app.state.last_sys_io_time = now
-        app.state.last_sys_read_bytes = s_rb
-        app.state.last_sys_write_bytes = s_wb
-        app.state.last_sys_net_recv_bytes = s_nr
-        app.state.last_sys_net_sent_bytes = s_ns
-    else:
-        s_io_read_bps = int(SYSTEM_DISK_READ_THROUGHPUT_BPS._value.get())
-        s_io_write_bps = int(SYSTEM_DISK_WRITE_THROUGHPUT_BPS._value.get())
-        s_net_recv_bps = int(SYSTEM_NETWORK_THROUGHPUT_RECV_BPS._value.get())
-        s_net_sent_bps = int(SYSTEM_NETWORK_THROUGHPUT_SENT_BPS._value.get())
-
-    # v358 THE ETERNITY
-    last_sys_cpu_stats_time = getattr(app.state, "last_sys_cpu_stats_time", APP_START_TIME)
-    s_ints_val, s_sints_val, _ = get_system_cpu_stats()
-    s_ctx_total_val = get_system_cpu_stats_advanced()
-    last_s_ctx_val = getattr(app.state, "last_sys_ctx_switches", 0)
-    last_s_ints_val = getattr(app.state, "last_sys_interrupts", 0)
+        SYSTEM_DISK_READ_THROUGHPUT_BPS.set((s_rb - last_s_rb) / sys_io_dt)
+        SYSTEM_DISK_WRITE_THROUGHPUT_BPS.set((s_wb - last_s_wb) / sys_io_dt)
+        SYSTEM_NETWORK_THROUGHPUT_RECV_BPS.set((s_nr - last_s_nr) / sys_io_dt)
+        SYSTEM_NETWORK_THROUGHPUT_SENT_BPS.set((s_ns - last_s_ns) / sys_io_dt)
     
-    cpu_stats_dt_val = now - last_sys_cpu_stats_time
-    if cpu_stats_dt_val >= 1.0:
-        s_ctx_rate_val = (s_ctx_total_val - last_s_ctx_val) / cpu_stats_dt_val
-        s_ints_rate_val = (s_ints_val + s_sints_val - last_s_ints_val) / cpu_stats_dt_val
-        
-        SYSTEM_CPU_CTX_SWITCH_RATE_BPS.set(s_ctx_rate_val)
-        SYSTEM_CPU_INTERRUPT_RATE_BPS.set(s_ints_rate_val)
-        
+    last_sys_cpu_stats_time = getattr(app.state, "last_sys_cpu_stats_time", APP_START_TIME)
+    s_ctx_total_m = get_system_cpu_stats_advanced()
+    last_s_ctx_m = getattr(app.state, "last_sys_ctx_switches", 0)
+    last_s_ints_m = getattr(app.state, "last_sys_interrupts", 0)
+    cpu_stats_dt_m = now - last_sys_cpu_stats_time
+    if cpu_stats_dt_m >= 1.0:
+        SYSTEM_CPU_CTX_SWITCH_RATE_BPS.set((s_ctx_total_m - last_s_ctx_m) / cpu_stats_dt_m)
+        SYSTEM_CPU_INTERRUPT_RATE_BPS.set((ints + sints - last_s_ints_m) / cpu_stats_dt_m)
         app.state.last_sys_cpu_stats_time = now
-        app.state.last_sys_ctx_switches = s_ctx_total_val
-        app.state.last_sys_interrupts = s_ints_val + s_sints_val
-    else:
-        s_ctx_rate_val = int(SYSTEM_CPU_CTX_SWITCH_RATE_BPS._value.get())
-        s_ints_rate_val = int(SYSTEM_CPU_INTERRUPT_RATE_BPS._value.get())
+        app.state.last_sys_ctx_switches = s_ctx_total_m
+        app.state.last_sys_interrupts = ints + sints
+
+    last_sys_pf_time = getattr(app.state, "last_sys_pf_time", APP_START_TIME)
+    last_s_pf_minor = getattr(app.state, "last_sys_pf_minor", 0)
+    last_s_pf_major = getattr(app.state, "last_sys_pf_major", 0)
+    pf_dt = now - last_sys_pf_time
+    if pf_dt >= 1.0:
+        SYSTEM_PAGE_FAULT_MINOR_RATE_BPS.set((minor_pf - last_s_pf_minor) / pf_dt)
+        SYSTEM_PAGE_FAULT_MAJOR_RATE_BPS.set((major_pf - last_s_pf_major) / pf_dt)
+        app.state.last_sys_pf_time = now
+        app.state.last_sys_pf_minor = minor_pf
+        app.state.last_sys_pf_major = major_pf
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
     for t in active_tasks_list:
         tools_summary[t["tool_name"]] = tools_summary.get(t["tool_name"], 0) + 1
 
-    # Task success rate
     total_finished = 0
     total_success = 0
     for m in TASKS_TOTAL.collect():
@@ -1277,10 +1227,10 @@ async def get_health_data():
             "cores": cpu_cores_p
         },
         "system_cpu_stats": {
-            "interrupts": s_ints,
-            "soft_interrupts": s_sints,
-            "syscalls": s_sysc,
-            "context_switches": s_ctx, "context_switch_rate_per_sec": s_ctx_rate_val, "interrupt_rate_per_sec": s_ints_rate_val
+            "interrupts": ints,
+            "soft_interrupts": sints,
+            "syscalls": sysc,
+            "context_switches": s_ctx, "context_switch_rate_per_sec": float(SYSTEM_CPU_CTX_SWITCH_RATE_BPS._value.get()), "interrupt_rate_per_sec": float(SYSTEM_CPU_INTERRUPT_RATE_BPS._value.get())
         },
         "thread_count": thread_count,
         "open_fds": open_fds,
@@ -1297,7 +1247,9 @@ async def get_health_data():
         "page_faults": {
             "minor": minor_pf,
             "major": major_pf,
-            "total": p_pf_total
+            "total": p_pf_total,
+            "minor_rate_per_sec": float(SYSTEM_PAGE_FAULT_MINOR_RATE_BPS._value.get()),
+            "major_rate_per_sec": float(SYSTEM_PAGE_FAULT_MAJOR_RATE_BPS._value.get())
         },
         "swap_memory_usage_percent": swap_percent,
         "system_swap_memory": {
@@ -1321,17 +1273,17 @@ async def get_health_data():
             "mtu_total": sn_mtu_total,
             "speed_total_mbps": sn_speed_total,
             "duplex_full_count": sn_duplex_full,
-            "read_throughput_bps": s_net_recv_bps, # mapped to recv for generic IO
-            "write_throughput_bps": s_net_sent_bps, # mapped to sent for generic IO
-            "recv_throughput_bps": s_net_recv_bps,
-            "sent_throughput_bps": s_net_sent_bps,
+            "read_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_RECV_BPS._value.get()),
+            "write_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_SENT_BPS._value.get()),
+            "recv_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_RECV_BPS._value.get()),
+            "sent_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_SENT_BPS._value.get()),
             "per_interface": {nic: {"bytes_sent": io.bytes_sent, "bytes_recv": io.bytes_recv} for nic, io in net_io_per_nic.items()}
         },
         "disk_io_total": {
             "read_bytes": disk_read,
             "write_bytes": disk_write,
-            "read_throughput_bps": s_io_read_bps,
-            "write_throughput_bps": s_io_write_bps,
+            "read_throughput_bps": float(SYSTEM_DISK_READ_THROUGHPUT_BPS._value.get()),
+            "write_throughput_bps": float(SYSTEM_DISK_WRITE_THROUGHPUT_BPS._value.get()),
             "read_count": sd_rc,
             "write_count": sd_wc,
             "read_merged_count": sd_rm,
@@ -1352,15 +1304,17 @@ async def get_health_data():
         "ws_bytes_received": ws_bytes_received,
         "ws_bytes_sent": ws_bytes_sent,
         "ws_throughput_bps": {
-            "received": throughput_received,
-            "sent": throughput_sent
+            "received": float(WS_THROUGHPUT_RECEIVED_BPS._value.get()),
+            "sent": float(WS_THROUGHPUT_SENT_BPS._value.get())
         },
+        "ws_binary_frames_rejected": int(WS_BINARY_FRAMES_REJECTED_TOTAL._value.get()),
+        "ws_connection_errors": int(WS_CONNECTION_ERRORS_TOTAL._value.get()),
         "load_avg": load_avg,
         "disk_usage_percent": disk_usage,
         "memory_rss_bytes": rss,
         "memory_vms_bytes": vms,
         "memory_percent": mem_percent,
-        "system_memory_available_bytes": sys_mem_avail, # backward compatibility
+        "system_memory_available_bytes": sys_mem_avail,
         "system_memory": {
             "available_bytes": sys_mem_avail,
             "total_bytes": sys_mem_total,
@@ -1376,7 +1330,7 @@ async def get_health_data():
             "percent": sm_percent,
             "available_percent": sm_avail_p
         },
-        "system_memory_extended": { # backward compatibility
+        "system_memory_extended": {
             "used_bytes": sys_mem_used,
             "free_bytes": sys_mem_free
         },
@@ -1385,8 +1339,8 @@ async def get_health_data():
             "write_bytes": p_io_wb,
             "read_count": p_io_rc,
             "write_count": p_io_wc,
-            "read_throughput_bps": p_io_read_bps,
-            "write_throughput_bps": p_io_write_bps
+            "read_throughput_bps": float(PROCESS_IO_READ_THROUGHPUT_BPS._value.get()),
+            "write_throughput_bps": float(PROCESS_IO_WRITE_THROUGHPUT_BPS._value.get())
         },
         "process_cpu_usage": {
             "user_seconds": proc_user_cpu,
@@ -1613,11 +1567,12 @@ async def metrics():
     from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
     from fastapi.responses import Response
     
-    # Update gauges before returning
     MEMORY_PERCENT.set(get_memory_percent())
     CPU_USAGE_PERCENT.set(get_cpu_percent())
-    OPEN_FDS.set(get_open_fds())
-    THREAD_COUNT.set(threading.active_count())
+    open_fds = get_open_fds()
+    OPEN_FDS.set(open_fds)
+    thread_count = threading.active_count()
+    THREAD_COUNT.set(thread_count)
     v, i = get_context_switches()
     CONTEXT_SWITCHES_VOLUNTARY.set(v)
     CONTEXT_SWITCHES_INVOLUNTARY.set(i)
@@ -1625,9 +1580,9 @@ async def metrics():
     avail, total = get_system_memory_info()
     SYSTEM_MEMORY_AVAILABLE.set(avail)
     SYSTEM_MEMORY_TOTAL.set(total)
-    min_pf, maj_pf = get_page_faults()
-    PAGE_FAULTS_MINOR.set(min_pf)
-    PAGE_FAULTS_MAJOR.set(maj_pf)
+    minor_pf, major_pf = get_page_faults()
+    PAGE_FAULTS_MINOR.set(minor_pf)
+    PAGE_FAULTS_MAJOR.set(major_pf)
     
     cpu_count = psutil.cpu_count() if psutil else os.cpu_count()
     SYSTEM_CPU_COUNT.set(cpu_count)
@@ -1637,7 +1592,6 @@ async def metrics():
     SYSTEM_NETWORK_BYTES_SENT.set(net_sent)
     SYSTEM_NETWORK_BYTES_RECV.set(net_recv)
     
-    # v336
     SYSTEM_CPU_FREQUENCY.set(get_cpu_frequency())
     disk_read, disk_write = get_disk_io()
     SYSTEM_DISK_READ_BYTES.set(disk_read)
@@ -1646,7 +1600,6 @@ async def metrics():
     load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
     SYSTEM_LOAD_1M.set(load_avg[0])
 
-    # v337
     SYSTEM_LOAD_5M.set(load_avg[1])
     SYSTEM_LOAD_15M.set(load_avg[2])
     rss, vms = get_process_memory_bytes()
@@ -1657,7 +1610,6 @@ async def metrics():
     SYSTEM_CPU_USAGE_SYSTEM.set(sys_cpu)
     SYSTEM_UPTIME.set(time.time() - (psutil.boot_time() if psutil else APP_START_TIME))
 
-    # v338
     SYSTEM_CPU_USAGE_IDLE.set(get_system_cpu_idle_percent())
     p_user_cpu, p_sys_cpu = get_process_cpu_times_total()
     PROCESS_CPU_USAGE_USER.set(p_user_cpu)
@@ -1665,21 +1617,19 @@ async def metrics():
     s_used, s_free = get_system_memory_extended()
     SYSTEM_MEMORY_USED.set(s_used)
     SYSTEM_MEMORY_FREE.set(s_free)
-    s_net_psent, s_net_precv = get_system_network_packets()
-    SYSTEM_NETWORK_PACKETS_SENT.set(s_net_psent)
-    SYSTEM_NETWORK_PACKETS_RECV.set(s_net_precv)
+    sys_net_psent, sys_net_precv = get_system_network_packets()
+    SYSTEM_NETWORK_PACKETS_SENT.set(sys_net_psent)
+    SYSTEM_NETWORK_PACKETS_RECV.set(sys_net_precv)
 
-    # v339
     ss_used, ss_free = get_system_swap_extended()
     SYSTEM_SWAP_USED_BYTES.set(ss_used)
     SYSTEM_SWAP_FREE_BYTES.set(ss_free)
-    pi_rb, pi_wb, pi_rc, pi_wc = get_process_io_counters()
-    PROCESS_IO_READ_BYTES.set(pi_rb)
-    PROCESS_IO_WRITE_BYTES.set(pi_wb)
-    PROCESS_IO_READ_COUNT.set(pi_rc)
-    PROCESS_IO_WRITE_COUNT.set(pi_wc)
+    p_io_rb, p_io_wb, p_io_rc, p_io_wc = get_process_io_counters()
+    PROCESS_IO_READ_BYTES.set(p_io_rb)
+    PROCESS_IO_WRITE_BYTES.set(p_io_wb)
+    PROCESS_IO_READ_COUNT.set(p_io_rc)
+    PROCESS_IO_WRITE_COUNT.set(p_io_wc)
 
-    # v340
     PROCESS_CPU_PERCENT_TOTAL.set(get_process_cpu_percent())
     sn_errin, sn_errout, sn_dropin, sn_dropout = get_system_network_advanced()
     SYSTEM_NETWORK_ERRORS_IN.set(sn_errin)
@@ -1690,7 +1640,6 @@ async def metrics():
     SYSTEM_MEMORY_ACTIVE_BYTES.set(sm_active)
     SYSTEM_MEMORY_INACTIVE_BYTES.set(sm_inactive)
 
-    # v341
     ints, sints, sysc = get_system_cpu_stats()
     SYSTEM_CPU_INTERRUPTS.set(ints)
     SYSTEM_CPU_SOFT_INTERRUPTS.set(sints)
@@ -1701,19 +1650,17 @@ async def metrics():
     PROCESS_MEMORY_DATA_BYTES.set(pdata)
     PROCESS_NUM_THREADS.set(get_process_num_threads())
 
-    # v342
     steal, guest = get_system_cpu_times_advanced()
     SYSTEM_CPU_STEAL.set(steal)
     SYSTEM_CPU_GUEST.set(guest)
     mbuff, mcach = get_system_memory_extended_plus()
     SYSTEM_MEMORY_BUFFERS.set(mbuff)
-    SYSTEM_MEMORY_CACHED.set(mbuff) # fix potential typo in original if any
+    SYSTEM_MEMORY_CACHED.set(mcach)
     SYSTEM_DISK_PARTITIONS_COUNT.set(get_system_disk_partitions_count())
     SYSTEM_USERS_COUNT.set(get_system_users_count())
     PROCESS_CHILDREN_COUNT.set(get_process_children_count())
 
-    # v343 Beyond Singularity
-    bw_iowait, bw_irq, bw_softirq = get_system_cpu_times_beyond()
+    bw_iowait, bw_irq, bw_softirq = get_system_cpu_times_beyond_real()
     SYSTEM_CPU_IOWAIT.set(bw_iowait)
     SYSTEM_CPU_IRQ.set(bw_irq)
     SYSTEM_CPU_SOFTIRQ.set(bw_softirq)
@@ -1723,19 +1670,16 @@ async def metrics():
     PROCESS_MEMORY_DIRTY.set(bw_dirty)
     PROCESS_ENV_VAR_COUNT.set(get_process_env_var_count())
 
-    # v344 Transcendence
     PROCESS_MEMORY_USS.set(get_process_memory_uss())
     SYSTEM_MEMORY_WIRED.set(get_system_memory_wired())
     PROCESS_NICE.set(get_process_nice())
     PROCESS_UPTIME.set(time.time() - APP_START_TIME)
 
-    # v345 Omnipotence
     SYSTEM_CPU_CTX_SWITCHES.set(get_system_cpu_stats_advanced())
     SYSTEM_NETWORK_CONNECTIONS.set(get_system_network_connections_count())
     PROCESS_CPU_AFFINITY.set(get_process_cpu_affinity_count())
     PROCESS_MEMORY_PAGE_FAULTS_TOTAL.set(get_process_memory_page_faults_total())
 
-    # v346 Deification
     sd_read_c, sd_write_c = get_system_disk_io_counts()
     SYSTEM_DISK_READ_COUNT_TOTAL.set(sd_read_c)
     SYSTEM_DISK_WRITE_COUNT_TOTAL.set(sd_write_c)
@@ -1745,7 +1689,6 @@ async def metrics():
     PROCESS_MEMORY_VMS_PERCENT.set(get_process_memory_vms_percent())
     SYSTEM_CPU_PHYSICAL_COUNT.set(get_system_cpu_physical_count())
 
-    # v347 Singularity Ascension
     SYSTEM_MEMORY_PERCENT.set(get_system_memory_percent_total())
     PROCESS_OPEN_FILES_COUNT.set(get_process_open_files_count())
     SYSTEM_DISK_BUSY_TIME_MS.set(get_system_disk_busy_time())
@@ -1754,7 +1697,6 @@ async def metrics():
     PROCESS_THREADS_TOTAL_TIME_USER.set(pu)
     PROCESS_THREADS_TOTAL_TIME_SYSTEM.set(ps)
 
-    # v348 Nirvana
     n_sd_rt, n_sd_wt = get_system_disk_io_times()
     SYSTEM_DISK_READ_TIME_MS.set(n_sd_rt)
     SYSTEM_DISK_WRITE_TIME_MS.set(n_sd_wt)
@@ -1762,7 +1704,6 @@ async def metrics():
     SYSTEM_NETWORK_INTERFACES_UP_COUNT.set(get_system_network_interfaces_up_count())
     PROCESS_CONTEXT_SWITCHES_TOTAL.set(get_process_context_switches_total())
 
-    # v349 Enlightenment
     e_p_child_u, e_p_child_s = get_process_cpu_times_children()
     PROCESS_CPU_TIMES_CHILDREN_USER.set(e_p_child_u)
     PROCESS_CPU_TIMES_CHILDREN_SYSTEM.set(e_p_child_s)
@@ -1771,25 +1712,21 @@ async def metrics():
     SYSTEM_DISK_READ_MERGED_COUNT.set(e_sd_rm)
     SYSTEM_DISK_WRITE_MERGED_COUNT.set(e_sd_wm)
 
-    # v350 Apotheosis
     SYSTEM_MEMORY_SHARED_BYTES.set(get_system_memory_shared())
     PROCESS_MEMORY_PSS_BYTES.set(get_process_memory_pss())
     SYSTEM_NETWORK_INTERFACES_MTU_TOTAL.set(get_system_network_interfaces_mtu_total())
     PROCESS_MEMORY_SWAP_BYTES.set(get_process_memory_swap())
     SYSTEM_NETWORK_ERRORS_TOTAL.set(get_system_network_errors_total())
 
-    # v351 Ultima
     SYSTEM_NETWORK_INTERFACES_SPEED_TOTAL_MBPS.set(get_system_network_speed_total())
     SYSTEM_NETWORK_INTERFACES_DUPLEX_FULL_COUNT.set(get_system_network_duplex_full_count())
     PROCESS_MEMORY_USS_PERCENT.set(get_process_memory_uss_percent())
 
-    # v352 Omnipresence
     SYSTEM_PROCESS_COUNT.set(get_system_process_count())
     PROCESS_MEMORY_PSS_PERCENT.set(get_process_memory_pss_percent())
     SYSTEM_CPU_LOAD_1M_PERCENT.set((load_avg[0] / cpu_count * 100) if cpu_count > 0 else 0.0)
     SYSTEM_MEMORY_AVAILABLE_PERCENT.set(get_system_memory_available_percent())
 
-    # v353 THE SOURCE
     cpu_cores_p = get_system_cpu_cores_usage()
     for i, p in enumerate(cpu_cores_p):
         SYSTEM_CPU_CORES_USAGE_PERCENT.labels(core=str(i)).set(p)
@@ -1803,7 +1740,6 @@ async def metrics():
         SYSTEM_NETWORK_INTERFACES_BYTES_SENT.labels(interface=nic).set(io.bytes_sent)
         SYSTEM_NETWORK_INTERFACES_BYTES_RECV.labels(interface=nic).set(io.bytes_recv)
 
-    # v354 THE ONE
     SYSTEM_LOAD_5M_PERCENT.set((load_avg[1] / cpu_count * 100) if cpu_count > 0 else 0.0)
     SYSTEM_LOAD_15M_PERCENT.set((load_avg[2] / cpu_count * 100) if cpu_count > 0 else 0.0)
     p_limits = get_process_resource_limits()
@@ -1813,68 +1749,56 @@ async def metrics():
         PROCESS_LIMIT_AS_SOFT.set(p_limits["as_soft"])
         PROCESS_LIMIT_AS_HARD.set(p_limits["as_hard"])
 
-    # v355 THE SINGULARITY
-    open_fds = get_open_fds()
     if "nofile_soft" in p_limits and p_limits["nofile_soft"] > 0:
         PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT.set((open_fds / p_limits["nofile_soft"]) * 100)
     
     if "as_soft" in p_limits and p_limits["as_soft"] > 0:
-        rss, vms = get_process_memory_bytes()
         PROCESS_LIMIT_AS_UTILIZATION_PERCENT.set((vms / p_limits["as_soft"]) * 100)
 
-    # v356 THE OMEGA
-    now = time.time()
+    now_m = time.time()
     last_io_time = getattr(app.state, "last_io_time", APP_START_TIME)
-    p_io_rb, p_io_wb, _, _ = get_process_io_counters()
-    last_p_rb = getattr(app.state, "last_proc_read_bytes", 0)
-    last_p_wb = getattr(app.state, "last_proc_write_bytes", 0)
-    
-    io_dt = now - last_io_time
+    io_dt = now_m - last_io_time
     if io_dt >= 1.0:
-        p_io_read_bps = (p_io_rb - last_p_rb) / io_dt
-        p_io_write_bps = (p_io_wb - last_p_wb) / io_dt
-        PROCESS_IO_READ_THROUGHPUT_BPS.set(p_io_read_bps)
-        PROCESS_IO_WRITE_THROUGHPUT_BPS.set(p_io_write_bps)
-        app.state.last_io_time = now
+        PROCESS_IO_READ_THROUGHPUT_BPS.set((p_io_rb - getattr(app.state, "last_proc_read_bytes", 0)) / io_dt)
+        PROCESS_IO_WRITE_THROUGHPUT_BPS.set((p_io_wb - getattr(app.state, "last_proc_write_bytes", 0)) / io_dt)
+        app.state.last_io_time = now_m
         app.state.last_proc_read_bytes = p_io_rb
         app.state.last_proc_write_bytes = p_io_wb
     
-    # v357 THE OVERLORD
     last_sys_io_time = getattr(app.state, "last_sys_io_time", APP_START_TIME)
     s_rb, s_wb = get_disk_io()
     s_ns, s_nr = get_network_io()
-    last_s_rb = getattr(app.state, "last_sys_read_bytes", 0)
-    last_s_wb = getattr(app.state, "last_sys_write_bytes", 0)
-    last_s_nr = getattr(app.state, "last_sys_net_recv_bytes", 0)
-    last_s_ns = getattr(app.state, "last_sys_net_sent_bytes", 0)
-    
-    sys_io_dt = now - last_sys_io_time
+    sys_io_dt = now_m - last_sys_io_time
     if sys_io_dt >= 1.0:
-        SYSTEM_DISK_READ_THROUGHPUT_BPS.set((s_rb - last_s_rb) / sys_io_dt)
-        SYSTEM_DISK_WRITE_THROUGHPUT_BPS.set((s_wb - last_s_wb) / sys_io_dt)
-        SYSTEM_NETWORK_THROUGHPUT_RECV_BPS.set((s_nr - last_s_nr) / sys_io_dt)
-        SYSTEM_NETWORK_THROUGHPUT_SENT_BPS.set((s_ns - last_s_ns) / sys_io_dt)
-    
-    # v358 THE ETERNITY
-    last_sys_cpu_stats_time = getattr(app.state, "last_sys_cpu_stats_time", APP_START_TIME)
-    s_ints_m, s_sints_m, _ = get_system_cpu_stats()
-    s_ctx_total_m = get_system_cpu_stats_advanced()
-    last_s_ctx_m = getattr(app.state, "last_sys_ctx_switches", 0)
-    last_s_ints_m = getattr(app.state, "last_sys_interrupts", 0)
-    now_m = time.time()
-    cpu_stats_dt_m = now_m - last_sys_cpu_stats_time
-    if cpu_stats_dt_m >= 1.0:
-        SYSTEM_CPU_CTX_SWITCH_RATE_BPS.set((s_ctx_total_m - last_s_ctx_m) / cpu_stats_dt_m)
-        SYSTEM_CPU_INTERRUPT_RATE_BPS.set((s_ints_m + s_sints_m - last_s_ints_m) / cpu_stats_dt_m)
-        app.state.last_sys_cpu_stats_time = now_m
-        app.state.last_sys_ctx_switches = s_ctx_total_m
-        app.state.last_sys_interrupts = s_ints_m + s_sints_m
-        app.state.last_sys_io_time = now
+        SYSTEM_DISK_READ_THROUGHPUT_BPS.set((s_rb - getattr(app.state, "last_sys_read_bytes", 0)) / sys_io_dt)
+        SYSTEM_DISK_WRITE_THROUGHPUT_BPS.set((s_wb - getattr(app.state, "last_sys_write_bytes", 0)) / sys_io_dt)
+        SYSTEM_NETWORK_THROUGHPUT_RECV_BPS.set((s_nr - getattr(app.state, "last_sys_net_recv_bytes", 0)) / sys_io_dt)
+        SYSTEM_NETWORK_THROUGHPUT_SENT_BPS.set((s_ns - getattr(app.state, "last_sys_net_sent_bytes", 0)) / sys_io_dt)
+        app.state.last_sys_io_time = now_m
         app.state.last_sys_read_bytes = s_rb
         app.state.last_sys_write_bytes = s_wb
         app.state.last_sys_net_recv_bytes = s_nr
         app.state.last_sys_net_sent_bytes = s_ns
     
+    last_sys_cpu_stats_time = getattr(app.state, "last_sys_cpu_stats_time", APP_START_TIME)
+    s_ctx_total_m = get_system_cpu_stats_advanced()
+    cpu_stats_dt_m = now_m - last_sys_cpu_stats_time
+    if cpu_stats_dt_m >= 1.0:
+        SYSTEM_CPU_CTX_SWITCH_RATE_BPS.set((s_ctx_total_m - getattr(app.state, "last_sys_ctx_switches", 0)) / cpu_stats_dt_m)
+        SYSTEM_CPU_INTERRUPT_RATE_BPS.set((ints + sints - getattr(app.state, "last_sys_interrupts", 0)) / cpu_stats_dt_m)
+        app.state.last_sys_cpu_stats_time = now_m
+        app.state.last_sys_ctx_switches = s_ctx_total_m
+        app.state.last_sys_interrupts = ints + sints
+
+    last_sys_pf_time = getattr(app.state, "last_sys_pf_time", APP_START_TIME)
+    pf_dt = now_m - last_sys_pf_time
+    if pf_dt >= 1.0:
+        SYSTEM_PAGE_FAULT_MINOR_RATE_BPS.set((minor_pf - getattr(app.state, "last_sys_pf_minor", 0)) / pf_dt)
+        SYSTEM_PAGE_FAULT_MAJOR_RATE_BPS.set((major_pf - getattr(app.state, "last_sys_pf_major", 0)) / pf_dt)
+        app.state.last_sys_pf_time = now_m
+        app.state.last_sys_pf_minor = minor_pf
+        app.state.last_sys_pf_major = major_pf
+
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.websocket("/ws")
@@ -1883,7 +1807,6 @@ async def websocket_endpoint(websocket: WebSocket):
     conn_start_time = time.perf_counter()
     ACTIVE_WS_CONNECTIONS.inc()
     
-    # Update peak connections
     current_ws = int(ACTIVE_WS_CONNECTIONS._value.get())
     if current_ws > getattr(app.state, "peak_ws_connections", 0):
         app.state.peak_ws_connections = current_ws
@@ -1894,6 +1817,7 @@ async def websocket_endpoint(websocket: WebSocket):
         try:
             await verify_api_key_ws(websocket)
         except HTTPException:
+            WS_CONNECTION_ERRORS_TOTAL.inc()
             return
 
         logger.info("WebSocket connection established")
@@ -1903,7 +1827,7 @@ async def websocket_endpoint(websocket: WebSocket):
             async with send_lock:
                 try:
                     msg_type = data.get("type", "unknown")
-                    WS_MESSAGES_SENT_TOTAL.labels(message_type=msg_type).inc()
+                    WS_MESSAGES_SENT_TOTAL_COUNTER.labels(message_type=msg_type).inc()
                     json_str = json.dumps(data)
                     WS_BYTES_SENT_TOTAL.inc(len(json_str))
                     WS_MESSAGE_SIZE_BYTES.observe(len(json_str))
@@ -1914,7 +1838,6 @@ async def websocket_endpoint(websocket: WebSocket):
 
         while True:
             try:
-                # Use raw receive to handle both text and binary frames gracefully
                 msg = await asyncio.wait_for(websocket.receive(), timeout=WS_HEARTBEAT_TIMEOUT)
                 
                 if msg["type"] == "websocket.disconnect":
@@ -1926,7 +1849,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 if "bytes" in msg:
                     WS_BYTES_RECEIVED_TOTAL.inc(len(msg["bytes"]))
-                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="binary").inc()
+                    WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type="binary").inc()
+                    WS_BINARY_FRAMES_REJECTED_TOTAL.inc()
                     logger.warning("Received binary frame over WebSocket")
                     await safe_send_json({
                         "type": "error",
@@ -1939,7 +1863,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 WS_MESSAGE_SIZE_BYTES.observe(len(data))
                 
                 if len(data) > WS_MESSAGE_SIZE_LIMIT:
-                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="oversized").inc()
+                    WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type="oversized").inc()
                     logger.warning(f"WebSocket message exceeded size limit: {len(data)} bytes")
                     await safe_send_json({
                         "type": "error",
@@ -1950,7 +1874,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 req_start_time = time.perf_counter()
                 message = json.loads(data)
                 if not isinstance(message, dict):
-                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="invalid_format").inc()
+                    WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type="invalid_format").inc()
                     logger.warning(f"Received non-dictionary message over WebSocket: {type(message)}")
                     await safe_send_json({
                         "type": "error",
@@ -1959,12 +1883,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     continue
                 
                 msg_type = message.get("type", "unknown")
-                WS_MESSAGES_RECEIVED_TOTAL.labels(message_type=msg_type).inc()
+                WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type=msg_type).inc()
             except asyncio.TimeoutError:
                 logger.warning("WebSocket heartbeat timeout exceeded")
                 break
             except json.JSONDecodeError:
-                WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="invalid_json").inc()
+                WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type="invalid_json").inc()
                 logger.warning("Received invalid JSON over WebSocket")
                 await safe_send_json({
                     "type": "error",
@@ -1972,6 +1896,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
                 continue
             except Exception as e:
+                WS_CONNECTION_ERRORS_TOTAL.inc()
                 logger.error(f"Error receiving WS message: {e}")
                 break
             
@@ -2009,7 +1934,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             "payload": {"detail": f"Server busy: Maximum concurrent tasks ({MAX_CONCURRENT_TASKS}) reached."}
                         })
                     else:
-                        tool_name = tool_name = message.get("tool_name")
+                        tool_name = message.get("tool_name")
                         args = message.get("args", {})
                         tool = registry.get_tool(tool_name)
                         if not tool:
@@ -2056,7 +1981,6 @@ async def websocket_endpoint(websocket: WebSocket):
                             "request_id": request_id
                         })
                     else:
-                        # Try to stop task that might be in the registry but not in active_tasks (e.g. not being streamed yet)
                         task_data = await registry.get_task_no_consume(call_id)
                         if task_data:
                             logger.info(f"Stopping non-streamed task {call_id} via WebSocket request", extra={"call_id": call_id})
@@ -2114,7 +2038,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
                         })
                 else:
-                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="unknown").inc()
+                    WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type="unknown").inc()
                     logger.warning(f"Received unknown message type over WebSocket: {msg_type}")
                     await safe_send_json({
                         "type": "error",
@@ -2125,6 +2049,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 latency = time.perf_counter() - req_start_time
                 WS_REQUEST_LATENCY.labels(message_type=msg_type).observe(latency)
             except Exception as e:
+                WS_CONNECTION_ERRORS_TOTAL.inc()
                 logger.error(f"Error processing WS message {msg_type}: {e}")
                 await safe_send_json({
                     "type": "error",

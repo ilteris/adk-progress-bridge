@@ -784,6 +784,28 @@ WS_MESSAGE_SIZE_BYTES = Histogram(
     "Distribution of WebSocket message sizes",
     buckets=[64, 256, 1024, 4096, 16384, 65536, 262144, 1048576]
 )
+
+# v359 THE TRANSCENDENCE Metrics
+SYSTEM_PAGE_FAULT_MINOR_RATE_BPS = Gauge(
+    "adk_system_page_fault_minor_rate_per_sec",
+    "Current rate of system-wide minor page faults per second"
+)
+
+SYSTEM_PAGE_FAULT_MAJOR_RATE_BPS = Gauge(
+    "adk_system_page_fault_major_rate_per_sec",
+    "Current rate of system-wide major page faults per second"
+)
+
+WS_BINARY_FRAMES_REJECTED_TOTAL = Counter(
+    "adk_ws_binary_frames_rejected_total",
+    "Total number of rejected binary WebSocket frames"
+)
+
+WS_CONNECTION_ERRORS_TOTAL = Counter(
+    "adk_ws_connection_errors_total",
+    "Total number of WebSocket connection errors"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():
