@@ -668,6 +668,31 @@ SYSTEM_MEMORY_AVAILABLE_PERCENT = Gauge(
     "Percentage of system memory that is available"
 )
 
+# v353 THE SOURCE Metrics
+SYSTEM_CPU_CORES_USAGE_PERCENT = Gauge(
+    "adk_system_cpu_cores_usage_percent",
+    "Per-CPU core usage percentage",
+    ["core"]
+)
+
+SYSTEM_DISK_PARTITIONS_USAGE_PERCENT = Gauge(
+    "adk_system_disk_partitions_usage_percent",
+    "Per-disk partition usage percentage",
+    ["partition"]
+)
+
+SYSTEM_NETWORK_INTERFACES_BYTES_SENT = Gauge(
+    "adk_system_network_interfaces_bytes_sent_total",
+    "Total bytes sent per network interface",
+    ["interface"]
+)
+
+SYSTEM_NETWORK_INTERFACES_BYTES_RECV = Gauge(
+    "adk_system_network_interfaces_bytes_recv_total",
+    "Total bytes received per network interface",
+    ["interface"]
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

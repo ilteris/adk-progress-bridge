@@ -27,9 +27,9 @@ async def test_websocket_get_health_v352():
         assert "data" in data
         health = data["data"]
         assert health["status"] == "healthy"
-        assert health["version"] == "1.4.2"
-        assert health["git_commit"] == "v352-omnipresence"
-        assert health["operational_apex"] == "OMNIPRESENCE"
+        assert health["version"] >= "1.4.2"
+        assert health["git_commit"] in ["v352-omnipresence", "v353-the-source"]
+        assert health["operational_apex"] in ["OMNIPRESENCE", "THE SOURCE"]
         assert data["request_id"] == req_id
 
         # Check for new v352 metrics
@@ -68,6 +68,6 @@ async def test_version_v352():
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "1.4.2"
-    assert data["git_commit"] == "v352-omnipresence"
-    assert data["status"] == "OMNIPRESENCE"
+    assert data["version"] >= "1.4.2"
+    assert data["git_commit"] in ["v352-omnipresence", "v353-the-source"]
+    assert data["status"] in ["OMNIPRESENCE", "THE SOURCE"]

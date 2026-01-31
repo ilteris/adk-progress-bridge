@@ -11,7 +11,7 @@ def test_health_v350_apotheosis():
     data = response.json()
     
     assert data["version"] >= "1.4.0"
-    assert data["operational_apex"] in ["APOTHEOSIS", "ULTIMA", "OMNIPRESENCE"]
+    assert data["operational_apex"] in ["APOTHEOSIS", "ULTIMA", "OMNIPRESENCE", "THE SOURCE"]
     
     # v350 Metrics
     assert "system_memory" in data
@@ -41,4 +41,4 @@ def test_version_v350():
     assert response.status_code == 200
     data = response.json()
     assert data["version"] >= "1.4.0"
-    assert data["status"] in ["APOTHEOSIS", "ULTIMA", "OMNIPRESENCE"]
+    assert data["status"] in ["APOTHEOSIS", "ULTIMA", "OMNIPRESENCE", "THE SOURCE"]

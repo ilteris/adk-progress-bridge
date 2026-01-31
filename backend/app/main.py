@@ -71,7 +71,9 @@ from .metrics import (
     SYSTEM_NETWORK_INTERFACES_SPEED_TOTAL_MBPS, SYSTEM_NETWORK_INTERFACES_DUPLEX_FULL_COUNT,
     PROCESS_MEMORY_USS_PERCENT,
     SYSTEM_PROCESS_COUNT, PROCESS_MEMORY_PSS_PERCENT,
-    SYSTEM_CPU_LOAD_1M_PERCENT, SYSTEM_MEMORY_AVAILABLE_PERCENT
+    SYSTEM_CPU_LOAD_1M_PERCENT, SYSTEM_MEMORY_AVAILABLE_PERCENT,
+    SYSTEM_CPU_CORES_USAGE_PERCENT, SYSTEM_DISK_PARTITIONS_USAGE_PERCENT,
+    SYSTEM_NETWORK_INTERFACES_BYTES_SENT, SYSTEM_NETWORK_INTERFACES_BYTES_RECV
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -80,10 +82,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.4.2"
+APP_VERSION = "1.4.3"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v352-omnipresence"
-OPERATIONAL_APEX = "OMNIPRESENCE"
+GIT_COMMIT = "v353-the-source"
+OPERATIONAL_APEX = "THE SOURCE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -249,6 +251,14 @@ def get_system_network_packets():
         except:
             pass
     return 0, 0
+
+def get_system_network_io_per_nic():
+    if psutil:
+        try:
+            return psutil.net_io_counters(pernic=True)
+        except:
+            pass
+    return {}
 
 def get_system_swap_extended():
     if psutil:
@@ -769,6 +779,32 @@ def get_system_memory_available_percent():
             pass
     return 0.0
 
+# v353 THE SOURCE Helpers
+def get_system_cpu_cores_usage():
+    if psutil:
+        try:
+            return psutil.cpu_percent(interval=None, percpu=True)
+        except:
+            pass
+    return []
+
+def get_system_disk_partitions_usage():
+    if psutil:
+        try:
+            usage = {}
+            for part in psutil.disk_partitions(all=False):
+                if os.name == 'nt':
+                    if 'cdrom' in part.opts or part.fstype == '':
+                        continue
+                try:
+                    usage[part.mountpoint] = psutil.disk_usage(part.mountpoint).percent
+                except:
+                    continue
+            return usage
+        except:
+            pass
+    return {}
+
 
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
@@ -1045,6 +1081,20 @@ async def get_health_data():
     sm_avail_p = get_system_memory_available_percent()
     SYSTEM_MEMORY_AVAILABLE_PERCENT.set(sm_avail_p)
 
+    # v353 metrics
+    cpu_cores_usage = get_system_cpu_cores_usage()
+    for i, usage in enumerate(cpu_cores_usage):
+        SYSTEM_CPU_CORES_USAGE_PERCENT.labels(core=str(i)).set(usage)
+    
+    disk_part_usage = get_system_disk_partitions_usage()
+    for part, usage in disk_part_usage.items():
+        SYSTEM_DISK_PARTITIONS_USAGE_PERCENT.labels(partition=part).set(usage)
+        
+    net_io_per_nic = get_system_network_io_per_nic()
+    for nic, io in net_io_per_nic.items():
+        SYSTEM_NETWORK_INTERFACES_BYTES_SENT.labels(interface=nic).set(io.bytes_sent)
+        SYSTEM_NETWORK_INTERFACES_BYTES_RECV.labels(interface=nic).set(io.bytes_recv)
+
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -1084,7 +1134,8 @@ async def get_health_data():
             "iowait_percent": s_iowait,
             "irq_percent": s_irq,
             "softirq_percent": s_softirq,
-            "load_1m_percent": s_load_1m_p
+            "load_1m_percent": s_load_1m_p,
+            "cores": cpu_cores_usage
         },
         "system_cpu_stats": {
             "interrupts": s_ints,
@@ -1125,7 +1176,8 @@ async def get_health_data():
             "interfaces_down_count": sn_if_down,
             "mtu_total": sn_mtu_total,
             "speed_total_mbps": sn_speed_total,
-            "duplex_full_count": sn_duplex_full
+            "duplex_full_count": sn_duplex_full,
+            "per_interface": {nic: {"bytes_sent": io.bytes_sent, "bytes_recv": io.bytes_recv} for nic, io in net_io_per_nic.items()}
         },
         "disk_io_total": {
             "read_bytes": disk_read,
@@ -1134,7 +1186,8 @@ async def get_health_data():
             "write_count": sd_wc,
             "read_merged_count": sd_rm,
             "write_merged_count": sd_wm,
-            "busy_time_ms": sd_busy
+            "busy_time_ms": sd_busy,
+            "partitions_usage_percent": disk_part_usage
         },
         "system_network_connections_count": s_conn_count,
         "process_connections_count": proc_conn_count,
@@ -1583,6 +1636,20 @@ async def metrics():
     PROCESS_MEMORY_PSS_PERCENT.set(get_process_memory_pss_percent())
     SYSTEM_CPU_LOAD_1M_PERCENT.set((load_avg[0] / cpu_count * 100) if cpu_count > 0 else 0.0)
     SYSTEM_MEMORY_AVAILABLE_PERCENT.set(get_system_memory_available_percent())
+
+    # v353 THE SOURCE
+    cpu_cores_p = get_system_cpu_cores_usage()
+    for i, p in enumerate(cpu_cores_p):
+        SYSTEM_CPU_CORES_USAGE_PERCENT.labels(core=str(i)).set(p)
+    
+    disk_p_u = get_system_disk_partitions_usage()
+    for part, p in disk_p_u.items():
+        SYSTEM_DISK_PARTITIONS_USAGE_PERCENT.labels(partition=part).set(p)
+        
+    net_io_per_nic = get_system_network_io_per_nic()
+    for nic, io in net_io_per_nic.items():
+        SYSTEM_NETWORK_INTERFACES_BYTES_SENT.labels(interface=nic).set(io.bytes_sent)
+        SYSTEM_NETWORK_INTERFACES_BYTES_RECV.labels(interface=nic).set(io.bytes_recv)
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
