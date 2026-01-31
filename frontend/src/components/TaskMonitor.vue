@@ -103,7 +103,7 @@ const formatBps = (bps: number) => {
                     <strong>WS Recv:</strong> {{ formatBps(state.systemMetrics.network_io_total?.recv_throughput_bps) }}
                 </div>
                 <div class="col-md-3">
-                    <strong>Tasks:</strong> {{ state.systemMetrics.registry_stats?.active_tasks }} active<br>
+                    <strong>Tasks:</strong> {{ state.systemMetrics.registry_size }} active<br>
                     <strong>Uptime:</strong> {{ Math.floor(state.systemMetrics.boot_time_seconds ? (Date.now()/1000 - state.systemMetrics.boot_time_seconds) : 0) }}s
                 </div>
             </div>

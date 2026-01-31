@@ -100,10 +100,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.6.3"
+APP_VERSION = "1.6.4"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v363-supreme-audit"
-OPERATIONAL_APEX = "THE NEBULA (v363 SUPREME AUDIT)"
+GIT_COMMIT = "v364-supreme-refinement"
+OPERATIONAL_APEX = "THE NEBULA (v364 SUPREME REFINEMENT)"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -2097,19 +2097,23 @@ async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
     call_id_var.set(call_id)
     tool_name_var.set(tool_name)
     start_time = time.perf_counter()
-    last_metrics_time = time.perf_counter()
     status = "success"
+    
+    async def metrics_pusher():
+        try:
+            while True:
+                await asyncio.sleep(3.0)
+                metrics = await get_health_data()
+                await send_func({"type": "system_metrics", "payload": metrics})
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f"Metrics pusher error for task {call_id}: {e}")
+
+    metrics_task = asyncio.create_task(metrics_pusher())
+    
     try:
         async for item in gen:
-            now = time.perf_counter()
-            if now - last_metrics_time > 3.0:
-                try:
-                    
-                    metrics = await get_health_data()
-                    await send_func({"type": "system_metrics", "payload": metrics})
-                    last_metrics_time = now
-                except Exception as me:
-                    pass
             if isinstance(item, ProgressPayload):
                 TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
                 payload = item.model_dump() if hasattr(item, "model_dump") else item
@@ -2127,6 +2131,7 @@ async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
         logger.error(f"Error during task {call_id} execution: {e}")
         await send_func({"call_id": call_id, "type": "error", "payload": {"detail": str(e)}})
     finally:
+        metrics_task.cancel()
         duration = time.perf_counter() - start_time
         TASK_DURATION.labels(tool_name=tool_name).observe(duration)
         TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
