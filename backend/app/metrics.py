@@ -767,6 +767,23 @@ SYSTEM_NETWORK_THROUGHPUT_SENT_BPS = Gauge(
     "Current system-wide network transmit throughput in bytes per second"
 )
 
+
+# v358 THE ETERNITY Metrics
+SYSTEM_CPU_CTX_SWITCH_RATE_BPS = Gauge(
+    "adk_system_cpu_context_switch_rate_per_sec",
+    "Current rate of system-wide context switches per second"
+)
+
+SYSTEM_CPU_INTERRUPT_RATE_BPS = Gauge(
+    "adk_system_cpu_interrupt_rate_per_sec",
+    "Current rate of system-wide hardware interrupts per second"
+)
+
+WS_MESSAGE_SIZE_BYTES = Histogram(
+    "adk_ws_message_size_bytes",
+    "Distribution of WebSocket message sizes",
+    buckets=[64, 256, 1024, 4096, 16384, 65536, 262144, 1048576]
+)
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

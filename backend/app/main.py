@@ -85,7 +85,7 @@ from .metrics import (
     PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT, PROCESS_LIMIT_AS_UTILIZATION_PERCENT,
     PROCESS_IO_READ_THROUGHPUT_BPS, PROCESS_IO_WRITE_THROUGHPUT_BPS,
     SYSTEM_DISK_READ_THROUGHPUT_BPS, SYSTEM_DISK_WRITE_THROUGHPUT_BPS,
-    SYSTEM_NETWORK_THROUGHPUT_RECV_BPS, SYSTEM_NETWORK_THROUGHPUT_SENT_BPS
+    SYSTEM_NETWORK_THROUGHPUT_RECV_BPS, SYSTEM_NETWORK_THROUGHPUT_SENT_BPS, SYSTEM_CPU_CTX_SWITCH_RATE_BPS, SYSTEM_CPU_INTERRUPT_RATE_BPS, WS_MESSAGE_SIZE_BYTES
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -94,10 +94,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.4.7"
+APP_VERSION = "1.4.8"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v357-the-overlord"
-OPERATIONAL_APEX = "THE OVERLORD"
+GIT_COMMIT = "v358-the-eternity"
+OPERATIONAL_APEX = "THE ETERNITY"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -120,6 +120,11 @@ async def lifespan(app: FastAPI):
     app.state.last_sys_write_bytes = 0
     app.state.last_sys_net_recv_bytes = 0
     app.state.last_sys_net_sent_bytes = 0
+    
+    # v358 system CPU stats rate state
+    app.state.last_sys_cpu_stats_time = time.time()
+    app.state.last_sys_ctx_switches = 0
+    app.state.last_sys_interrupts = 0
     
     cleanup_task = asyncio.create_task(cleanup_background_task())
     logger.info("Background cleanup task started")
@@ -1206,6 +1211,28 @@ async def get_health_data():
         s_net_recv_bps = int(SYSTEM_NETWORK_THROUGHPUT_RECV_BPS._value.get())
         s_net_sent_bps = int(SYSTEM_NETWORK_THROUGHPUT_SENT_BPS._value.get())
 
+    # v358 THE ETERNITY
+    last_sys_cpu_stats_time = getattr(app.state, "last_sys_cpu_stats_time", APP_START_TIME)
+    s_ints_val, s_sints_val, _ = get_system_cpu_stats()
+    s_ctx_total_val = get_system_cpu_stats_advanced()
+    last_s_ctx_val = getattr(app.state, "last_sys_ctx_switches", 0)
+    last_s_ints_val = getattr(app.state, "last_sys_interrupts", 0)
+    
+    cpu_stats_dt_val = now - last_sys_cpu_stats_time
+    if cpu_stats_dt_val >= 1.0:
+        s_ctx_rate_val = (s_ctx_total_val - last_s_ctx_val) / cpu_stats_dt_val
+        s_ints_rate_val = (s_ints_val + s_sints_val - last_s_ints_val) / cpu_stats_dt_val
+        
+        SYSTEM_CPU_CTX_SWITCH_RATE_BPS.set(s_ctx_rate_val)
+        SYSTEM_CPU_INTERRUPT_RATE_BPS.set(s_ints_rate_val)
+        
+        app.state.last_sys_cpu_stats_time = now
+        app.state.last_sys_ctx_switches = s_ctx_total_val
+        app.state.last_sys_interrupts = s_ints_val + s_sints_val
+    else:
+        s_ctx_rate_val = int(SYSTEM_CPU_CTX_SWITCH_RATE_BPS._value.get())
+        s_ints_rate_val = int(SYSTEM_CPU_INTERRUPT_RATE_BPS._value.get())
+
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
     for t in active_tasks_list:
@@ -1253,7 +1280,7 @@ async def get_health_data():
             "interrupts": s_ints,
             "soft_interrupts": s_sints,
             "syscalls": s_sysc,
-            "context_switches": s_ctx
+            "context_switches": s_ctx, "context_switch_rate_per_sec": s_ctx_rate_val, "interrupt_rate_per_sec": s_ints_rate_val
         },
         "thread_count": thread_count,
         "open_fds": open_fds,
@@ -1827,6 +1854,21 @@ async def metrics():
         SYSTEM_DISK_WRITE_THROUGHPUT_BPS.set((s_wb - last_s_wb) / sys_io_dt)
         SYSTEM_NETWORK_THROUGHPUT_RECV_BPS.set((s_nr - last_s_nr) / sys_io_dt)
         SYSTEM_NETWORK_THROUGHPUT_SENT_BPS.set((s_ns - last_s_ns) / sys_io_dt)
+    
+    # v358 THE ETERNITY
+    last_sys_cpu_stats_time = getattr(app.state, "last_sys_cpu_stats_time", APP_START_TIME)
+    s_ints_m, s_sints_m, _ = get_system_cpu_stats()
+    s_ctx_total_m = get_system_cpu_stats_advanced()
+    last_s_ctx_m = getattr(app.state, "last_sys_ctx_switches", 0)
+    last_s_ints_m = getattr(app.state, "last_sys_interrupts", 0)
+    now_m = time.time()
+    cpu_stats_dt_m = now_m - last_sys_cpu_stats_time
+    if cpu_stats_dt_m >= 1.0:
+        SYSTEM_CPU_CTX_SWITCH_RATE_BPS.set((s_ctx_total_m - last_s_ctx_m) / cpu_stats_dt_m)
+        SYSTEM_CPU_INTERRUPT_RATE_BPS.set((s_ints_m + s_sints_m - last_s_ints_m) / cpu_stats_dt_m)
+        app.state.last_sys_cpu_stats_time = now_m
+        app.state.last_sys_ctx_switches = s_ctx_total_m
+        app.state.last_sys_interrupts = s_ints_m + s_sints_m
         app.state.last_sys_io_time = now
         app.state.last_sys_read_bytes = s_rb
         app.state.last_sys_write_bytes = s_wb
@@ -1864,6 +1906,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     WS_MESSAGES_SENT_TOTAL.labels(message_type=msg_type).inc()
                     json_str = json.dumps(data)
                     WS_BYTES_SENT_TOTAL.inc(len(json_str))
+                    WS_MESSAGE_SIZE_BYTES.observe(len(json_str))
                     await websocket.send_text(json_str)
                 except Exception as e:
                     logger.error(f"Error sending WS message: {e}")
@@ -1893,6 +1936,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 data = msg.get("text", "")
                 WS_BYTES_RECEIVED_TOTAL.inc(len(data))
+                WS_MESSAGE_SIZE_BYTES.observe(len(data))
                 
                 if len(data) > WS_MESSAGE_SIZE_LIMIT:
                     WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="oversized").inc()

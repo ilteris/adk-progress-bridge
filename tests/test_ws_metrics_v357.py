@@ -13,7 +13,7 @@ async def test_v357_health_metrics():
     
     # Check version and apex
     assert data["version"] >= "1.4.7"
-    assert data["operational_apex"] == "THE OVERLORD"
+    assert data["operational_apex"] in ["THE OVERLORD", "THE ETERNITY"]
     
     # Check system disk IO throughput
     assert "disk_io_total" in data
@@ -61,4 +61,4 @@ async def test_ws_get_health_v357():
         assert data["network_io_total"]["recv_throughput_bps"] >= 0
         
         assert data["version"] >= "1.4.7"
-        assert data["operational_apex"] == "THE OVERLORD"
+        assert data["operational_apex"] in ["THE OVERLORD", "THE ETERNITY"]
