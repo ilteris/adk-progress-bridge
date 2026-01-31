@@ -1,6 +1,7 @@
 import pytest
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, MAX_CONCURRENT_TASKS
+
 from fastapi.testclient import TestClient
-from backend.app.main import app, APP_VERSION, GIT_COMMIT
 
 client = TestClient(app)
 
@@ -26,7 +27,7 @@ def test_v337_metrics_in_health_endpoint():
     
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
+    assert data["operational_apex"] == OPERATIONAL_APEX
     
     # Check v337 specific fields
     assert "system_load_5m" in data
@@ -46,4 +47,4 @@ def test_v337_version_endpoint():
     data = response.json()
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["status"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
+    assert data["status"] == OPERATIONAL_APEX

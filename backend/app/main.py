@@ -16,8 +16,10 @@ from pydantic import BaseModel
 
 try:
     import psutil
+    _process = psutil.Process()
 except ImportError:
     psutil = None
+    _process = None
 
 from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_manager
 from .logger import logger
@@ -41,7 +43,10 @@ from .metrics import (
     SYSTEM_UPTIME, SYSTEM_CPU_USAGE_IDLE, PROCESS_CPU_USAGE_USER, PROCESS_CPU_USAGE_SYSTEM, 
     SYSTEM_MEMORY_USED, SYSTEM_MEMORY_FREE, SYSTEM_NETWORK_PACKETS_SENT, SYSTEM_NETWORK_PACKETS_RECV,
     SYSTEM_SWAP_USED_BYTES, SYSTEM_SWAP_FREE_BYTES, PROCESS_IO_READ_BYTES, PROCESS_IO_WRITE_BYTES,
-    PROCESS_IO_READ_COUNT, PROCESS_IO_WRITE_COUNT
+    PROCESS_IO_READ_COUNT, PROCESS_IO_WRITE_COUNT,
+    PROCESS_CPU_PERCENT_TOTAL, SYSTEM_NETWORK_ERRORS_IN, SYSTEM_NETWORK_ERRORS_OUT,
+    SYSTEM_NETWORK_DROPS_IN, SYSTEM_NETWORK_DROPS_OUT,
+    SYSTEM_MEMORY_ACTIVE_BYTES, SYSTEM_MEMORY_INACTIVE_BYTES
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -50,10 +55,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.2.9"
+APP_VERSION = "1.3.0"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v339-omega-plus-ultra"
-OPERATIONAL_APEX = "SUPREME ABSOLUTE APEX OMEGA ULTRA"
+GIT_COMMIT = "v340-ultimate"
+OPERATIONAL_APEX = "SUPREME ABSOLUTE APEX OMEGA ULTRA ULTIMATE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -81,9 +86,9 @@ async def cleanup_background_task():
         logger.info("Background cleanup task cancelled")
 
 def get_memory_usage_kb():
-    if psutil:
+    if _process:
         try:
-            return psutil.Process().memory_info().rss // 1024
+            return _process.memory_info().rss // 1024
         except:
             pass
     
@@ -103,18 +108,18 @@ def get_memory_usage_kb():
     return 0
 
 def get_process_memory_bytes():
-    if psutil:
+    if _process:
         try:
-            info = psutil.Process().memory_info()
+            info = _process.memory_info()
             return info.rss, info.vms
         except:
             pass
     return 0, 0
 
 def get_memory_percent():
-    if psutil:
+    if _process:
         try:
-            return psutil.Process().memory_percent()
+            return _process.memory_percent()
         except:
             pass
     return 0.0
@@ -137,21 +142,20 @@ def get_system_cpu_usage_breakdown():
     return 0.0, 0.0
 
 def get_open_fds():
-    if psutil:
+    if _process:
         try:
-            proc = psutil.Process()
-            if hasattr(proc, "num_fds"):
-                return proc.num_fds()
-            elif hasattr(proc, "num_handles"):
-                return proc.num_handles()
+            if hasattr(_process, "num_fds"):
+                return _process.num_fds()
+            elif hasattr(_process, "num_handles"):
+                return _process.num_handles()
         except:
             pass
     return 0
 
 def get_context_switches():
-    if psutil:
+    if _process:
         try:
-            switches = psutil.Process().num_ctx_switches()
+            switches = _process.num_ctx_switches()
             return switches.voluntary, switches.involuntary
         except:
             pass
@@ -175,9 +179,9 @@ def get_system_memory_info():
     return 0, 0
 
 def get_page_faults():
-    if psutil:
+    if _process:
         try:
-            mem = psutil.Process().memory_info()
+            mem = _process.memory_info()
             minor = getattr(mem, "pfaults", 0)
             major = getattr(mem, "pageins", 0)
             return minor, major
@@ -195,9 +199,9 @@ def get_system_cpu_idle_percent():
     return 0.0
 
 def get_process_cpu_times_total():
-    if psutil:
+    if _process:
         try:
-            times = psutil.Process().cpu_times()
+            times = _process.cpu_times()
             return times.user, times.system
         except:
             pass
@@ -231,9 +235,9 @@ def get_system_swap_extended():
     return 0, 0
 
 def get_process_io_counters():
-    if psutil:
+    if _process:
         try:
-            io = psutil.Process().io_counters()
+            io = _process.io_counters()
             return io.read_bytes, io.write_bytes, io.read_count, io.write_count
         except:
             pass
@@ -276,12 +280,41 @@ def get_disk_io():
     return 0, 0
 
 def get_process_connections_count():
-    if psutil:
+    if _process:
         try:
-            return len(psutil.Process().net_connections())
+            return len(_process.net_connections())
         except:
             pass
     return 0
+
+# v340 Supreme Apex Ultra Millennium Omega Plus Ultra Ultimate Helpers
+def get_process_cpu_percent():
+    if _process:
+        try:
+            return _process.cpu_percent(interval=None)
+        except:
+            pass
+    return 0.0
+
+def get_system_network_advanced():
+    if psutil:
+        try:
+            io = psutil.net_io_counters()
+            return io.errin, io.errout, io.dropin, io.dropout
+        except:
+            pass
+    return 0, 0, 0, 0
+
+def get_system_memory_advanced():
+    if psutil:
+        try:
+            mem = psutil.virtual_memory()
+            active = getattr(mem, "active", 0)
+            inactive = getattr(mem, "inactive", 0)
+            return active, inactive
+        except:
+            pass
+    return 0, 0
 
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
@@ -556,6 +589,18 @@ async def health_check():
     PROCESS_IO_READ_COUNT.set(p_io_rc)
     PROCESS_IO_WRITE_COUNT.set(p_io_wc)
 
+    # v340 metrics
+    p_cpu_p = get_process_cpu_percent()
+    PROCESS_CPU_PERCENT_TOTAL.set(p_cpu_p)
+    n_errin, n_errout, n_dropin, n_dropout = get_system_network_advanced()
+    SYSTEM_NETWORK_ERRORS_IN.set(n_errin)
+    SYSTEM_NETWORK_ERRORS_OUT.set(n_errout)
+    SYSTEM_NETWORK_DROPS_IN.set(n_dropin)
+    SYSTEM_NETWORK_DROPS_OUT.set(n_dropout)
+    m_active, m_inactive = get_system_memory_advanced()
+    SYSTEM_MEMORY_ACTIVE_BYTES.set(m_active)
+    SYSTEM_MEMORY_INACTIVE_BYTES.set(m_inactive)
+
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
     for t in active_tasks_list:
@@ -607,7 +652,11 @@ async def health_check():
         "boot_time_seconds": boot_time,
         "network_io_total": {
             "bytes_sent": net_sent,
-            "bytes_recv": net_recv
+            "bytes_recv": net_recv,
+            "errin": n_errin,
+            "errout": n_errout,
+            "dropin": n_dropin,
+            "dropout": n_dropout
         },
         "disk_io_total": {
             "read_bytes": disk_read,
@@ -637,7 +686,9 @@ async def health_check():
             "available_bytes": sys_mem_avail,
             "total_bytes": sys_mem_total,
             "used_bytes": sys_mem_used,
-            "free_bytes": sys_mem_free
+            "free_bytes": sys_mem_free,
+            "active_bytes": m_active,
+            "inactive_bytes": m_inactive
         },
         "system_memory_extended": { # backward compatibility
             "used_bytes": sys_mem_used,
@@ -651,7 +702,8 @@ async def health_check():
         },
         "process_cpu_usage": {
             "user_seconds": proc_user_cpu,
-            "system_seconds": proc_sys_cpu
+            "system_seconds": proc_sys_cpu,
+            "percent": p_cpu_p
         },
         "system_network_packets": {
             "sent": sys_net_psent,
@@ -755,6 +807,17 @@ async def metrics():
     PROCESS_IO_WRITE_BYTES.set(pi_wb)
     PROCESS_IO_READ_COUNT.set(pi_rc)
     PROCESS_IO_WRITE_COUNT.set(pi_wc)
+
+    # v340
+    PROCESS_CPU_PERCENT_TOTAL.set(get_process_cpu_percent())
+    sn_errin, sn_errout, sn_dropin, sn_dropout = get_system_network_advanced()
+    SYSTEM_NETWORK_ERRORS_IN.set(sn_errin)
+    SYSTEM_NETWORK_ERRORS_OUT.set(sn_errout)
+    SYSTEM_NETWORK_DROPS_IN.set(sn_dropin)
+    SYSTEM_NETWORK_DROPS_OUT.set(sn_dropout)
+    sm_active, sm_inactive = get_system_memory_advanced()
+    SYSTEM_MEMORY_ACTIVE_BYTES.set(sm_active)
+    SYSTEM_MEMORY_INACTIVE_BYTES.set(sm_inactive)
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

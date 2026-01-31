@@ -1,9 +1,11 @@
 import pytest
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, MAX_CONCURRENT_TASKS
+
 import asyncio
 import json
 import time
 from fastapi.testclient import TestClient
-from backend.app.main import app, APP_VERSION, GIT_COMMIT
+
 from backend.app.bridge import registry
 
 client = TestClient(app)
@@ -19,7 +21,7 @@ async def test_health_metrics_v327():
     assert "uptime_human" in data
     assert "registry_summary" in data
     assert "operational_apex" in data
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
+    assert data["operational_apex"] == OPERATIONAL_APEX
     
     # Verify uptime_human format (e.g., "0s", "1m 5s")
     assert isinstance(data["uptime_human"], str)

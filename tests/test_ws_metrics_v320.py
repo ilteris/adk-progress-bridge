@@ -1,7 +1,8 @@
 import pytest
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, MAX_CONCURRENT_TASKS
+
 import asyncio
 from fastapi.testclient import TestClient
-from backend.app.main import app, ACTIVE_WS_CONNECTIONS
 
 client = TestClient(app)
 

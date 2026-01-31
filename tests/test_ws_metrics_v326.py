@@ -1,8 +1,9 @@
 import pytest
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, MAX_CONCURRENT_TASKS
+
 import json
 import asyncio
 from fastapi.testclient import TestClient
-from backend.app.main import app, MAX_CONCURRENT_TASKS, APP_VERSION, GIT_COMMIT
 
 def test_health_v326_metadata():
     client = TestClient(app)
@@ -11,7 +12,7 @@ def test_health_v326_metadata():
     data = response.json()
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
+    assert data["operational_apex"] == OPERATIONAL_APEX
     assert data["config"]["max_concurrent_tasks"] == MAX_CONCURRENT_TASKS
 
 def test_version_v326():

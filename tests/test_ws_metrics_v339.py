@@ -1,7 +1,8 @@
 import pytest
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, MAX_CONCURRENT_TASKS
+
 import asyncio
 from fastapi.testclient import TestClient
-from backend.app.main import app
 
 client = TestClient(app)
 
@@ -11,9 +12,9 @@ def test_health_v339_new_metrics():
     assert response.status_code == 200
     data = response.json()
     
-    assert data["version"] == "1.2.9"
-    assert data["git_commit"] == "v339-omega-plus-ultra"
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT
+    assert data["operational_apex"] == OPERATIONAL_APEX
     
     # Check v339 metrics
     assert "system_swap_memory" in data

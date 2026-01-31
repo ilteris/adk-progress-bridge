@@ -1,9 +1,11 @@
 import pytest
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, MAX_CONCURRENT_TASKS
+
 import asyncio
 import json
 import time
 from fastapi.testclient import TestClient
-from backend.app.main import app, APP_VERSION, GIT_COMMIT
+
 from backend.app.bridge import registry
 
 client = TestClient(app)

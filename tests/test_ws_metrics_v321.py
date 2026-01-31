@@ -1,8 +1,9 @@
 import pytest
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, MAX_CONCURRENT_TASKS
+
 import asyncio
 import json
 from fastapi.testclient import TestClient
-from backend.app.main import app
 
 def test_ws_message_counters():
     client = TestClient(app)

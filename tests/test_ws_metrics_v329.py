@@ -1,8 +1,9 @@
 import pytest
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, MAX_CONCURRENT_TASKS
+
 import asyncio
 import json
 from fastapi.testclient import TestClient
-from backend.app.main import app, APP_VERSION, GIT_COMMIT
 
 def test_ws_metrics_v329_health():
     client = TestClient(app)
@@ -16,7 +17,7 @@ def test_ws_metrics_v329_health():
 
 @pytest.mark.asyncio
 async def test_ws_metrics_v329_execution():
-    from backend.app.main import app
+
     from fastapi.testclient import TestClient
     
     # We use a real websocket client for this

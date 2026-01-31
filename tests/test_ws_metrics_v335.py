@@ -1,7 +1,8 @@
 import pytest
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, MAX_CONCURRENT_TASKS
+
 import time
 from fastapi.testclient import TestClient
-from backend.app.main import app, APP_VERSION, GIT_COMMIT
 
 client = TestClient(app)
 
@@ -14,7 +15,7 @@ def test_health_v335_metrics():
     # Version checks - Use imported constants for resilience
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
+    assert data["operational_apex"] == OPERATIONAL_APEX
     
     # New metrics in v335
     assert "cpu_count" in data
@@ -53,4 +54,4 @@ def test_version_v335():
     data = response.json()
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["status"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
+    assert data["status"] == OPERATIONAL_APEX

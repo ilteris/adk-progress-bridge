@@ -1,8 +1,9 @@
 import pytest
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, MAX_CONCURRENT_TASKS
+
 import time
 import os
 from fastapi.testclient import TestClient
-from backend.app.main import app, APP_VERSION, GIT_COMMIT
 
 client = TestClient(app)
 
@@ -15,7 +16,7 @@ def test_health_v336_metrics():
     # Version checks
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
+    assert data["operational_apex"] == OPERATIONAL_APEX
     
     # New metrics in v336
     assert "cpu_frequency_current_mhz" in data
@@ -54,4 +55,4 @@ def test_version_v336():
     data = response.json()
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["status"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
+    assert data["status"] == OPERATIONAL_APEX

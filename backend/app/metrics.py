@@ -304,6 +304,42 @@ PROCESS_IO_WRITE_COUNT = Gauge(
     "Total number of write operations by the process"
 )
 
+# v340 Supreme Apex Ultra Millennium Omega Plus Ultra Ultimate Metrics
+PROCESS_CPU_PERCENT_TOTAL = Gauge(
+    "adk_process_cpu_percent_total",
+    "Current process CPU usage percentage"
+)
+
+SYSTEM_NETWORK_ERRORS_IN = Gauge(
+    "adk_system_network_errors_in_total",
+    "Total system network receive errors"
+)
+
+SYSTEM_NETWORK_ERRORS_OUT = Gauge(
+    "adk_system_network_errors_out_total",
+    "Total system network transmit errors"
+)
+
+SYSTEM_NETWORK_DROPS_IN = Gauge(
+    "adk_system_network_drops_in_total",
+    "Total system network receive drops"
+)
+
+SYSTEM_NETWORK_DROPS_OUT = Gauge(
+    "adk_system_network_drops_out_total",
+    "Total system network transmit drops"
+)
+
+SYSTEM_MEMORY_ACTIVE_BYTES = Gauge(
+    "adk_system_memory_active_bytes",
+    "System-wide active memory in bytes"
+)
+
+SYSTEM_MEMORY_INACTIVE_BYTES = Gauge(
+    "adk_system_memory_inactive_bytes",
+    "System-wide inactive memory in bytes"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

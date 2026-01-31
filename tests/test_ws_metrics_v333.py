@@ -1,6 +1,8 @@
 import pytest
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, MAX_CONCURRENT_TASKS
+
 from fastapi.testclient import TestClient
-from backend.app.main import app, APP_VERSION, GIT_COMMIT
+
 import time
 
 def test_health_v333_metrics():
@@ -14,7 +16,7 @@ def test_health_v333_metrics():
         assert response.status_code == 200
         data = response.json()
         
-        from backend.app.main import APP_VERSION; assert data["version"] == APP_VERSION
+        assert data["version"] == APP_VERSION
         assert "git_commit" in data
         
         # Check for throughput
@@ -50,5 +52,5 @@ def test_version_v333():
         response = client.get("/version")
         assert response.status_code == 200
         data = response.json()
-        from backend.app.main import APP_VERSION; assert data["version"] == APP_VERSION
+        assert data["version"] == APP_VERSION
         assert "git_commit" in data
