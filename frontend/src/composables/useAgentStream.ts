@@ -8,11 +8,13 @@ interface ProgressPayload {
 }
 
 interface AgentEvent {
-  call_id: string
-  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list' | 'system_metrics'
-  payload: any
+  call_id?: string
+  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list' | 'system_metrics' | 'health_data' | 'active_tasks_list' | 'pong'
+  payload?: any
   request_id?: string
   tools?: string[]
+  tasks?: any[]
+  data?: any
 }
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error' | 'completed' | 'cancelled' | 'waiting_for_input'
@@ -110,7 +112,7 @@ export class WebSocketManager {
 
       this.ws.onmessage = (event) => {
         try {
-            const data: any = JSON.parse(event.data)
+            const data: AgentEvent = JSON.parse(event.data)
             if (data.type === 'pong') return
 
             if (data.request_id && this.requestCallbacks.has(data.request_id)) {
@@ -126,15 +128,18 @@ export class WebSocketManager {
                 return
             }
 
-            const callback = this.subscribers.get(data.call_id)
+            const callback = data.call_id ? this.subscribers.get(data.call_id) : null
             if (callback) {
                 callback(data)
-            } else if (data.call_id || data.type === 'system_metrics') {
+            } else {
                 // Buffer message if no subscriber yet, or if it's a broadcast like system_metrics
                 this.messageBuffer.push(data)
                 if (this.messageBuffer.length > WS_BUFFER_SIZE) {
                     this.messageBuffer.shift()
                 }
+                
+                // If it's system_metrics, also notify anyone who might be interested globally
+                // In this simplified version, we just let the subscribers handle it if they match
             }
         } catch (e) {
             console.error('[WS] Failed to parse message', e)
@@ -300,6 +305,13 @@ export class WebSocketManager {
     })
     return data.tools
   }
+
+  async getHealth(): Promise<any> {
+    const data = await this.sendWithCorrelation({
+        type: 'get_health'
+    })
+    return data.data
+  }
 }
 
 export const wsManager = new WebSocketManager()
@@ -370,13 +382,17 @@ export function useAgentStream() {
 
   const fetchHealth = async () => {
     try {
-      const headers: Record<string, string> = {}
-      if (BRIDGE_API_KEY) {
-        headers['X-API-Key'] = BRIDGE_API_KEY
-      }
-      const response = await fetch(`${API_BASE_URL}/health`, { headers })
-      if (response.ok) {
-        state.systemMetrics = await response.json()
+      if (state.useWS) {
+          state.systemMetrics = await wsManager.getHealth()
+      } else {
+          const headers: Record<string, string> = {}
+          if (BRIDGE_API_KEY) {
+            headers['X-API-Key'] = BRIDGE_API_KEY
+          }
+          const response = await fetch(`${API_BASE_URL}/health`, { headers })
+          if (response.ok) {
+            state.systemMetrics = await response.json()
+          }
       }
     } catch (err) {
       console.error('Failed to fetch health metrics:', err)
