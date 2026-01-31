@@ -1,4 +1,4 @@
-from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Histogram, Gauge, Info, generate_latest, CONTENT_TYPE_LATEST
 from fastapi import Response
 
 # Metrics definitions
@@ -30,6 +30,25 @@ TASK_PROGRESS_STEPS_TOTAL = Counter(
     "Total number of progress steps yielded by tasks",
     ["tool_name"]
 )
+
+ACTIVE_WS_CONNECTIONS = Gauge(
+    "adk_active_ws_connections",
+    "Number of active WebSocket connections"
+)
+
+WS_MESSAGES_RECEIVED_TOTAL = Counter(
+    "adk_ws_messages_received_total",
+    "Total number of messages received via WebSocket",
+    ["message_type"]
+)
+
+WS_MESSAGES_SENT_TOTAL = Counter(
+    "adk_ws_messages_sent_total",
+    "Total number of messages sent via WebSocket",
+    ["message_type"]
+)
+
+BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
