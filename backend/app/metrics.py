@@ -119,6 +119,26 @@ CONTEXT_SWITCHES_INVOLUNTARY = Gauge(
     "Number of involuntary context switches"
 )
 
+DISK_USAGE_PERCENT = Gauge(
+    "adk_disk_usage_percent",
+    "Disk usage percentage of the root filesystem"
+)
+
+SYSTEM_MEMORY_AVAILABLE = Gauge(
+    "adk_system_memory_available_bytes",
+    "Available system memory in bytes"
+)
+
+PAGE_FAULTS_MINOR = Gauge(
+    "adk_page_faults_minor",
+    "Number of minor page faults"
+)
+
+PAGE_FAULTS_MAJOR = Gauge(
+    "adk_page_faults_major",
+    "Number of major page faults"
+)
+
 TOTAL_TASKS_STARTED = Counter(
     "adk_total_tasks_started_total",
     "Total number of tasks started since application launch"

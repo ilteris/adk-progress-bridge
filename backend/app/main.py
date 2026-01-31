@@ -30,7 +30,8 @@ from .metrics import (
     WS_REQUEST_LATENCY, WS_CONNECTION_DURATION, MEMORY_PERCENT, TOTAL_TASKS_STARTED,
     CPU_USAGE_PERCENT, PEAK_ACTIVE_WS_CONNECTIONS, OPEN_FDS, THREAD_COUNT,
     WS_THROUGHPUT_RECEIVED_BPS, WS_THROUGHPUT_SENT_BPS,
-    CONTEXT_SWITCHES_VOLUNTARY, CONTEXT_SWITCHES_INVOLUNTARY
+    CONTEXT_SWITCHES_VOLUNTARY, CONTEXT_SWITCHES_INVOLUNTARY,
+    DISK_USAGE_PERCENT, SYSTEM_MEMORY_AVAILABLE, PAGE_FAULTS_MINOR, PAGE_FAULTS_MAJOR
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -39,9 +40,9 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.2.3"
+APP_VERSION = "1.2.4"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v333-supreme"
+GIT_COMMIT = "v334-supreme"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -123,6 +124,34 @@ def get_context_switches():
         try:
             switches = psutil.Process().num_ctx_switches()
             return switches.voluntary, switches.involuntary
+        except:
+            pass
+    return 0, 0
+
+def get_disk_usage_percent():
+    if psutil:
+        try:
+            return psutil.disk_usage('/').percent
+        except:
+            pass
+    return 0.0
+
+def get_system_memory_available():
+    if psutil:
+        try:
+            return psutil.virtual_memory().available
+        except:
+            pass
+    return 0
+
+def get_page_faults():
+    if psutil:
+        try:
+            mem = psutil.Process().memory_info()
+            # pfaults is for Windows/Linux, on Mac it might be different
+            minor = getattr(mem, "pfaults", 0)
+            major = getattr(mem, "pageins", 0) # On Mac pageins is major
+            return minor, major
         except:
             pass
     return 0, 0
@@ -333,6 +362,14 @@ async def health_check():
     voluntary_ctx, involuntary_ctx = get_context_switches()
     CONTEXT_SWITCHES_VOLUNTARY.set(voluntary_ctx)
     CONTEXT_SWITCHES_INVOLUNTARY.set(involuntary_ctx)
+
+    disk_usage = get_disk_usage_percent()
+    DISK_USAGE_PERCENT.set(disk_usage)
+    sys_mem_avail = get_system_memory_available()
+    SYSTEM_MEMORY_AVAILABLE.set(sys_mem_avail)
+    minor_pf, major_pf = get_page_faults()
+    PAGE_FAULTS_MINOR.set(minor_pf)
+    PAGE_FAULTS_MAJOR.set(major_pf)
     
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -366,6 +403,10 @@ async def health_check():
             "voluntary": voluntary_ctx,
             "involuntary": involuntary_ctx
         },
+        "page_faults": {
+            "minor": minor_pf,
+            "major": major_pf
+        },
         "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
         "peak_ws_connections": getattr(app.state, "peak_ws_connections", 0),
         "ws_messages_received": int(ws_received_count),
@@ -377,8 +418,10 @@ async def health_check():
             "sent": throughput_sent
         },
         "load_avg": load_avg,
+        "disk_usage_percent": disk_usage,
         "memory_rss_kb": get_memory_usage_kb(),
         "memory_percent": mem_percent,
+        "system_memory_available_bytes": sys_mem_avail,
         "registry_size": registry.active_task_count, 
         "peak_registry_size": registry.peak_active_tasks,
         "total_tasks_started": registry.total_tasks_started,
@@ -420,6 +463,11 @@ async def metrics():
     v, i = get_context_switches()
     CONTEXT_SWITCHES_VOLUNTARY.set(v)
     CONTEXT_SWITCHES_INVOLUNTARY.set(i)
+    DISK_USAGE_PERCENT.set(get_disk_usage_percent())
+    SYSTEM_MEMORY_AVAILABLE.set(get_system_memory_available())
+    min_pf, maj_pf = get_page_faults()
+    PAGE_FAULTS_MINOR.set(min_pf)
+    PAGE_FAULTS_MAJOR.set(maj_pf)
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
