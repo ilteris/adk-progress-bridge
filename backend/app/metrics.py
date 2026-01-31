@@ -448,6 +448,27 @@ PROCESS_ENV_VAR_COUNT = Gauge(
     "Number of environment variables for the process"
 )
 
+# v344 Transcendence Metrics
+PROCESS_MEMORY_USS = Gauge(
+    "adk_process_memory_uss_bytes",
+    "Unique Set Size memory usage of the process in bytes"
+)
+
+SYSTEM_MEMORY_WIRED = Gauge(
+    "adk_system_memory_wired_bytes",
+    "System memory that can never be paged out to disk (macOS)"
+)
+
+PROCESS_NICE = Gauge(
+    "adk_process_nice_value",
+    "The priority (niceness) of the process"
+)
+
+PROCESS_UPTIME = Gauge(
+    "adk_process_uptime_seconds",
+    "Uptime of the process in seconds"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

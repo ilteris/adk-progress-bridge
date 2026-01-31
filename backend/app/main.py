@@ -46,12 +46,17 @@ from .metrics import (
     PROCESS_IO_READ_COUNT, PROCESS_IO_WRITE_COUNT,
     PROCESS_CPU_PERCENT_TOTAL, SYSTEM_NETWORK_ERRORS_IN, SYSTEM_NETWORK_ERRORS_OUT,
     SYSTEM_NETWORK_DROPS_IN, SYSTEM_NETWORK_DROPS_OUT,
+    SYSTEM_NETWORK_ERRORS_IN, SYSTEM_NETWORK_ERRORS_OUT,
+    SYSTEM_NETWORK_DROPS_IN, SYSTEM_NETWORK_DROPS_OUT,
     SYSTEM_MEMORY_ACTIVE_BYTES, SYSTEM_MEMORY_INACTIVE_BYTES,
     SYSTEM_CPU_INTERRUPTS, SYSTEM_CPU_SOFT_INTERRUPTS, SYSTEM_CPU_SYSCALLS,
     PROCESS_MEMORY_SHARED_BYTES, PROCESS_MEMORY_TEXT_BYTES, PROCESS_MEMORY_DATA_BYTES,
     PROCESS_NUM_THREADS,
     SYSTEM_CPU_STEAL, SYSTEM_CPU_GUEST, SYSTEM_MEMORY_BUFFERS, SYSTEM_MEMORY_CACHED,
-    SYSTEM_DISK_PARTITIONS_COUNT, SYSTEM_USERS_COUNT, PROCESS_CHILDREN_COUNT, SYSTEM_CPU_IOWAIT, SYSTEM_CPU_IRQ, SYSTEM_CPU_SOFTIRQ, SYSTEM_MEMORY_SLAB, PROCESS_MEMORY_LIB, PROCESS_MEMORY_DIRTY, PROCESS_ENV_VAR_COUNT
+    SYSTEM_DISK_PARTITIONS_COUNT, SYSTEM_USERS_COUNT, PROCESS_CHILDREN_COUNT, 
+    SYSTEM_CPU_IOWAIT, SYSTEM_CPU_IRQ, SYSTEM_CPU_SOFTIRQ, SYSTEM_MEMORY_SLAB, 
+    PROCESS_MEMORY_LIB, PROCESS_MEMORY_DIRTY, PROCESS_ENV_VAR_COUNT,
+    PROCESS_MEMORY_USS, SYSTEM_MEMORY_WIRED, PROCESS_NICE, PROCESS_UPTIME
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -60,10 +65,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.3.3"
+APP_VERSION = "1.3.4"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v343-beyond-singularity"
-OPERATIONAL_APEX = "BEYOND SINGULARITY"
+GIT_COMMIT = "v344-transcendence"
+OPERATIONAL_APEX = "TRANSCENDENCE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -440,6 +445,33 @@ def get_process_env_var_count():
             pass
     return 0
 
+# v344 Transcendence Helpers
+def get_process_memory_uss():
+    if _process:
+        try:
+            if hasattr(_process, "memory_full_info"):
+                return _process.memory_full_info().uss
+        except:
+            pass
+    return 0
+
+def get_system_memory_wired():
+    if psutil:
+        try:
+            mem = psutil.virtual_memory()
+            return getattr(mem, "wired", 0)
+        except:
+            pass
+    return 0
+
+def get_process_nice():
+    if _process:
+        try:
+            return _process.nice()
+        except:
+            pass
+    return 0
+
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
     hours, rem = divmod(rem, 3600)
@@ -764,6 +796,15 @@ async def health_check():
     p_env_count = get_process_env_var_count()
     PROCESS_ENV_VAR_COUNT.set(p_env_count)
 
+    # v344 metrics
+    p_uss = get_process_memory_uss()
+    PROCESS_MEMORY_USS.set(p_uss)
+    m_wired = get_system_memory_wired()
+    SYSTEM_MEMORY_WIRED.set(m_wired)
+    p_nice = get_process_nice()
+    PROCESS_NICE.set(p_nice)
+    PROCESS_UPTIME.set(uptime_seconds)
+
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -865,7 +906,8 @@ async def health_check():
             "inactive_bytes": m_inactive,
             "buffers_bytes": m_buffers,
             "cached_bytes": m_cached,
-            "slab_bytes": m_slab
+            "slab_bytes": m_slab,
+            "wired_bytes": m_wired
         },
         "system_memory_extended": { # backward compatibility
             "used_bytes": sys_mem_used,
@@ -887,9 +929,12 @@ async def health_check():
             "text_bytes": p_text,
             "data_bytes": p_data,
             "lib_bytes": p_lib,
-            "dirty_bytes": p_dirty
+            "dirty_bytes": p_dirty,
+            "uss_bytes": p_uss
         },
         "process_env_var_count": p_env_count,
+        "process_nice_value": p_nice,
+        "process_uptime_seconds": uptime_seconds,
         "process_num_threads": p_num_threads,
         "process_children_count": p_children_count,
         "system_network_packets": {
@@ -1040,6 +1085,12 @@ async def metrics():
     PROCESS_MEMORY_LIB.set(bw_lib)
     PROCESS_MEMORY_DIRTY.set(bw_dirty)
     PROCESS_ENV_VAR_COUNT.set(get_process_env_var_count())
+
+    # v344 Transcendence
+    PROCESS_MEMORY_USS.set(get_process_memory_uss())
+    SYSTEM_MEMORY_WIRED.set(get_system_memory_wired())
+    PROCESS_NICE.set(get_process_nice())
+    PROCESS_UPTIME.set(time.time() - APP_START_TIME)
 
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
