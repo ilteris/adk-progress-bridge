@@ -245,10 +245,10 @@ export class WebSocketManager {
   subscribe(callId: string, callback: (event: AgentEvent) => void) {
     this.subscribers.set(callId, callback)
     
-    const relevantMessages = this.messageBuffer.filter(msg => msg.call_id === callId || msg.type === 'system_metrics')
+    const relevantMessages = this.messageBuffer.filter(msg => msg.call_id === callId || (msg.type === 'system_metrics' && !msg.call_id))
     if (relevantMessages.length > 0) {
         relevantMessages.forEach(msg => callback(msg))
-        this.messageBuffer = this.messageBuffer.filter(msg => msg.call_id !== callId && msg.type !== 'system_metrics')
+        this.messageBuffer = this.messageBuffer.filter(msg => msg.call_id !== callId)
     }
   }
 

@@ -34,8 +34,8 @@ WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 APP_VERSION = "1.8.1"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v398-aetherial-omega-hyper-apex-final-signoff"
-OPERATIONAL_APEX = "AETHERIAL OMEGA HYPER APEX FINAL SIGNOFF (v398)"
+GIT_COMMIT = "v399-absolute-final-equilibrium-signoff"
+OPERATIONAL_APEX = "ABSOLUTE FINAL EQUILIBRIUM SIGNOFF (v399)"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")

@@ -79,7 +79,7 @@ interface AgentState {
   useWS: boolean; // Toggle between SSE and WS
   inputPrompt: string | null; // Prompt text when waiting for input
   tools: string[]; // List of available tools fetched from backend
-  health: any | null; // Real-time system health metrics
+  systemMetrics: any | null; // Real-time system health metrics
 }
 ```
 

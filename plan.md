@@ -1,19 +1,19 @@
-# Implementation Plan - WebSocket Integration Robustness
+# Implementation Plan - v399 Absolute Final Equilibrium
 
-## Problem
-WebSocket-started tasks are currently not marked as "consumed" in the `ToolRegistry`. This makes them vulnerable to being prematurely terminated by the background `cleanup_stale_tasks` loop if they run longer than the stale threshold (default 300s).
+## 1. Version Synchronization
+- Update `frontend/src/App.vue` version from 1.8.0 to 1.8.1 to match backend and SPEC.
 
-## Proposed Changes
+## 2. SPEC & Code Alignment
+- Update `SPEC.md` to reflect that `AgentState` uses `systemMetrics` instead of `health`.
+- Ensure consistency in terminology across documentation.
 
-### 1. Backend (bridge.py)
-- Add `mark_consumed(call_id: str)` method to `ToolRegistry` to allow explicit state updates without retrieving the generator (since WS flow already has it).
+## 3. WebSocket Buffer Optimization
+- Refine `WebSocketManager.subscribe` in `useAgentStream.ts` to ensure broadcast messages like `system_metrics` are not prematurely cleared from the buffer if multiple subscribers exist.
 
-### 2. Backend (main.py)
-- Call `registry.mark_consumed(call_id)` in the WebSocket `start` message handler after storing the task.
+## 4. Verification
+- Run all 109 tests (88 backend, 16 frontend unit, 5 E2E).
+- Verify the UI displays the correct version and metrics.
 
-### 3. Documentation (rules.md)
-- Update `rules.md` to include WebSocket specifications, matching the SSE standards.
-
-## Verification Plan
-- Run `tests/test_websocket.py` to ensure no regressions.
-- Add a specific test case in a new test file `tests/test_ws_cleanup.py` that verifies WS tasks are NOT reaped by the stale cleanup loop.
+## 5. Final Sign-off
+- Generate `tasks/websocket_audit_report_jan31_v399_absolute_final_equilibrium.md`.
+- Update `tasks/websocket-integration.json`.
