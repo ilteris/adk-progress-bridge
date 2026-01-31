@@ -28,7 +28,7 @@ from .metrics import (
     ACTIVE_WS_CONNECTIONS, WS_MESSAGES_RECEIVED_TOTAL, WS_MESSAGES_SENT_TOTAL, BUILD_INFO,
     PEAK_ACTIVE_TASKS, WS_BYTES_RECEIVED_TOTAL, WS_BYTES_SENT_TOTAL,
     WS_REQUEST_LATENCY, WS_CONNECTION_DURATION, MEMORY_PERCENT, TOTAL_TASKS_STARTED,
-    CPU_USAGE_PERCENT, PEAK_ACTIVE_WS_CONNECTIONS
+    CPU_USAGE_PERCENT, PEAK_ACTIVE_WS_CONNECTIONS, OPEN_FDS, THREAD_COUNT
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -37,9 +37,9 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.2.1"
+APP_VERSION = "1.2.2"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v331-supreme"
+GIT_COMMIT = "v332-supreme"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -99,6 +99,18 @@ def get_cpu_percent():
         except:
             pass
     return 0.0
+
+def get_open_fds():
+    if psutil:
+        try:
+            proc = psutil.Process()
+            if hasattr(proc, "num_fds"):
+                return proc.num_fds()
+            elif hasattr(proc, "num_handles"):
+                return proc.num_handles()
+        except:
+            pass
+    return 0
 
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
@@ -276,6 +288,10 @@ async def health_check():
     MEMORY_PERCENT.set(mem_percent)
     cpu_percent = get_cpu_percent()
     CPU_USAGE_PERCENT.set(cpu_percent)
+    open_fds = get_open_fds()
+    OPEN_FDS.set(open_fds)
+    thread_count = threading.active_count()
+    THREAD_COUNT.set(thread_count)
     
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -292,7 +308,8 @@ async def health_check():
         "system_platform": sys.platform, 
         "cpu_count": os.cpu_count(),
         "cpu_usage_percent": cpu_percent,
-        "thread_count": threading.active_count(),
+        "thread_count": thread_count,
+        "open_fds": open_fds,
         "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
         "peak_ws_connections": getattr(app.state, "peak_ws_connections", 0),
         "ws_messages_received": int(ws_received),
@@ -337,6 +354,8 @@ async def metrics():
     # Update gauges before returning
     MEMORY_PERCENT.set(get_memory_percent())
     CPU_USAGE_PERCENT.set(get_cpu_percent())
+    OPEN_FDS.set(get_open_fds())
+    THREAD_COUNT.set(threading.active_count())
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

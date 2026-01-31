@@ -89,6 +89,16 @@ CPU_USAGE_PERCENT = Gauge(
     "CPU usage percentage of the process"
 )
 
+OPEN_FDS = Gauge(
+    "adk_open_fds",
+    "Number of open file descriptors for the process"
+)
+
+THREAD_COUNT = Gauge(
+    "adk_thread_count",
+    "Number of active threads in the process"
+)
+
 TOTAL_TASKS_STARTED = Counter(
     "adk_total_tasks_started_total",
     "Total number of tasks started since application launch"
