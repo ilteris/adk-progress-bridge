@@ -1,4 +1,3 @@
-
 import pytest
 import time
 from fastapi.testclient import TestClient
@@ -12,9 +11,9 @@ def test_health_v335_metrics():
     assert response.status_code == 200
     data = response.json()
     
-    # Version checks
-    assert data["version"] == "1.2.5"
-    assert data["git_commit"] == "v335-supreme"
+    # Version checks - Use imported constants for resilience
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT
     assert data["operational_apex"] == "SUPREME ABSOLUTE APEX"
     
     # New metrics in v335
@@ -44,14 +43,14 @@ def test_prometheus_v335_metrics():
     assert "adk_system_network_bytes_sent" in content
     assert "adk_system_network_bytes_recv" in content
     
-    # Verify build info
-    assert f'adk_build_info{{git_commit="v335-supreme",version="1.2.5"}}' in content
+    # Verify build info - Use imported constants for resilience
+    assert f'adk_build_info{{git_commit="{GIT_COMMIT}",version="{APP_VERSION}"}}' in content
 
 def test_version_v335():
     """Verify version endpoint."""
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "1.2.5"
-    assert data["git_commit"] == "v335-supreme"
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT
     assert data["status"] == "SUPREME ABSOLUTE APEX"

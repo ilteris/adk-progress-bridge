@@ -165,6 +165,32 @@ SYSTEM_NETWORK_BYTES_RECV = Gauge(
     "Total system bytes received over the network"
 )
 
+# v336 Supreme Apex Ultra Millennium Metrics
+SYSTEM_CPU_FREQUENCY = Gauge(
+    "adk_system_cpu_frequency_current_mhz",
+    "Current CPU frequency in MHz"
+)
+
+SYSTEM_DISK_READ_BYTES = Gauge(
+    "adk_system_disk_read_bytes_total",
+    "Total bytes read from disk"
+)
+
+SYSTEM_DISK_WRITE_BYTES = Gauge(
+    "adk_system_disk_write_bytes_total",
+    "Total bytes written to disk"
+)
+
+PROCESS_CONNECTIONS_COUNT = Gauge(
+    "adk_process_connections_count",
+    "Number of network connections for the current process"
+)
+
+SYSTEM_LOAD_1M = Gauge(
+    "adk_system_load_1m",
+    "System load average over the last 1 minute"
+)
+
 TOTAL_TASKS_STARTED = Counter(
     "adk_total_tasks_started_total",
     "Total number of tasks started since application launch"

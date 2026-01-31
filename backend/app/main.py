@@ -33,7 +33,9 @@ from .metrics import (
     CONTEXT_SWITCHES_VOLUNTARY, CONTEXT_SWITCHES_INVOLUNTARY,
     DISK_USAGE_PERCENT, SYSTEM_MEMORY_AVAILABLE, PAGE_FAULTS_MINOR, PAGE_FAULTS_MAJOR,
     SYSTEM_CPU_COUNT, SYSTEM_BOOT_TIME, SWAP_MEMORY_USAGE_PERCENT,
-    SYSTEM_NETWORK_BYTES_SENT, SYSTEM_NETWORK_BYTES_RECV
+    SYSTEM_NETWORK_BYTES_SENT, SYSTEM_NETWORK_BYTES_RECV,
+    SYSTEM_CPU_FREQUENCY, SYSTEM_DISK_READ_BYTES, SYSTEM_DISK_WRITE_BYTES,
+    PROCESS_CONNECTIONS_COUNT, SYSTEM_LOAD_1M
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -42,9 +44,9 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.2.5"
+APP_VERSION = "1.2.6"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v335-supreme"
+GIT_COMMIT = "v336-supreme"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -173,6 +175,35 @@ def get_network_io():
         except:
             pass
     return 0, 0
+
+def get_cpu_frequency():
+    if psutil:
+        try:
+            freq = psutil.cpu_freq()
+            if freq:
+                return freq.current
+        except:
+            pass
+    return 0.0
+
+def get_disk_io():
+    if psutil:
+        try:
+            io = psutil.disk_io_counters()
+            if io:
+                return io.read_bytes, io.write_bytes
+        except:
+            pass
+    return 0, 0
+
+def get_process_connections_count():
+    if psutil:
+        try:
+            # Use net_connections() instead of deprecated connections()
+            return len(psutil.Process().net_connections())
+        except:
+            pass
+    return 0
 
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
@@ -331,7 +362,8 @@ async def stop_task(
 @app.get("/health") 
 async def health_check(): 
     load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
-    
+    SYSTEM_LOAD_1M.set(load_avg[0])
+
     # Calculate totals from metrics
     ws_received_count = 0
     for m in WS_MESSAGES_RECEIVED_TOTAL.collect():
@@ -400,6 +432,15 @@ async def health_check():
     SYSTEM_NETWORK_BYTES_SENT.set(net_sent)
     SYSTEM_NETWORK_BYTES_RECV.set(net_recv)
     
+    # v336 metrics
+    cpu_freq = get_cpu_frequency()
+    SYSTEM_CPU_FREQUENCY.set(cpu_freq)
+    disk_read, disk_write = get_disk_io()
+    SYSTEM_DISK_READ_BYTES.set(disk_read)
+    SYSTEM_DISK_WRITE_BYTES.set(disk_write)
+    proc_conn_count = get_process_connections_count()
+    PROCESS_CONNECTIONS_COUNT.set(proc_conn_count)
+
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
     for t in active_tasks_list:
@@ -425,6 +466,7 @@ async def health_check():
         "python_implementation": platform.python_implementation(),
         "system_platform": sys.platform, 
         "cpu_count": cpu_count,
+        "cpu_frequency_current_mhz": cpu_freq,
         "cpu_usage_percent": cpu_percent,
         "thread_count": thread_count,
         "open_fds": open_fds,
@@ -442,6 +484,12 @@ async def health_check():
             "bytes_sent": net_sent,
             "bytes_recv": net_recv
         },
+        "disk_io_total": {
+            "read_bytes": disk_read,
+            "write_bytes": disk_write
+        },
+        "process_connections_count": proc_conn_count,
+        "system_load_1m": load_avg[0],
         "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
         "peak_ws_connections": getattr(app.state, "peak_ws_connections", 0),
         "ws_messages_received": int(ws_received_count),
@@ -510,6 +558,15 @@ async def metrics():
     net_sent, net_recv = get_network_io()
     SYSTEM_NETWORK_BYTES_SENT.set(net_sent)
     SYSTEM_NETWORK_BYTES_RECV.set(net_recv)
+    
+    # v336
+    SYSTEM_CPU_FREQUENCY.set(get_cpu_frequency())
+    disk_read, disk_write = get_disk_io()
+    SYSTEM_DISK_READ_BYTES.set(disk_read)
+    SYSTEM_DISK_WRITE_BYTES.set(disk_write)
+    PROCESS_CONNECTIONS_COUNT.set(get_process_connections_count())
+    load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
+    SYSTEM_LOAD_1M.set(load_avg[0])
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
