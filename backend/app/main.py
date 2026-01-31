@@ -5,7 +5,7 @@ import time
 import os
 from typing import Dict, List, Optional, Any
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
+from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status, Response
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -25,6 +25,8 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 # WS_MESSAGE_SIZE_LIMIT: Maximum allowed size (bytes) for an incoming WebSocket message.
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
+# PROTOCOL_VERSION: Current version of the bridge protocol for compatibility tracking.
+PROTOCOL_VERSION = "1.1.0"
 
 # CORS Configuration
 # Defaults to "*" for development but can be restricted via environment variable.
@@ -79,10 +81,11 @@ class InputProvideRequest(BaseModel):
 AUTH_RESPONSES = {401: {"description": "Unauthorized"}}
 
 @app.get("/tools", response_model=List[str], responses=AUTH_RESPONSES)
-async def list_tools(authenticated: bool = Depends(verify_api_key)):
+async def list_tools(response: Response, authenticated: bool = Depends(verify_api_key)):
     """
     Returns a list of all registered tools.
     """
+    response.headers["X-Protocol-Version"] = PROTOCOL_VERSION
     return registry.list_tools()
 
 @app.post("/start_task/{tool_name}", response_model=TaskStartResponse, responses=AUTH_RESPONSES)
@@ -299,7 +302,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 await safe_send_json({
                     "type": "tools_list",
                     "tools": tools,
-                    "request_id": request_id
+                    "request_id": request_id,
+                    "protocol_version": PROTOCOL_VERSION,
+                    "timestamp": time.time()
                 })
                 continue
 
@@ -326,7 +331,9 @@ async def websocket_endpoint(websocket: WebSocket):
                         "type": "task_started", 
                         "call_id": call_id, 
                         "tool_name": tool_name, 
-                        "request_id": request_id
+                        "request_id": request_id,
+                        "protocol_version": PROTOCOL_VERSION,
+                        "timestamp": time.time()
                     })
                     task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
                     active_tasks[call_id] = task
@@ -349,13 +356,15 @@ async def websocket_endpoint(websocket: WebSocket):
                     await safe_send_json({
                         "call_id": call_id,
                         "type": "progress",
-                        "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}
+                        "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."},
+                        "timestamp": time.time()
                     })
                     # Command acknowledgment
                     await safe_send_json({
                         "type": "stop_success",
                         "call_id": call_id,
-                        "request_id": request_id
+                        "request_id": request_id,
+                        "timestamp": time.time()
                     })
                 else:
                     # 2. Try to stop globally if started via SSE or another WS
@@ -371,14 +380,16 @@ async def websocket_endpoint(websocket: WebSocket):
                         await safe_send_json({
                             "type": "stop_success",
                             "call_id": call_id,
-                            "request_id": request_id
+                            "request_id": request_id,
+                            "timestamp": time.time()
                         })
                     else:
                         await safe_send_json({
                             "type": "error",
                             "call_id": call_id,
                             "request_id": request_id, 
-                            "payload": {"detail": f"No active task found with call_id: {call_id}"}
+                            "payload": {"detail": f"No active task found with call_id: {call_id}"},
+                            "timestamp": time.time()
                         })
             
             elif msg_type == "input":
@@ -390,14 +401,16 @@ async def websocket_endpoint(websocket: WebSocket):
                     await safe_send_json({
                         "type": "input_success",
                         "call_id": call_id,
-                        "request_id": request_id
+                        "request_id": request_id,
+                        "timestamp": time.time()
                     })
                 else:
                     await safe_send_json({
                         "type": "error",
                         "call_id": call_id,
                         "request_id": request_id, 
-                        "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
+                        "payload": {"detail": f"No task waiting for input with call_id: {call_id}"},
+                        "timestamp": time.time()
                     })
             
             else:
@@ -405,7 +418,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 await safe_send_json({
                     "type": "error",
                     "request_id": request_id, 
-                    "payload": {"detail": f"Unknown message type: {msg_type}"}
+                    "payload": {"detail": f"Unknown message type: {msg_type}"},
+                    "timestamp": time.time()
                 })
 
     except WebSocketDisconnect:
