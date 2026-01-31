@@ -3,7 +3,7 @@
   "info": {
     "title": "ADK Progress Bridge",
     "description": "A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
-    "version": "1.7.0"
+    "version": "1.7.1"
   },
   "paths": {
     "/tools": {

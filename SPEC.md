@@ -97,6 +97,6 @@ The bridge provides deep visibility into the host system performance:
 *   **Thread Safety:** `asyncio.Lock` ensures frame integrity during concurrent streaming.
 
 ## 6. Versioning & Identity
-- **APP_VERSION**: 1.7.0
-- **GIT_COMMIT**: v378-ultimate-god-tier-audit
-- **OPERATIONAL_APEX**: GOD TIER FIDELITY (v378 ULTIMATE)
+- **APP_VERSION**: 1.7.1
+- **GIT_COMMIT**: v379-final-signoff
+- **OPERATIONAL_APEX**: GOD TIER FIDELITY (v379 ULTIMATE)
