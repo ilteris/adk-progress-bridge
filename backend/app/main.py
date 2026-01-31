@@ -56,7 +56,10 @@ from .metrics import (
     PROCESS_MEMORY_LIB, PROCESS_MEMORY_DIRTY, PROCESS_ENV_VAR_COUNT,
     PROCESS_MEMORY_USS, SYSTEM_MEMORY_WIRED, PROCESS_NICE, PROCESS_UPTIME,
     SYSTEM_CPU_CTX_SWITCHES, SYSTEM_NETWORK_CONNECTIONS, PROCESS_CPU_AFFINITY,
-    PROCESS_MEMORY_PAGE_FAULTS_TOTAL
+    PROCESS_MEMORY_PAGE_FAULTS_TOTAL,
+    SYSTEM_DISK_READ_COUNT_TOTAL, SYSTEM_DISK_WRITE_COUNT_TOTAL,
+    SYSTEM_SWAP_IN_BYTES_TOTAL, SYSTEM_SWAP_OUT_BYTES_TOTAL,
+    PROCESS_MEMORY_VMS_PERCENT, SYSTEM_CPU_PHYSICAL_COUNT
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -65,10 +68,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.3.5"
+APP_VERSION = "1.3.6"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v345-omnipotence"
-OPERATIONAL_APEX = "OMNIPOTENCE"
+GIT_COMMIT = "v346-deification"
+OPERATIONAL_APEX = "DEIFICATION"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -503,6 +506,45 @@ def get_process_memory_page_faults_total():
     minor, major = get_page_faults()
     return minor + major
 
+# v346 Deification Helpers
+def get_system_disk_io_counts():
+    if psutil:
+        try:
+            io = psutil.disk_io_counters()
+            if io:
+                return io.read_count, io.write_count
+        except:
+            pass
+    return 0, 0
+
+def get_system_swap_io():
+    if psutil:
+        try:
+            swap = psutil.swap_memory()
+            return swap.sin, swap.sout
+        except:
+            pass
+    return 0, 0
+
+def get_process_memory_vms_percent():
+    if _process and psutil:
+        try:
+            vms = _process.memory_info().vms
+            total = psutil.virtual_memory().total
+            if total > 0:
+                return (vms / total) * 100
+        except:
+            pass
+    return 0.0
+
+def get_system_cpu_physical_count():
+    if psutil:
+        try:
+            return psutil.cpu_count(logical=False) or 0
+        except:
+            pass
+    return 0
+
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
     hours, rem = divmod(rem, 3600)
@@ -846,6 +888,18 @@ async def health_check():
     p_pf_total = get_process_memory_page_faults_total()
     PROCESS_MEMORY_PAGE_FAULTS_TOTAL.set(p_pf_total)
 
+    # v346 metrics
+    sd_rc, sd_wc = get_system_disk_io_counts()
+    SYSTEM_DISK_READ_COUNT_TOTAL.set(sd_rc)
+    SYSTEM_DISK_WRITE_COUNT_TOTAL.set(sd_wc)
+    ss_sin, ss_sout = get_system_swap_io()
+    SYSTEM_SWAP_IN_BYTES_TOTAL.set(ss_sin)
+    SYSTEM_SWAP_OUT_BYTES_TOTAL.set(ss_sout)
+    p_vms_p = get_process_memory_vms_percent()
+    PROCESS_MEMORY_VMS_PERCENT.set(p_vms_p)
+    s_cpu_phys = get_system_cpu_physical_count()
+    SYSTEM_CPU_PHYSICAL_COUNT.set(s_cpu_phys)
+
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -872,6 +926,7 @@ async def health_check():
         "python_implementation": platform.python_implementation(),
         "system_platform": sys.platform, 
         "cpu_count": cpu_count,
+        "cpu_physical_count": s_cpu_phys,
         "cpu_frequency_current_mhz": cpu_freq,
         "cpu_usage_percent": cpu_percent,
         "system_cpu_idle_percent": idle_p, # backward compatibility
@@ -905,7 +960,9 @@ async def health_check():
         "swap_memory_usage_percent": swap_percent,
         "system_swap_memory": {
             "used_bytes": sys_swap_used,
-            "free_bytes": sys_swap_free
+            "free_bytes": sys_swap_free,
+            "sin_bytes": ss_sin,
+            "sout_bytes": ss_sout
         },
         "boot_time_seconds": boot_time,
         "network_io_total": {
@@ -918,7 +975,9 @@ async def health_check():
         },
         "disk_io_total": {
             "read_bytes": disk_read,
-            "write_bytes": disk_write
+            "write_bytes": disk_write,
+            "read_count": sd_rc,
+            "write_count": sd_wc
         },
         "system_network_connections_count": s_conn_count,
         "process_connections_count": proc_conn_count,
@@ -975,7 +1034,8 @@ async def health_check():
             "data_bytes": p_data,
             "lib_bytes": p_lib,
             "dirty_bytes": p_dirty,
-            "uss_bytes": p_uss
+            "uss_bytes": p_uss,
+            "vms_percent": p_vms_p
         },
         "process_env_var_count": p_env_count,
         "process_nice_value": p_nice,
@@ -1142,6 +1202,16 @@ async def metrics():
     SYSTEM_NETWORK_CONNECTIONS.set(get_system_network_connections_count())
     PROCESS_CPU_AFFINITY.set(get_process_cpu_affinity_count())
     PROCESS_MEMORY_PAGE_FAULTS_TOTAL.set(get_process_memory_page_faults_total())
+
+    # v346 Deification
+    sd_read_c, sd_write_c = get_system_disk_io_counts()
+    SYSTEM_DISK_READ_COUNT_TOTAL.set(sd_read_c)
+    SYSTEM_DISK_WRITE_COUNT_TOTAL.set(sd_write_c)
+    ss_swap_in, ss_swap_out = get_system_swap_io()
+    SYSTEM_SWAP_IN_BYTES_TOTAL.set(ss_swap_in)
+    SYSTEM_SWAP_OUT_BYTES_TOTAL.set(ss_swap_out)
+    PROCESS_MEMORY_VMS_PERCENT.set(get_process_memory_vms_percent())
+    SYSTEM_CPU_PHYSICAL_COUNT.set(get_system_cpu_physical_count())
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

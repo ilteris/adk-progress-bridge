@@ -490,6 +490,37 @@ PROCESS_MEMORY_PAGE_FAULTS_TOTAL = Gauge(
     "Total number of page faults (minor + major) for the process"
 )
 
+# v346 Deification Metrics
+SYSTEM_DISK_READ_COUNT_TOTAL = Gauge(
+    "adk_system_disk_read_count_total",
+    "Total number of system-wide disk read operations"
+)
+
+SYSTEM_DISK_WRITE_COUNT_TOTAL = Gauge(
+    "adk_system_disk_write_count_total",
+    "Total number of system-wide disk write operations"
+)
+
+SYSTEM_SWAP_IN_BYTES_TOTAL = Gauge(
+    "adk_system_swap_in_bytes_total",
+    "Total number of bytes swapped in from disk"
+)
+
+SYSTEM_SWAP_OUT_BYTES_TOTAL = Gauge(
+    "adk_system_swap_out_bytes_total",
+    "Total number of bytes swapped out to disk"
+)
+
+PROCESS_MEMORY_VMS_PERCENT = Gauge(
+    "adk_process_memory_vms_percent",
+    "Virtual memory size as a percentage of total system memory"
+)
+
+SYSTEM_CPU_PHYSICAL_COUNT = Gauge(
+    "adk_system_cpu_physical_count",
+    "Total number of physical CPUs in the system"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

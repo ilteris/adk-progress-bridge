@@ -2,7 +2,7 @@
 
 A real-time progress bridge between long-running agent tools and a frontend/TUI. Built for high-fidelity agent status monitoring.
 
-**Current Version:** 1.1.2 ("SUPREME ABSOLUTE APEX")
+**Current Version:** 1.3.6 ("DEIFICATION")
 
 ## 🚀 Key Features
 
@@ -20,6 +20,7 @@ A real-time progress bridge between long-running agent tools and a frontend/TUI.
 - **Observability:** 
   - Integrated Prometheus metrics for task duration, status, and **WebSocket throughput**.
   - Enhanced `/health` endpoint with real-time operational metrics.
+  - **DEIFICATION Observability:** v346 tier reaching into system-wide disk I/O counts, swap activity (sin/sout), physical CPU cores, and virtual memory percentages.
 
 ## 🛠️ Tech Stack
 
