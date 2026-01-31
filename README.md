@@ -67,7 +67,7 @@ We define a strict JSON schema for the events streamed over the wire.
 *   **FastAPI Endpoints:** 
     *   `/start_task`: Traditional REST for SSE flow.
     *   `/stream`: SSE output stream.
-    *   `/ws`: Bi-directional WebSocket for sub-millisecond sync, task cancellation, and **interactive input**.
+    *   `/ws`: Bi-directional WebSocket for sub-millisecond sync, task cancellation, interactive input, and **cross-protocol task monitoring** via the subscribe command.
 
 ### 3. Frontend (Vue.js)
 *   **`useAgentStream`:** A Vue composable that connects via SSE or WebSocket.
