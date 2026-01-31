@@ -25,8 +25,8 @@ def test_ws_v250_supreme_consistency():
         data = websocket.receive_json()
         assert data["type"] == "pong"
         # Let's see if pong has them
-        # assert data["protocol_version"] == PROTOCOL_VERSION
-        # assert "timestamp" in data
+        assert data["protocol_version"] == PROTOCOL_VERSION
+        assert "timestamp" in data
 
         # 3. Check start
         websocket.send_json({"type": "start", "tool_name": "long_audit", "request_id": "req-2"})
