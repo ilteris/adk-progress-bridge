@@ -4,6 +4,7 @@ import json
 import uuid
 import time
 import os
+import inspect
 from typing import Dict, List, Optional, Any
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
@@ -33,8 +34,8 @@ WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 APP_VERSION = "1.7.2"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v388-supreme-apex"
-OPERATIONAL_APEX = "SUPREME APEX FIDELITY (v388)"
+GIT_COMMIT = "v389-ultimate-supreme-apex-fix"
+OPERATIONAL_APEX = "SUPREME APEX FIDELITY (v389)"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -94,45 +95,55 @@ async def start_task(tool_name: str, request: Optional[TaskStartRequest] = None,
 async def stream_task(call_id: Optional[str] = None, cid: Optional[str] = Query(None, alias="call_id"), authenticated: bool = Depends(verify_api_key)):
     actual_call_id = call_id or cid
     if not actual_call_id: raise HTTPException(status_code=400, detail="call_id is required")
-    task_data = await registry.get_task(actual_call_id)
-    if not task_data: raise HTTPException(status_code=404, detail="Task not found")
-    gen, tool_name = task_data["gen"], task_data["tool_name"]
+    task_data_check = await registry.get_task_no_consume(actual_call_id)
+    if not task_data_check: raise HTTPException(status_code=404, detail="Task not found")
 
     async def event_generator():
-        call_id_var.set(actual_call_id); tool_name_var.set(tool_name)
-        start_time, status, metrics_queue, combined_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(actual_call_id), asyncio.Queue()
-        async def pull_gen():
-            try:
-                async for item in gen: await combined_queue.put(("item", item))
-                await combined_queue.put(("done", None))
-            except Exception as e: await combined_queue.put(("error", e))
-        async def pull_metrics():
-            try:
-                while True: await combined_queue.put(("metrics", await metrics_queue.get()))
-            except asyncio.CancelledError: pass
-        gen_task, metrics_task = asyncio.create_task(pull_gen()), asyncio.create_task(pull_metrics())
+        # ULTIMATE LEAK PROTECTION
         try:
-            while True:
-                msg_type, payload = await combined_queue.get()
-                if msg_type == "done": break
-                elif msg_type == "error": raise payload
-                elif msg_type == "metrics": yield await format_sse(ProgressEvent(call_id=actual_call_id, type="system_metrics", payload=payload))
-                elif msg_type == "item":
-                    if isinstance(payload, ProgressPayload):
-                        TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                        yield await format_sse(ProgressEvent(call_id=actual_call_id, type="progress", payload=payload))
-                    elif isinstance(payload, dict) and payload.get("type") == "input_request": yield await format_sse(ProgressEvent(call_id=actual_call_id, type="input_request", payload=payload["payload"]))
-                    else: yield await format_sse(ProgressEvent(call_id=actual_call_id, type="result", payload=payload))
-            gen_task.cancel(); metrics_task.cancel()
-        except asyncio.CancelledError: status = "cancelled"; await gen.aclose()
-        except Exception as e: status = "error"; yield await format_sse(ProgressEvent(call_id=actual_call_id, type="error", payload={"detail": str(e)}))
+            task_data = await registry.get_task(actual_call_id)
+            if not task_data: return
+            gen, tool_name = task_data["gen"], task_data["tool_name"]
+            
+            call_id_var.set(actual_call_id); tool_name_var.set(tool_name)
+            start_time, status, metrics_queue, combined_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(actual_call_id), asyncio.Queue()
+            
+            async def pull_gen():
+                try:
+                    async for item in gen: await combined_queue.put(("item", item))
+                    await combined_queue.put(("done", None))
+                except Exception as e: await combined_queue.put(("error", e))
+            
+            async def pull_metrics():
+                try:
+                    while True: await combined_queue.put(("metrics", await metrics_queue.get()))
+                except asyncio.CancelledError: pass
+            
+            gen_task, metrics_task = asyncio.create_task(pull_gen()), asyncio.create_task(pull_metrics())
+            try:
+                while True:
+                    msg_type, payload = await combined_queue.get()
+                    if msg_type == "done": break
+                    elif msg_type == "error": raise payload
+                    elif msg_type == "metrics": yield await format_sse(ProgressEvent(call_id=actual_call_id, type="system_metrics", payload=payload))
+                    elif msg_type == "item":
+                        if isinstance(payload, ProgressPayload):
+                            TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
+                            yield await format_sse(ProgressEvent(call_id=actual_call_id, type="progress", payload=payload))
+                        elif isinstance(payload, dict) and payload.get("type") == "input_request": yield await format_sse(ProgressEvent(call_id=actual_call_id, type="input_request", payload=payload["payload"]))
+                        else: yield await format_sse(ProgressEvent(call_id=actual_call_id, type="result", payload=payload))
+                gen_task.cancel(); metrics_task.cancel()
+            except asyncio.CancelledError: status = "cancelled"; await gen.aclose()
+            except Exception as e: status = "error"; yield await format_sse(ProgressEvent(call_id=actual_call_id, type="error", payload={"detail": str(e)}))
+            finally:
+                metrics_broadcaster.unsubscribe(actual_call_id)
+                if not gen_task.done(): gen_task.cancel()
+                if not metrics_task.done(): metrics_task.cancel()
+                duration = time.perf_counter() - start_time
+                TASK_DURATION.labels(tool_name=tool_name).observe(duration); TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
         finally:
-            metrics_broadcaster.unsubscribe(actual_call_id)
-            if not gen_task.done(): gen_task.cancel()
-            if not metrics_task.done(): metrics_task.cancel()
-            duration = time.perf_counter() - start_time
-            TASK_DURATION.labels(tool_name=tool_name).observe(duration); TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
             await registry.remove_task(actual_call_id)
+                
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/provide_input", responses=AUTH_RESPONSES)
@@ -228,12 +239,18 @@ async def websocket_endpoint(websocket: WebSocket):
                         if not tool: await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": f"Tool not found: {tool_name}"}})
                         else:
                             call_id = str(uuid.uuid4())
+                            gen = None
                             try:
                                 gen = tool(**message.get("args", {}))
                                 await registry.store_task(call_id, gen, tool_name); await registry.mark_consumed(call_id)
-                                await safe_send_json({"type": "task_started", "call_id": call_id, "tool_name": tool_name, "request_id": request_id})
                                 active_tasks[call_id] = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
-                            except Exception as e: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": str(e)}})
+                                await safe_send_json({"type": "task_started", "call_id": call_id, "tool_name": tool_name, "request_id": request_id})
+                            except Exception as e:
+                                if call_id in active_tasks: active_tasks[call_id].cancel()
+                                await registry.remove_task(call_id)
+                                if gen and inspect.isasyncgen(gen): await gen.aclose()
+                                try: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": str(e)}})
+                                except: pass
                 elif msg_type == "stop":
                     call_id = message.get("call_id")
                     if call_id in active_tasks:
@@ -249,11 +266,17 @@ async def websocket_endpoint(websocket: WebSocket):
                         else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No active task found"}})
                 elif msg_type == "subscribe":
                     call_id = message.get("call_id")
-                    task_data = await registry.get_task(call_id)
-                    if task_data:
-                        active_tasks[call_id] = asyncio.create_task(run_ws_generator(safe_send_json, call_id, task_data["tool_name"], task_data["gen"], active_tasks))
-                        await safe_send_json({"type": "task_started", "call_id": call_id, "tool_name": task_data["tool_name"], "request_id": request_id})
-                    else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No active task found"}})
+                    try:
+                        task_data = await registry.get_task(call_id)
+                        if task_data:
+                            active_tasks[call_id] = asyncio.create_task(run_ws_generator(safe_send_json, call_id, task_data["tool_name"], task_data["gen"], active_tasks))
+                            await safe_send_json({"type": "task_started", "call_id": call_id, "tool_name": task_data["tool_name"], "request_id": request_id})
+                        else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No active task found"}})
+                    except Exception as e:
+                        if call_id in active_tasks: active_tasks[call_id].cancel()
+                        await registry.remove_task(call_id)
+                        try: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": str(e)}})
+                        except: pass
                 elif msg_type == "input":
                     call_id = message.get("call_id")
                     if await input_manager.provide_input(call_id, message.get("value")): await safe_send_json({"type": "input_success", "call_id": call_id, "request_id": request_id})
@@ -262,32 +285,35 @@ async def websocket_endpoint(websocket: WebSocket):
                 WS_REQUEST_LATENCY.labels(message_type=msg_type).observe(time.perf_counter() - req_start_time)
             except Exception as e:
                 WS_CONNECTION_ERRORS_TOTAL.labels(error_type="other_error").inc()
-                await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": "Internal error"}})
+                try: await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": "Internal error"}})
+                except: pass
     finally:
         ACTIVE_WS_CONNECTIONS.dec(); WS_CONNECTION_DURATION.observe(time.perf_counter() - conn_start_time)
         for t in active_tasks.values():
             if not t.done(): t.cancel()
 
 async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
-    call_id_var.set(call_id); tool_name_var.set(tool_name)
-    start_time, status, metrics_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(call_id)
-    async def metrics_pusher():
-        try:
-            while True: await send_func({"call_id": call_id, "type": "system_metrics", "payload": await metrics_queue.get()})
-        except asyncio.CancelledError: pass
-    metrics_task = asyncio.create_task(metrics_pusher())
     try:
-        async for item in gen:
-            if isinstance(item, ProgressPayload):
-                TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                await send_func({"call_id": call_id, "type": "progress", "payload": item.model_dump()})
-            elif isinstance(item, dict) and item.get("type") == "input_request": await send_func({"call_id": call_id, "type": "input_request", "payload": item["payload"]})
-            else: await send_func({"call_id": call_id, "type": "result", "payload": item})
-    except asyncio.CancelledError: status = "cancelled"; await gen.aclose()
-    except Exception as e: status = "error"; await send_func({"call_id": call_id, "type": "error", "payload": {"detail": str(e)}})
+        call_id_var.set(call_id); tool_name_var.set(tool_name)
+        start_time, status, metrics_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(call_id)
+        async def metrics_pusher():
+            try:
+                while True: await send_func({"call_id": call_id, "type": "system_metrics", "payload": await metrics_queue.get()})
+            except asyncio.CancelledError: pass
+        metrics_task = asyncio.create_task(metrics_pusher())
+        try:
+            async for item in gen:
+                if isinstance(item, ProgressPayload):
+                    TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
+                    await send_func({"call_id": call_id, "type": "progress", "payload": item.model_dump()})
+                elif isinstance(item, dict) and item.get("type") == "input_request": await send_func({"call_id": call_id, "type": "input_request", "payload": item["payload"]})
+                else: await send_func({"call_id": call_id, "type": "result", "payload": item})
+        except asyncio.CancelledError: status = "cancelled"; await gen.aclose()
+        except Exception as e: status = "error"; await send_func({"call_id": call_id, "type": "error", "payload": {"detail": str(e)}})
+        finally:
+            metrics_broadcaster.unsubscribe(call_id); metrics_task.cancel()
+            TASK_DURATION.labels(tool_name=tool_name).observe(time.perf_counter() - start_time); TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
     finally:
-        metrics_broadcaster.unsubscribe(call_id); metrics_task.cancel()
-        TASK_DURATION.labels(tool_name=tool_name).observe(time.perf_counter() - start_time); TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
         await registry.remove_task(call_id); active_tasks.pop(call_id, None)
 
 from . import dummy_tool

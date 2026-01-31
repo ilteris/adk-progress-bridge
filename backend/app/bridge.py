@@ -193,7 +193,9 @@ class ToolRegistry:
             if task_data:
                 tool_name = task_data["tool_name"]
                 ACTIVE_TASKS.labels(tool_name=tool_name).dec()
-                logger.debug(f"Task removed from registry: {call_id}", extra={"call_id": call_id})
+                logger.info(f"Task removed from registry: {call_id}", extra={"call_id": call_id})
+            else:
+                logger.debug(f"Task not found for removal: {call_id}", extra={"call_id": call_id})
 
     async def cleanup_tasks(self):
         """Closes all active generators currently in the registry."""
