@@ -29,9 +29,9 @@ Manages bi-directional input for tasks that require user interaction.
 *   **REST Flow (SSE):**
     *   `GET /tools`: Returns a list of all registered tool names.
     *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id`.
-    *   `GET /stream/{call_id}`: SSE stream for progress.
-    *   `POST /stop_task/{call_id}`: Manual termination of SSE task.
-    *   `POST /provide_input`: REST fallback to provide input for SSE tasks.
+    *   `GET /stream/{call_id}`: SSE endpoint for progress streaming.
+    *   `POST /stop_task/{call_id}`: Manual termination.
+    *   `POST /provide_input`: REST fallback for providing input for SSE tasks.
 *   **WebSocket Flow:**
     *   `WS /ws`: Bi-directional connection for task control and streaming.
     *   Message `{"type": "list_tools", "request_id": "..."}` requests all tool names.
@@ -42,6 +42,8 @@ Manages bi-directional input for tasks that require user interaction.
         *   Response: `{"type": "stop_success", "call_id": "...", "request_id": "..."}`
     *   Message `{"type": "input", "call_id": "...", "value": "...", "request_id": "..."}` provides interactive input.
         *   Response: `{"type": "input_success", "call_id": "...", "request_id": "..."}`
+    *   Message `{"type": "ping"}` requests a heartbeat check.
+        *   Response: `{"type": "pong"}`
 
 ## 3. Frontend Specification (Vue.js)
 
@@ -80,7 +82,13 @@ interface AgentState {
 *   **Progress:** Animated progress bar and status labels.
 *   **Console:** Real-time log output with timestamps.
 
-## 4. Implementation Details
+## 4. Real-time System Observability
+The bridge provides deep visibility into the host system performance during task execution:
+1. **Periodic Metrics Injection:** For WebSocket-based tasks, the backend automatically injects system-wide health metrics (CPU, kernel stats, throughput) into the stream every 3 seconds.
+2. **Metrics Payload:** The `system_metrics` event contains a comprehensive payload including CPU usage breakdown, memory pressure, context switches, interrupt rates, and disk/network throughput.
+3. **Pydantic v2 Alignment:** The system utilizes modern Pydantic v2 `.model_dump()` and `.model_dump_json()` methods for high-performance serialization.
+
+## 5. Implementation Details
 
 ### 4.1 Bi-directional WebSockets
 The WebSocket layer allows for:
@@ -92,3 +100,11 @@ The WebSocket layer allows for:
 
 ### 4.2 Security
 All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` header or `api_key` query parameter.
+
+### 4.3 Robustness & Maintenance
+1.  **Heartbeats:** WebSocket connections use periodic ping/pong messages to keep the connection alive and detect dead peers.
+2.  **Message Size Limiting:** Incoming WebSocket messages are limited to 1MB to prevent memory exhaustion and DoS attacks.
+3.  **Automatic Reconnection:** The frontend implements exponential backoff reconnection for WebSocket connections.
+4.  **Stale Task Cleanup:** A background task on the backend cleans up tasks that were initiated but never streamed/consumed within a timeout period (default 300s).
+5.  **Thread-Safe Writes:** The backend uses an `asyncio.Lock` to ensure WebSocket frames are not interleaved during concurrent task streaming.
+6.  **Message Buffering:** The frontend buffers incoming WebSocket messages that arrive before the UI has fully subscribed to a task, preventing race conditions.
