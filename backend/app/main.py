@@ -14,7 +14,7 @@ from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_
 from .logger import logger
 from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
-from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
+from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, WS_ACTIVE_CONNECTIONS
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
 # WS_HEARTBEAT_TIMEOUT: Max time to wait for a client message (ping/pong) before closing connection.
@@ -76,14 +76,16 @@ class InputProvideRequest(BaseModel):
     call_id: str
     value: Any
 
-@app.get("/tools", response_model=List[str])
+AUTH_RESPONSES = {401: {"description": "Unauthorized"}}
+
+@app.get("/tools", response_model=List[str], responses=AUTH_RESPONSES)
 async def list_tools(authenticated: bool = Depends(verify_api_key)):
     """
     Returns a list of all registered tools.
     """
     return registry.list_tools()
 
-@app.post("/start_task/{tool_name}", response_model=TaskStartResponse)
+@app.post("/start_task/{tool_name}", response_model=TaskStartResponse, responses=AUTH_RESPONSES)
 async def start_task(
     tool_name: str, 
     request: Optional[TaskStartRequest] = None, 
@@ -113,8 +115,8 @@ async def start_task(
         stream_url=f"/stream/{call_id}"
     )
 
-@app.get("/stream/{call_id}")
-@app.get("/stream")
+@app.get("/stream/{call_id}", responses=AUTH_RESPONSES)
+@app.get("/stream", responses=AUTH_RESPONSES)
 async def stream_task(
     call_id: Optional[str] = None,
     cid: Optional[str] = Query(None, alias="call_id"),
@@ -179,15 +181,15 @@ async def stream_task(
         media_type="text/event-stream"
     )
 
-@app.post("/provide_input")
+@app.post("/provide_input", responses=AUTH_RESPONSES)
 async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
     if await input_manager.provide_input(request.call_id, request.value):
         return {"status": "input accepted"}
     else:
         raise HTTPException(status_code=404, detail=f"No task waiting for input with call_id: {request.call_id}")
 
-@app.post("/stop_task/{call_id}")
-@app.post("/stop_task")
+@app.post("/stop_task/{call_id}", responses=AUTH_RESPONSES)
+@app.post("/stop_task", responses=AUTH_RESPONSES)
 async def stop_task(
     call_id: Optional[str] = None, 
     cid: Optional[str] = Query(None, alias="call_id"),
@@ -221,10 +223,12 @@ async def websocket_endpoint(websocket: WebSocket):
     Bi-directional WebSocket endpoint for executing tools and receiving progress.
     """
     await websocket.accept()
+    WS_ACTIVE_CONNECTIONS.inc()
     
     try:
         await verify_api_key_ws(websocket)
     except HTTPException:
+        WS_ACTIVE_CONNECTIONS.dec()
         return
 
     logger.info("WebSocket connection established")
@@ -392,6 +396,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
+        WS_ACTIVE_CONNECTIONS.dec()
         if active_tasks:
             logger.info(f"Cleaning up {len(active_tasks)} WebSocket tasks due to disconnect/timeout")
             for task in active_tasks.values():

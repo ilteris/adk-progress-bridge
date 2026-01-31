@@ -55,3 +55,45 @@ def test_websocket_metrics_increment():
     
     assert final_count == initial_count + 1
     assert found_progress
+
+def test_websocket_active_connections_metric():
+    client = TestClient(app)
+    
+    # 1. Verify initial active connections is 0 or what it was
+    res = client.get("/metrics")
+    initial_ws_count = 0
+    for line in res.text.split('\n'):
+        if 'adk_ws_active_connections' in line and not line.startswith('#'):
+            initial_ws_count = float(line.split()[-1])
+            break
+            
+    # 2. Connect and check metric
+    with client.websocket_connect("/ws") as websocket:
+        res = client.get("/metrics")
+        during_ws_count = 0
+        for line in res.text.split('\n'):
+            if 'adk_ws_active_connections' in line and not line.startswith('#'):
+                during_ws_count = float(line.split()[-1])
+                break
+        
+        assert during_ws_count == initial_ws_count + 1
+        
+        # 3. Connect another one
+        with client.websocket_connect("/ws") as websocket2:
+            res = client.get("/metrics")
+            two_ws_count = 0
+            for line in res.text.split('\n'):
+                if 'adk_ws_active_connections' in line and not line.startswith('#'):
+                    two_ws_count = float(line.split()[-1])
+                    break
+            assert two_ws_count == initial_ws_count + 2
+            
+    # 4. Disconnect and check metric is back to initial
+    res = client.get("/metrics")
+    final_ws_count = 0
+    for line in res.text.split('\n'):
+        if 'adk_ws_active_connections' in line and not line.startswith('#'):
+            final_ws_count = float(line.split()[-1])
+            break
+            
+    assert final_ws_count == initial_ws_count
