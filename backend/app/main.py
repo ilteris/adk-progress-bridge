@@ -26,6 +26,7 @@ STALE_TASK_MAX_AGE = 300.0
 # WS_MESSAGE_SIZE_LIMIT: Maximum allowed size (bytes) for an incoming WebSocket message.
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 
+# Production-Ready WebSocket Integration: Bi-directional, heartbeat-supported, and concurrent-safe.
 # CORS Configuration
 # Defaults to "*" for development but can be restricted via environment variable.
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
