@@ -4,6 +4,7 @@ import json
 import uuid
 import time
 import os
+import subprocess
 from typing import Dict, List, Optional, Any
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
@@ -22,9 +23,9 @@ WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
-APP_VERSION = "1.0.5"
+APP_VERSION = "1.0.6"
 APP_START_TIME = time.time()
-GIT_COMMIT = "4d07ce6"
+GIT_COMMIT = "0eb2578"
 
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
 
@@ -44,6 +45,22 @@ async def cleanup_background_task():
             await registry.cleanup_stale_tasks(max_age_seconds=STALE_TASK_MAX_AGE)
     except asyncio.CancelledError:
         logger.info("Background cleanup task cancelled")
+
+def get_memory_usage_kb():
+    try:
+        if sys.platform == "darwin":
+            # Mac
+            output = subprocess.check_output(["ps", "-o", "rss=", "-p", str(os.getpid())])
+            return int(output.strip())
+        elif sys.platform.startswith("linux"):
+            # Linux
+            with open("/proc/self/status", "r") as f:
+                for line in f:
+                    if line.startswith("VmRSS:"):
+                        return int(line.split()[1])
+    except:
+        pass
+    return 0
 
 app = FastAPI(
     title="ADK Progress Bridge",
@@ -190,7 +207,9 @@ async def health_check():
         "system_platform": sys.platform, 
         "cpu_count": os.cpu_count(),
         "load_avg": load_avg,
+        "memory_rss_kb": get_memory_usage_kb(),
         "registry_size": registry.active_task_count, 
+        "total_tasks_started": registry.total_tasks_started,
         "uptime_seconds": time.time() - APP_START_TIME, 
         "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APP_START_TIME)), 
         "timestamp": time.time() 

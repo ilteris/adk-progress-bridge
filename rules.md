@@ -19,7 +19,7 @@
 The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 
 #### SSE Flow (Uni-directional)
-- `GET /health`: Returns system health status, version, git commit, uptime, CPU count, load average, and active task count. 
+- `GET /health`: Returns system health status, version, git commit, uptime, CPU count, load average, active task count, total tasks started, and memory usage. 
 - `GET /version`: Returns API version, git commit hash, and operational status.
 - `GET /tools`: Returns a list of all registered tool names.
 - `POST /start_task/{tool_name}`: Initiates a tool, returns `{ call_id }`.
