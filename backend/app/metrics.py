@@ -361,6 +361,7 @@ PROCESS_MEMORY_SHARED_BYTES = Gauge(
     "Shared memory usage of the process in bytes"
 )
 
+# v341 additional
 PROCESS_MEMORY_TEXT_BYTES = Gauge(
     "adk_process_memory_text_bytes",
     "Text segment memory usage of the process in bytes"
@@ -602,6 +603,32 @@ SYSTEM_DISK_READ_MERGED_COUNT = Gauge(
 SYSTEM_DISK_WRITE_MERGED_COUNT = Gauge(
     "adk_system_disk_write_merged_count_total",
     "Total number of system-wide disk write merged operations"
+)
+
+# v350 Apotheosis Metrics
+SYSTEM_MEMORY_SHARED_BYTES = Gauge(
+    "adk_system_memory_shared_bytes",
+    "System memory used by shared memory (shmem)"
+)
+
+PROCESS_MEMORY_PSS_BYTES = Gauge(
+    "adk_process_memory_pss_bytes",
+    "Proportional Set Size memory usage of the process in bytes"
+)
+
+SYSTEM_NETWORK_INTERFACES_MTU_TOTAL = Gauge(
+    "adk_system_network_interfaces_mtu_total",
+    "Total sum of MTU values across all network interfaces"
+)
+
+PROCESS_MEMORY_SWAP_BYTES = Gauge(
+    "adk_process_memory_swap_bytes",
+    "Amount of memory swapped out to disk for the process"
+)
+
+SYSTEM_NETWORK_ERRORS_TOTAL = Gauge(
+    "adk_system_network_errors_total",
+    "Total sum of all network errors (in, out, drops) across all interfaces"
 )
 
 BUILD_INFO = Info("adk_build", "Application build information")

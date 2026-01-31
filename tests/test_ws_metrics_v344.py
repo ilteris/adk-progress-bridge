@@ -36,7 +36,7 @@ def test_metrics_v344_transcendence():
     assert "adk_process_uptime_seconds" in content
     # Flexible version check
     assert 'adk_build_info{' in content
-    assert 'version="1.3.' in content
+    assert 'version="1.' in content
 
 def test_version_v344():
     response = client.get("/version")

@@ -34,7 +34,7 @@ def test_metrics_v345_omnipotence():
     assert "adk_process_cpu_affinity_count" in content
     assert "adk_process_memory_page_faults_total" in content
     assert 'adk_build_info{' in content
-    assert 'version="1.3.' in content
+    assert 'version="1.' in content
 
 def test_version_v345():
     response = client.get("/version")

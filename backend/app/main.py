@@ -65,7 +65,9 @@ from .metrics import (
     SYSTEM_DISK_READ_TIME_MS, SYSTEM_DISK_WRITE_TIME_MS, PROCESS_MEMORY_MAPS_COUNT, 
     SYSTEM_NETWORK_INTERFACES_UP_COUNT, PROCESS_CONTEXT_SWITCHES_TOTAL,
     PROCESS_CPU_TIMES_CHILDREN_USER, PROCESS_CPU_TIMES_CHILDREN_SYSTEM,
-    SYSTEM_NETWORK_INTERFACES_DOWN_COUNT, SYSTEM_DISK_READ_MERGED_COUNT, SYSTEM_DISK_WRITE_MERGED_COUNT
+    SYSTEM_NETWORK_INTERFACES_DOWN_COUNT, SYSTEM_DISK_READ_MERGED_COUNT, SYSTEM_DISK_WRITE_MERGED_COUNT,
+    SYSTEM_MEMORY_SHARED_BYTES, PROCESS_MEMORY_PSS_BYTES, SYSTEM_NETWORK_INTERFACES_MTU_TOTAL,
+    PROCESS_MEMORY_SWAP_BYTES, SYSTEM_NETWORK_ERRORS_TOTAL
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -74,10 +76,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.3.9"
+APP_VERSION = "1.4.0"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v349-enlightenment"
-OPERATIONAL_APEX = "ENLIGHTENMENT"
+GIT_COMMIT = "v350-apotheosis"
+OPERATIONAL_APEX = "APOTHEOSIS"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -493,7 +495,6 @@ def get_system_cpu_stats_advanced():
 def get_system_network_connections_count():
     if psutil:
         try:
-            # On some platforms/versions this might require root or fail for certain types
             return len(psutil.net_connections(kind='all'))
         except:
             pass
@@ -611,7 +612,6 @@ def get_system_disk_io_times():
 def get_process_memory_maps_count():
     if _process:
         try:
-            # This can be slow and might require root on some platforms
             return len(_process.memory_maps())
         except:
             pass
@@ -658,6 +658,51 @@ def get_system_disk_io_merged():
         except:
             pass
     return 0, 0
+
+# v350 Apotheosis Helpers
+def get_system_memory_shared():
+    if psutil:
+        try:
+            return getattr(psutil.virtual_memory(), "shared", 0)
+        except:
+            pass
+    return 0
+
+def get_process_memory_pss():
+    if _process:
+        try:
+            if hasattr(_process, "memory_full_info"):
+                return getattr(_process.memory_full_info(), "pss", 0)
+        except:
+            pass
+    return 0
+
+def get_system_network_interfaces_mtu_total():
+    if psutil:
+        try:
+            stats = psutil.net_if_stats()
+            return sum(s.mtu for s in stats.values())
+        except:
+            pass
+    return 0
+
+def get_process_memory_swap():
+    if _process:
+        try:
+            if hasattr(_process, "memory_full_info"):
+                return getattr(_process.memory_full_info(), "swap", 0)
+        except:
+            pass
+    return 0
+
+def get_system_network_errors_total():
+    if psutil:
+        try:
+            io = psutil.net_io_counters()
+            return io.errin + io.errout + io.dropin + io.dropout
+        except:
+            pass
+    return 0
 
 
 def get_uptime_human(seconds: float) -> str:
@@ -974,7 +1019,7 @@ async def health_check():
     # v343 metrics
     s_iowait, s_irq, s_softirq = get_system_cpu_times_beyond()
     SYSTEM_CPU_IOWAIT.set(s_iowait)
-    SYSTEM_CPU_IRQ.set(s_iowait) # Typo in original? No, IRQ is IRQ.
+    SYSTEM_CPU_IRQ.set(s_irq)
     SYSTEM_CPU_SOFTIRQ.set(s_softirq)
     m_slab = get_system_memory_beyond()
     SYSTEM_MEMORY_SLAB.set(m_slab)
@@ -1049,6 +1094,18 @@ async def health_check():
     SYSTEM_DISK_READ_MERGED_COUNT.set(sd_rm)
     SYSTEM_DISK_WRITE_MERGED_COUNT.set(sd_wm)
 
+    # v350 metrics
+    m_shared = get_system_memory_shared()
+    SYSTEM_MEMORY_SHARED_BYTES.set(m_shared)
+    p_pss = get_process_memory_pss()
+    PROCESS_MEMORY_PSS_BYTES.set(p_pss)
+    sn_mtu_total = get_system_network_interfaces_mtu_total()
+    SYSTEM_NETWORK_INTERFACES_MTU_TOTAL.set(sn_mtu_total)
+    p_swap = get_process_memory_swap()
+    PROCESS_MEMORY_SWAP_BYTES.set(p_swap)
+    sn_err_total = get_system_network_errors_total()
+    SYSTEM_NETWORK_ERRORS_TOTAL.set(sn_err_total)
+
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -1122,9 +1179,11 @@ async def health_check():
             "errout": n_errout,
             "dropin": n_dropin,
             "dropout": n_dropout,
+            "errors_total": sn_err_total,
             "interfaces_count": sn_if_count,
             "interfaces_up_count": sn_if_up,
-            "interfaces_down_count": sn_if_down
+            "interfaces_down_count": sn_if_down,
+            "mtu_total": sn_mtu_total
         },
         "disk_io_total": {
             "read_bytes": disk_read,
@@ -1167,6 +1226,7 @@ async def health_check():
             "cached_bytes": m_cached,
             "slab_bytes": m_slab,
             "wired_bytes": m_wired,
+            "shared_bytes": m_shared,
             "percent": sm_percent
         },
         "system_memory_extended": { # backward compatibility
@@ -1206,6 +1266,8 @@ async def health_check():
             "lib_bytes": p_lib,
             "dirty_bytes": p_dirty,
             "uss_bytes": p_uss,
+            "pss_bytes": p_pss,
+            "swap_bytes": p_swap,
             "vms_percent": p_vms_p
         },
         "process_env_var_count": p_env_count,
@@ -1346,7 +1408,7 @@ async def metrics():
     SYSTEM_CPU_GUEST.set(guest)
     mbuff, mcach = get_system_memory_extended_plus()
     SYSTEM_MEMORY_BUFFERS.set(mbuff)
-    SYSTEM_MEMORY_CACHED.set(mbuff) # Buffers/Cached
+    SYSTEM_MEMORY_CACHED.set(mcach)
     SYSTEM_DISK_PARTITIONS_COUNT.set(get_system_disk_partitions_count())
     SYSTEM_USERS_COUNT.set(get_system_users_count())
     PROCESS_CHILDREN_COUNT.set(get_process_children_count())
@@ -1409,6 +1471,13 @@ async def metrics():
     e_sd_rm, e_sd_wm = get_system_disk_io_merged()
     SYSTEM_DISK_READ_MERGED_COUNT.set(e_sd_rm)
     SYSTEM_DISK_WRITE_MERGED_COUNT.set(e_sd_wm)
+
+    # v350 Apotheosis
+    SYSTEM_MEMORY_SHARED_BYTES.set(get_system_memory_shared())
+    PROCESS_MEMORY_PSS_BYTES.set(get_process_memory_pss())
+    SYSTEM_NETWORK_INTERFACES_MTU_TOTAL.set(get_system_network_interfaces_mtu_total())
+    PROCESS_MEMORY_SWAP_BYTES.set(get_process_memory_swap())
+    SYSTEM_NETWORK_ERRORS_TOTAL.set(get_system_network_errors_total())
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

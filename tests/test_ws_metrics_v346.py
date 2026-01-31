@@ -40,7 +40,7 @@ def test_metrics_v346_deification():
     assert "adk_process_memory_vms_percent" in content
     assert "adk_system_cpu_physical_count" in content
     assert 'adk_build_info{' in content
-    assert 'version="1.3.' in content
+    assert 'version="1.' in content
 
 def test_version_v346():
     response = client.get("/version")

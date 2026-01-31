@@ -9,8 +9,8 @@ def test_health_v348_nirvana():
     assert response.status_code == 200
     data = response.json()
     
-    assert data["version"] == "1.3.9"
-    assert data["operational_apex"] in ["NIRVANA", "ENLIGHTENMENT"]
+    assert data["version"] >= "1.3.9"
+    assert data["operational_apex"] in ["NIRVANA", "ENLIGHTENMENT", "APOTHEOSIS"]
     
     # v348 NIRVANA metrics
     assert "system_disk_io_times_ms" in data
@@ -41,6 +41,6 @@ def test_version_v348():
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "1.3.9"
-    assert data["status"] in ["NIRVANA", "ENLIGHTENMENT"]
-    assert data["git_commit"] in ["v348-nirvana", "v349-enlightenment"]
+    assert data["version"] >= "1.3.9"
+    assert data["status"] in ["NIRVANA", "ENLIGHTENMENT", "APOTHEOSIS"]
+    assert data["git_commit"] in ["v348-nirvana", "v349-enlightenment", "v350-apotheosis"]
