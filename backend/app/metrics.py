@@ -31,5 +31,10 @@ TASK_PROGRESS_STEPS_TOTAL = Counter(
     ["tool_name"]
 )
 
+WS_ACTIVE_CONNECTIONS = Gauge(
+    "adk_ws_active_connections",
+    "Number of active WebSocket connections"
+)
+
 def get_metrics():
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
