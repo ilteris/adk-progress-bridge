@@ -27,3 +27,4 @@ urllib3==2.6.3
 uuid==1.30
 uvicorn==0.40.0
 websockets==16.0
+psutil==7.0.0
