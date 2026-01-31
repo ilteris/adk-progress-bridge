@@ -59,7 +59,9 @@ from .metrics import (
     PROCESS_MEMORY_PAGE_FAULTS_TOTAL,
     SYSTEM_DISK_READ_COUNT_TOTAL, SYSTEM_DISK_WRITE_COUNT_TOTAL,
     SYSTEM_SWAP_IN_BYTES_TOTAL, SYSTEM_SWAP_OUT_BYTES_TOTAL,
-    PROCESS_MEMORY_VMS_PERCENT, SYSTEM_CPU_PHYSICAL_COUNT
+    PROCESS_MEMORY_VMS_PERCENT, SYSTEM_CPU_PHYSICAL_COUNT,
+    SYSTEM_MEMORY_PERCENT, PROCESS_OPEN_FILES_COUNT, SYSTEM_DISK_BUSY_TIME_MS,
+    SYSTEM_NETWORK_INTERFACES_COUNT, PROCESS_THREADS_TOTAL_TIME_USER, PROCESS_THREADS_TOTAL_TIME_SYSTEM
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -68,10 +70,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.3.6"
+APP_VERSION = "1.3.7"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v346-deification"
-OPERATIONAL_APEX = "DEIFICATION"
+GIT_COMMIT = "v347-singularity-ascension"
+OPERATIONAL_APEX = "SINGULARITY ASCENSION"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -545,6 +547,54 @@ def get_system_cpu_physical_count():
             pass
     return 0
 
+# v347 Singularity Ascension Helpers
+def get_system_memory_percent_total():
+    if psutil:
+        try:
+            return psutil.virtual_memory().percent
+        except:
+            pass
+    return 0.0
+
+def get_process_open_files_count():
+    if _process:
+        try:
+            return len(_process.open_files())
+        except:
+            pass
+    return 0
+
+def get_system_disk_busy_time():
+    if psutil:
+        try:
+            io = psutil.disk_io_counters()
+            return getattr(io, "busy_time", 0)
+        except:
+            pass
+    return 0
+
+def get_system_network_interfaces_count():
+    if psutil:
+        try:
+            return len(psutil.net_if_addrs())
+        except:
+            pass
+    return 0
+
+def get_process_threads_times_total():
+    if _process:
+        try:
+            user_total = 0.0
+            system_total = 0.0
+            for t in _process.threads():
+                user_total += t.user_time
+                system_total += t.system_time
+            return user_total, system_total
+        except:
+            pass
+    return 0.0, 0.0
+
+
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
     hours, rem = divmod(rem, 3600)
@@ -900,6 +950,19 @@ async def health_check():
     s_cpu_phys = get_system_cpu_physical_count()
     SYSTEM_CPU_PHYSICAL_COUNT.set(s_cpu_phys)
 
+    # v347 metrics
+    sm_percent = get_system_memory_percent_total()
+    SYSTEM_MEMORY_PERCENT.set(sm_percent)
+    p_open_files = get_process_open_files_count()
+    PROCESS_OPEN_FILES_COUNT.set(p_open_files)
+    sd_busy = get_system_disk_busy_time()
+    SYSTEM_DISK_BUSY_TIME_MS.set(sd_busy)
+    sn_if_count = get_system_network_interfaces_count()
+    SYSTEM_NETWORK_INTERFACES_COUNT.set(sn_if_count)
+    pt_user, pt_sys = get_process_threads_times_total()
+    PROCESS_THREADS_TOTAL_TIME_USER.set(pt_user)
+    PROCESS_THREADS_TOTAL_TIME_SYSTEM.set(pt_sys)
+
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -948,6 +1011,7 @@ async def health_check():
         },
         "thread_count": thread_count,
         "open_fds": open_fds,
+        "process_open_files_count": p_open_files,
         "context_switches": {
             "voluntary": voluntary_ctx,
             "involuntary": involuntary_ctx
@@ -971,13 +1035,15 @@ async def health_check():
             "errin": n_errin,
             "errout": n_errout,
             "dropin": n_dropin,
-            "dropout": n_dropout
+            "dropout": n_dropout,
+            "interfaces_count": sn_if_count
         },
         "disk_io_total": {
             "read_bytes": disk_read,
             "write_bytes": disk_write,
             "read_count": sd_rc,
-            "write_count": sd_wc
+            "write_count": sd_wc,
+            "busy_time_ms": sd_busy
         },
         "system_network_connections_count": s_conn_count,
         "process_connections_count": proc_conn_count,
@@ -1010,7 +1076,8 @@ async def health_check():
             "buffers_bytes": m_buffers,
             "cached_bytes": m_cached,
             "slab_bytes": m_slab,
-            "wired_bytes": m_wired
+            "wired_bytes": m_wired,
+            "percent": sm_percent
         },
         "system_memory_extended": { # backward compatibility
             "used_bytes": sys_mem_used,
@@ -1027,6 +1094,10 @@ async def health_check():
             "system_seconds": proc_sys_cpu,
             "percent": p_cpu_p,
             "affinity_count": p_affinity
+        },
+        "process_threads_cpu_usage": {
+            "total_user_seconds": pt_user,
+            "total_system_seconds": pt_sys
         },
         "process_memory_advanced": {
             "shared_bytes": p_shared,
@@ -1212,6 +1283,15 @@ async def metrics():
     SYSTEM_SWAP_OUT_BYTES_TOTAL.set(ss_swap_out)
     PROCESS_MEMORY_VMS_PERCENT.set(get_process_memory_vms_percent())
     SYSTEM_CPU_PHYSICAL_COUNT.set(get_system_cpu_physical_count())
+
+    # v347 Singularity Ascension
+    SYSTEM_MEMORY_PERCENT.set(get_system_memory_percent_total())
+    PROCESS_OPEN_FILES_COUNT.set(get_process_open_files_count())
+    SYSTEM_DISK_BUSY_TIME_MS.set(get_system_disk_busy_time())
+    SYSTEM_NETWORK_INTERFACES_COUNT.set(get_system_network_interfaces_count())
+    pu, ps = get_process_threads_times_total()
+    PROCESS_THREADS_TOTAL_TIME_USER.set(pu)
+    PROCESS_THREADS_TOTAL_TIME_SYSTEM.set(ps)
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

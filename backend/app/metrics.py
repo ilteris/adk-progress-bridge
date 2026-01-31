@@ -521,6 +521,37 @@ SYSTEM_CPU_PHYSICAL_COUNT = Gauge(
     "Total number of physical CPUs in the system"
 )
 
+# v347 Singularity Ascension Metrics
+SYSTEM_MEMORY_PERCENT = Gauge(
+    "adk_system_memory_percent",
+    "Total system memory usage percentage"
+)
+
+PROCESS_OPEN_FILES_COUNT = Gauge(
+    "adk_process_open_files_count",
+    "Total number of open files by the process"
+)
+
+SYSTEM_DISK_BUSY_TIME_MS = Gauge(
+    "adk_system_disk_busy_time_ms_total",
+    "Total time spent doing system-wide disk I/O in milliseconds"
+)
+
+SYSTEM_NETWORK_INTERFACES_COUNT = Gauge(
+    "adk_system_network_interfaces_count",
+    "Total number of network interfaces on the system"
+)
+
+PROCESS_THREADS_TOTAL_TIME_USER = Gauge(
+    "adk_process_threads_total_time_user_seconds",
+    "Total user CPU time across all process threads in seconds"
+)
+
+PROCESS_THREADS_TOTAL_TIME_SYSTEM = Gauge(
+    "adk_process_threads_total_time_system_seconds",
+    "Total system CPU time across all process threads in seconds"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():
