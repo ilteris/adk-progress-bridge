@@ -17,7 +17,7 @@ from .auth import verify_api_key, verify_api_key_ws
 from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
-# WS_HEARTBEAT_TIMEOUT: Max time to wait for a client message (ping/pong) before closing connection.
+# WS_HEARTBEAT_TIMEOUT: Max time to wait for a client message (ping/pong) before closing connection (seconds).
 WS_HEARTBEAT_TIMEOUT = float(os.getenv("WS_HEARTBEAT_TIMEOUT", "60.0"))
 # CLEANUP_INTERVAL: Frequency (seconds) of the background stale task cleanup task.
 CLEANUP_INTERVAL = float(os.getenv("CLEANUP_INTERVAL", "60.0"))
