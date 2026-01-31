@@ -19,7 +19,8 @@
 The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 
 #### SSE Flow (Uni-directional)
-- `GET /health`: Returns system health status and active task count. 
+- `GET /health`: Returns system health status, version, and active task count. 
+- `GET /version`: Returns API version and operational status.
 - `GET /tools`: Returns a list of all registered tool names.
 - `POST /start_task/{tool_name}`: Initiates a tool, returns `{ call_id }`.
 - `GET /stream/{call_id}`: SSE endpoint for progress streaming.

@@ -21,6 +21,8 @@ WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
+APP_VERSION = "1.0.2"
+APP_START_TIME = time.time()
 
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
 
@@ -44,7 +46,7 @@ async def cleanup_background_task():
 app = FastAPI(
     title="ADK Progress Bridge",
     description="A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
-    version="1.0.1",
+    version=APP_VERSION,
     lifespan=lifespan
 )
 
@@ -176,10 +178,22 @@ async def stop_task(
 
 @app.get("/health") 
 async def health_check(): 
-    return {"status": "healthy", "registry_size": len(registry.active_tasks), "timestamp": time.time()} 
+    return {
+        "status": "healthy", 
+        "version": APP_VERSION,
+        "registry_size": len(registry.active_tasks), 
+        "uptime": time.time() - APP_START_TIME,
+        "timestamp": time.time()
+    } 
+
 @app.get("/version") 
 async def get_version(): 
-    return {"version": "1.0.1", "status": "God Tier", "timestamp": time.time()} 
+    return {
+        "version": APP_VERSION, 
+        "status": "SUPREME ABSOLUTE APEX", 
+        "timestamp": time.time()
+    } 
+
 @app.get("/metrics")
 async def metrics():
     from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
