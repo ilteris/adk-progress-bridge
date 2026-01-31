@@ -23,7 +23,7 @@ WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
-APP_VERSION = "1.0.6"
+APP_VERSION = "1.0.7"
 APP_START_TIME = time.time()
 GIT_COMMIT = "0eb2578"
 
@@ -212,7 +212,14 @@ async def health_check():
         "total_tasks_started": registry.total_tasks_started,
         "uptime_seconds": time.time() - APP_START_TIME, 
         "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APP_START_TIME)), 
-        "timestamp": time.time() 
+        "timestamp": time.time(),
+        "config": {
+            "ws_heartbeat_timeout": WS_HEARTBEAT_TIMEOUT,
+            "cleanup_interval": CLEANUP_INTERVAL,
+            "stale_task_max_age": STALE_TASK_MAX_AGE,
+            "ws_message_size_limit": WS_MESSAGE_SIZE_LIMIT,
+            "allowed_origins": ALLOWED_ORIGINS
+        }
     }
 
 @app.get("/version") 
