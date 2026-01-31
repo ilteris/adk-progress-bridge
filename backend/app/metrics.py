@@ -1,4 +1,4 @@
-from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Histogram, Gauge, Info, generate_latest, CONTENT_TYPE_LATEST
 from fastapi import Response
 
 # Metrics definitions
@@ -47,6 +47,8 @@ WS_MESSAGES_SENT_TOTAL = Counter(
     "Total number of messages sent via WebSocket",
     ["message_type"]
 )
+
+BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)

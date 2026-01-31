@@ -19,7 +19,7 @@ from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
 from .metrics import (
     TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, 
-    ACTIVE_WS_CONNECTIONS, WS_MESSAGES_RECEIVED_TOTAL, WS_MESSAGES_SENT_TOTAL
+    ACTIVE_WS_CONNECTIONS, WS_MESSAGES_RECEIVED_TOTAL, WS_MESSAGES_SENT_TOTAL, BUILD_INFO
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -27,10 +27,11 @@ WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.1.1"
 APP_START_TIME = time.time()
 GIT_COMMIT = "0eb2578"
 
+BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
 
 @asynccontextmanager
