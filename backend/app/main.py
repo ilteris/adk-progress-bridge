@@ -22,7 +22,7 @@ WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
-APP_VERSION = "1.0.3"
+APP_VERSION = "1.0.4"
 APP_START_TIME = time.time()
 
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -183,7 +183,7 @@ async def health_check():
         "status": "healthy", 
         "version": APP_VERSION, 
         "operational_apex": "SUPREME ABSOLUTE APEX", 
-        "python_version": sys.version, 
+        "python_version": sys.version, "system_platform": sys.platform, 
         "registry_size": registry.active_task_count, 
         "uptime_seconds": time.time() - APP_START_TIME, 
         "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APP_START_TIME)), 
