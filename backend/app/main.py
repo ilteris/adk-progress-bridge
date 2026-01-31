@@ -258,7 +258,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 if len(data) > WS_MESSAGE_SIZE_LIMIT:
                     logger.warning(f"WebSocket message exceeded size limit: {len(data)} bytes")
                     await safe_send_json({
-                        "type": "error",
+                        "type": "error", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time(),
                         "payload": {"detail": f"Message too large (max {WS_MESSAGE_SIZE_LIMIT} bytes)"}
                     })
                     continue
@@ -267,7 +267,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 if not isinstance(message, dict):
                     logger.warning(f"Received non-dictionary message over WebSocket: {type(message)}")
                     await safe_send_json({
-                        "type": "error",
+                        "type": "error", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time(),
                         "payload": {"detail": "Message must be a JSON object (dictionary)"}
                     })
                     continue
@@ -277,7 +277,7 @@ async def websocket_endpoint(websocket: WebSocket):
             except json.JSONDecodeError:
                 logger.warning("Received invalid JSON over WebSocket")
                 await safe_send_json({
-                    "type": "error",
+                    "type": "error", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time(),
                     "payload": {"detail": "Invalid JSON received"}
                 })
                 continue
@@ -292,7 +292,7 @@ async def websocket_endpoint(websocket: WebSocket):
             request_id = message.get("request_id")
             
             if msg_type == "ping":
-                await safe_send_json({"type": "pong"})
+                await safe_send_json({"type": "pong", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time()})
                 continue
 
             if msg_type == "list_tools":
@@ -313,7 +313,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 tool = registry.get_tool(tool_name)
                 if not tool:
                     await safe_send_json({
-                        "type": "error",
+                        "type": "error", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time(),
                         "request_id": request_id,
                         "payload": {"detail": f"Tool not found: {tool_name}"}
                     })
@@ -338,7 +338,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 except Exception as e:
                     logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
                     await safe_send_json({
-                        "type": "error",
+                        "type": "error", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time(),
                         "call_id": call_id,
                         "request_id": request_id,
                         "payload": {"detail": str(e)}
@@ -359,7 +359,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     })
                     # Command acknowledgment
                     await safe_send_json({
-                        "type": "stop_success",
+                        "type": "stop_success", "protocol_version": PROTOCOL_VERSION,
                         "call_id": call_id,
                         "request_id": request_id,
                         "timestamp": time.time()
@@ -376,14 +376,14 @@ async def websocket_endpoint(websocket: WebSocket):
                         
                         # Command acknowledgment
                         await safe_send_json({
-                            "type": "stop_success",
+                            "type": "stop_success", "protocol_version": PROTOCOL_VERSION,
                             "call_id": call_id,
                             "request_id": request_id,
                             "timestamp": time.time()
                         })
                     else:
                         await safe_send_json({
-                            "type": "error",
+                            "type": "error", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time(),
                             "call_id": call_id,
                             "request_id": request_id, 
                             "payload": {"detail": f"No active task found with call_id: {call_id}"},
@@ -397,14 +397,14 @@ async def websocket_endpoint(websocket: WebSocket):
                     logger.info(f"Input received for task {call_id}", extra={"call_id": call_id})
                     # Command acknowledgment
                     await safe_send_json({
-                        "type": "input_success",
+                        "type": "input_success", "protocol_version": PROTOCOL_VERSION,
                         "call_id": call_id,
                         "request_id": request_id,
                         "timestamp": time.time()
                     })
                 else:
                     await safe_send_json({
-                        "type": "error",
+                        "type": "error", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time(),
                         "call_id": call_id,
                         "request_id": request_id, 
                         "payload": {"detail": f"No task waiting for input with call_id: {call_id}"},
@@ -414,7 +414,7 @@ async def websocket_endpoint(websocket: WebSocket):
             else:
                 logger.warning(f"Unknown WebSocket message type: {msg_type}")
                 await safe_send_json({
-                    "type": "error",
+                    "type": "error", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time(),
                     "request_id": request_id, 
                     "payload": {"detail": f"Unknown message type: {msg_type}"},
                     "timestamp": time.time()
