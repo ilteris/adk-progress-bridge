@@ -82,7 +82,13 @@ interface AgentState {
 *   **Progress:** Animated progress bar and status labels.
 *   **Console:** Real-time log output with timestamps.
 
-## 4. Implementation Details
+## 4. Real-time System Observability
+The bridge provides deep visibility into the host system performance during task execution:
+1. **Periodic Metrics Injection:** For WebSocket-based tasks, the backend automatically injects system-wide health metrics (CPU, kernel stats, throughput) into the stream every 3 seconds.
+2. **Metrics Payload:** The `system_metrics` event contains a comprehensive payload including CPU usage breakdown, memory pressure, context switches, interrupt rates, and disk/network throughput.
+3. **Pydantic v2 Alignment:** The system utilizes modern Pydantic v2 `.model_dump()` and `.model_dump_json()` methods for high-performance serialization.
+
+## 5. Implementation Details
 
 ### 4.1 Bi-directional WebSockets
 The WebSocket layer allows for:

@@ -3,7 +3,7 @@
   "info": {
     "title": "ADK Progress Bridge",
     "description": "A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
-    "version": "1.5.0"
+    "version": "1.6.0"
   },
   "paths": {
     "/tools": {
@@ -551,6 +551,118 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "ProgressEvent": {
+        "properties": {
+          "call_id": {
+            "type": "string",
+            "title": "Call Id",
+            "description": "The unique identifier for this specific task execution session.",
+            "examples": [
+              "550e8400-e29b-41d4-a716-446655440000"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "task_started",
+              "input_request",
+              "progress",
+              "result",
+              "error",
+              "system_metrics"
+            ],
+            "title": "Type",
+            "description": "The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, and 'error' signifies a failure.",
+            "examples": [
+              "progress",
+              "result",
+              "error"
+            ]
+          },
+          "payload": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProgressPayload"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              }
+            ],
+            "title": "Payload",
+            "description": "The actual data payload. Contains a ProgressPayload object for 'progress' types, or the final result/error details."
+          }
+        },
+        "type": "object",
+        "required": [
+          "call_id",
+          "type",
+          "payload"
+        ],
+        "title": "ProgressEvent",
+        "description": "The event envelope sent over the Server-Sent Events (SSE) stream."
+      },
+      "ProgressPayload": {
+        "properties": {
+          "step": {
+            "type": "string",
+            "title": "Step",
+            "description": "A human-readable label for the current task phase.",
+            "examples": [
+              "Analyzing documents",
+              "Uploading results",
+              "Scanning ports"
+            ]
+          },
+          "pct": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Pct",
+            "description": "The completion percentage of the overall task (0-100).",
+            "examples": [
+              45
+            ]
+          },
+          "log": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Log",
+            "description": "Detailed log message, breadcrumb, or status update for the current step.",
+            "examples": [
+              "Found 12 matching records in batch 3...",
+              "Port 80 is open",
+              "Processed document 5 of 10"
+            ]
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata",
+            "description": "Structured key-value pairs providing additional context for this update.",
+            "examples": [
+              {
+                "batch_size": 100,
+                "doc_id": "doc_123",
+                "retry_count": 0
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "step",
+          "pct"
+        ],
+        "title": "ProgressPayload",
+        "description": "Standard schema for progress updates yielded by tools."
       }
     },
     "securitySchemes": {

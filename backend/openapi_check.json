@@ -10,9 +10,46 @@
     "license": {
       "name": "MIT"
     },
-    "version": "1.0.0"
+    "version": "1.6.0"
   },
   "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Observability"],
+        "summary": "System Health Overview",
+        "description": "Returns a comprehensive health report including CPU, memory, and WebSocket throughput.",
+        "responses": { "200": { "description": "Successful Response" } }
+      }
+    },
+    "/version": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "Get System Version",
+        "description": "Returns the current version, git commit, and operational apex status.",
+        "responses": { "200": { "description": "Successful Response" } }
+      }
+    },
+    "/tools": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "List Available Tools",
+        "description": "Returns a list of all registered tool names that can be executed.",
+        "operationId": "list_tools_tools_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/metrics": {
       "get": {
         "tags": [
@@ -179,6 +216,8 @@
           "type": {
             "type": "string",
             "enum": [
+              "task_started",
+              "input_request",
               "progress",
               "result",
               "error"
