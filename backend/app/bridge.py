@@ -40,7 +40,7 @@ class ProgressEvent(BaseModel):
         description="The unique identifier for this specific task execution session.",
         examples=["550e8400-e29b-41d4-a716-446655440000"]
     )
-    type: Literal["progress", "result", "error", "input_request", "task_started"] = Field(
+    type: Literal["progress", "result", "error", "input_request", "task_started", "system_metrics"] = Field(
         ..., 
         description="The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, 'error' signifies a failure, and 'input_request' prompts the user for information.",
         examples=["progress", "result", "error", "input_request"]

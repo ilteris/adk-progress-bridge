@@ -84,7 +84,7 @@ interface AgentState {
 
 ## 4. Real-time System Observability
 The bridge provides deep visibility into the host system performance during task execution:
-1. **Periodic Metrics Injection:** For WebSocket-based tasks, the backend automatically injects system-wide health metrics (CPU, kernel stats, throughput) into the stream every 3 seconds.
+1. **Periodic Metrics Injection:** The backend automatically injects system-wide health metrics (CPU, kernel stats, throughput) into the progress stream every 3 seconds for both WebSocket and SSE-based tasks, powered by a centralized singleton broadcaster for maximum efficiency.
 2. **Metrics Payload:** The `system_metrics` event contains a comprehensive payload including CPU usage breakdown, memory pressure, context switches, interrupt rates, and disk/network throughput.
 3. **Pydantic v2 Alignment:** The system utilizes modern Pydantic v2 `.model_dump()` and `.model_dump_json()` methods for high-performance serialization.
 

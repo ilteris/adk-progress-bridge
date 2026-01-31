@@ -100,10 +100,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.6.4"
+APP_VERSION = "1.6.5"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v364-supreme-refinement"
-OPERATIONAL_APEX = "THE NEBULA (v364 SUPREME REFINEMENT)"
+GIT_COMMIT = "v365-supreme-broadcaster"
+OPERATIONAL_APEX = "THE NEBULA (v365 SUPREME BROADCASTER)"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -136,8 +136,10 @@ async def lifespan(app: FastAPI):
     app.state.last_sys_pf_major = 0
     
     cleanup_task = asyncio.create_task(cleanup_background_task())
-    logger.info("Background cleanup task started")
+    await metrics_broadcaster.start()
+    logger.info("Background cleanup task and metrics broadcaster started")
     yield
+    await metrics_broadcaster.stop()
     cleanup_task.cancel()
     await registry.cleanup_tasks()
     logger.info("Server shutdown: Cleaned up active tasks")
@@ -1429,6 +1431,59 @@ async def get_health_data():
         }
     }
 
+
+class BroadcastMetricsManager:
+    def __init__(self):
+        self.listeners: Dict[str, asyncio.Queue] = {}
+        self.task: Optional[asyncio.Task] = None
+
+    async def start(self):
+        if self.task:
+            return
+        self.task = asyncio.create_task(self._run())
+        logger.info("BroadcastMetricsManager started")
+
+    async def stop(self):
+        if self.task:
+            self.task.cancel()
+            try:
+                await self.task
+            except asyncio.CancelledError:
+                pass
+            self.task = None
+            logger.info("BroadcastMetricsManager stopped")
+
+    def subscribe(self, call_id: str) -> asyncio.Queue:
+        queue = asyncio.Queue()
+        self.listeners[call_id] = queue
+        return queue
+
+    def unsubscribe(self, call_id: str):
+        if call_id in self.listeners:
+            del self.listeners[call_id]
+
+    async def _run(self):
+        try:
+            while True:
+                await asyncio.sleep(3.0)
+                if not self.listeners:
+                    continue
+                
+                metrics = await get_health_data()
+                for call_id in list(self.listeners.keys()):
+                    if call_id not in self.listeners:
+                        continue
+                    queue = self.listeners[call_id]
+                    try:
+                        while not queue.empty():
+                            queue.get_nowait()
+                        await queue.put(metrics)
+                    except Exception as e:
+                        logger.error(f"Error pushing metrics to listener {call_id}: {e}")
+        except asyncio.CancelledError:
+            pass
+
+metrics_broadcaster = BroadcastMetricsManager()
 app = FastAPI(
     title="ADK Progress Bridge",
     description="A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
@@ -1519,16 +1574,53 @@ async def stream_task(
         tool_name_var.set(tool_name)
         start_time = time.perf_counter()
         status = "success"
+        
+        metrics_queue = metrics_broadcaster.subscribe(actual_call_id)
+        combined_queue = asyncio.Queue()
+        
+        async def pull_gen():
+            try:
+                async for item in gen:
+                    await combined_queue.put(("item", item))
+                await combined_queue.put(("done", None))
+            except Exception as e:
+                await combined_queue.put(("error", e))
+
+        async def pull_metrics():
+            try:
+                while True:
+                    m = await metrics_queue.get()
+                    await combined_queue.put(("metrics", m))
+            except asyncio.CancelledError:
+                pass
+
+        gen_task = asyncio.create_task(pull_gen())
+        metrics_task = asyncio.create_task(pull_metrics())
+        
         try:
-            async for item in gen:
-                if isinstance(item, ProgressPayload):
-                    TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                    event = ProgressEvent(call_id=actual_call_id, type="progress", payload=item)
-                elif isinstance(item, dict) and item.get("type") == "input_request":
-                    event = ProgressEvent(call_id=actual_call_id, type="input_request", payload=item["payload"])
-                else:
-                    event = ProgressEvent(call_id=actual_call_id, type="result", payload=item)
-                yield await format_sse(event)
+            while True:
+                msg_type, payload = await combined_queue.get()
+                if msg_type == "done":
+                    break
+                elif msg_type == "error":
+                    raise payload
+                elif msg_type == "metrics":
+                    event = ProgressEvent(call_id=actual_call_id, type="system_metrics", payload=payload)
+                    yield await format_sse(event)
+                elif msg_type == "item":
+                    item = payload
+                    if isinstance(item, ProgressPayload):
+                        TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
+                        event = ProgressEvent(call_id=actual_call_id, type="progress", payload=item)
+                    elif isinstance(item, dict) and item.get("type") == "input_request":
+                        event = ProgressEvent(call_id=actual_call_id, type="input_request", payload=item["payload"])
+                    else:
+                        event = ProgressEvent(call_id=actual_call_id, type="result", payload=item)
+                    yield await format_sse(event)
+            
+            gen_task.cancel()
+            metrics_task.cancel()
+            
         except asyncio.CancelledError:
             status = "cancelled"
             logger.info(f"Task {actual_call_id} was cancelled by client")
@@ -1539,6 +1631,10 @@ async def stream_task(
             error_event = ProgressEvent(call_id=actual_call_id, type="error", payload={"detail": str(e)})
             yield await format_sse(error_event)
         finally:
+            metrics_broadcaster.unsubscribe(actual_call_id)
+            if not gen_task.done(): gen_task.cancel()
+            if not metrics_task.done(): metrics_task.cancel()
+            
             duration = time.perf_counter() - start_time
             TASK_DURATION.labels(tool_name=tool_name).observe(duration)
             TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
@@ -2099,12 +2195,13 @@ async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
     start_time = time.perf_counter()
     status = "success"
     
+    metrics_queue = metrics_broadcaster.subscribe(call_id)
+    
     async def metrics_pusher():
         try:
             while True:
-                await asyncio.sleep(3.0)
-                metrics = await get_health_data()
-                await send_func({"type": "system_metrics", "payload": metrics})
+                metrics = await metrics_queue.get()
+                await send_func({"call_id": call_id, "type": "system_metrics", "payload": metrics})
         except asyncio.CancelledError:
             pass
         except Exception as e:
@@ -2131,6 +2228,7 @@ async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
         logger.error(f"Error during task {call_id} execution: {e}")
         await send_func({"call_id": call_id, "type": "error", "payload": {"detail": str(e)}})
     finally:
+        metrics_broadcaster.unsubscribe(call_id)
         metrics_task.cancel()
         duration = time.perf_counter() - start_time
         TASK_DURATION.labels(tool_name=tool_name).observe(duration)
