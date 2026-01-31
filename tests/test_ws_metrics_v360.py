@@ -17,16 +17,16 @@ def enable_auth(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_v360_health_metrics():
-    """Verify v360 metrics are present in the health data."""
+    """Verify metrics are present in the health data."""
     # Wait for rate calculation window
     time.sleep(1.1)
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
     
-    assert data["version"] == "1.6.0"
-    assert data["operational_apex"] == "THE NEBULA"
-    assert data["git_commit"] == "v361-the-nebula"
+    assert data["version"] == APP_VERSION
+    assert data["operational_apex"] == OPERATIONAL_APEX
+    assert data["git_commit"] == GIT_COMMIT
     
     # Check interrupt rates
     assert "system_cpu_stats" in data
@@ -42,7 +42,7 @@ async def test_v360_health_metrics():
 
 @pytest.mark.asyncio
 async def test_v360_prometheus_metrics():
-    """Verify v360 metrics are present in the /metrics endpoint."""
+    """Verify metrics are present in the /metrics endpoint."""
     time.sleep(1.1)
     response = client.get("/metrics")
     assert response.status_code == 200
@@ -52,7 +52,7 @@ async def test_v360_prometheus_metrics():
     assert "adk_system_cpu_syscall_rate_per_sec" in content
     assert 'adk_ws_connection_errors_total{error_type="auth_failure"}' in content
     assert 'adk_ws_connection_errors_total{error_type="protocol_error"}' in content
-    assert 'adk_build_info{git_commit="v361-the-nebula",version="1.6.0"}' in content
+    assert f'adk_build_info{{git_commit="{GIT_COMMIT}",version="{APP_VERSION}"}}' in content
 
 @pytest.mark.asyncio
 async def test_ws_auth_error_metric_v360(enable_auth):

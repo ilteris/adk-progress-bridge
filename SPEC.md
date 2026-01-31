@@ -108,3 +108,8 @@ All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` hea
 4.  **Stale Task Cleanup:** A background task on the backend cleans up tasks that were initiated but never streamed/consumed within a timeout period (default 300s).
 5.  **Thread-Safe Writes:** The backend uses an `asyncio.Lock` to ensure WebSocket frames are not interleaved during concurrent task streaming.
 6.  **Message Buffering:** The frontend buffers incoming WebSocket messages that arrive before the UI has fully subscribed to a task, preventing race conditions.
+
+## 6. Versioning & Identity
+- **APP_VERSION**: 1.6.3
+- **GIT_COMMIT**: v363-supreme-audit
+- **OPERATIONAL_APEX**: THE NEBULA (v363 SUPREME AUDIT)
