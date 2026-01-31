@@ -321,6 +321,27 @@ async def websocket_endpoint(websocket: WebSocket):
                         "request_id": request_id, 
                         "payload": {"detail": f"No active task found with call_id: {call_id}"}
                     })
+            elif msg_type == "subscribe":
+                call_id = message.get("call_id")
+                task_data = await registry.get_task(call_id)
+                if task_data:
+                    tool_name = task_data["tool_name"]
+                    gen = task_data["gen"]
+                    await safe_send_json({
+                        "type": "task_started", 
+                        "call_id": call_id, 
+                        "tool_name": tool_name, 
+                        "request_id": request_id
+                    })
+                    task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
+                    active_tasks[call_id] = task
+                else:
+                    await safe_send_json({
+                        "type": "error",
+                        "call_id": call_id,
+                        "request_id": request_id, 
+                        "payload": {"detail": f"Task not found or already being streamed: {call_id}"}
+                    })
             elif msg_type == "input":
                 call_id = message.get("call_id")
                 value = message.get("value")

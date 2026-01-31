@@ -221,3 +221,49 @@ def test_websocket_message_size_limit():
         data = websocket.receive_json()
         assert data["type"] == "error"
         assert "Message too large" in data["payload"]["detail"]
+
+def test_websocket_subscribe():
+    client = TestClient(app)
+    # 1. Start a task via REST
+    resp = client.post("/start_task/long_audit", json={"args": {"duration": 1}})
+    assert resp.status_code == 200
+    call_id = resp.json()["call_id"]
+    
+    # 2. Connect via WebSocket and subscribe
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "type": "subscribe",
+            "call_id": call_id,
+            "request_id": "sub_req_1"
+        })
+        
+        # 3. Receive task_started acknowledgement
+        data = websocket.receive_json()
+        assert data["type"] == "task_started"
+        assert data["call_id"] == call_id
+        assert data.get("request_id") == "sub_req_1"
+        
+        # 4. Receive events until result
+        found_result = False
+        for _ in range(20):
+            data = websocket.receive_json()
+            if data["type"] == "result":
+                found_result = True
+                assert data["call_id"] == call_id
+                break
+        
+        assert found_result
+
+def test_websocket_subscribe_invalid():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "type": "subscribe",
+            "call_id": "non-existent-id",
+            "request_id": "sub_req_invalid"
+        })
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert data.get("request_id") == "sub_req_invalid"
+        assert "Task not found" in data["payload"]["detail"]
