@@ -225,28 +225,29 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     WS_ACTIVE_CONNECTIONS.inc()
     
-    try:
-        await verify_api_key_ws(websocket)
-    except HTTPException:
-        WS_ACTIVE_CONNECTIONS.dec()
-        return
-
-    logger.info("WebSocket connection established")
-    
     active_tasks: Dict[str, asyncio.Task] = {}
-    # Use a lock to ensure only one task can send over the websocket at a time
-    send_lock = asyncio.Lock()
-
-    async def safe_send_json(data: dict):
-        async with send_lock:
-            try:
-                await websocket.send_json(data)
-            except Exception as e:
-                # If the websocket is closed, we might get an error here
-                logger.error(f"Error sending WS message: {e}")
-                raise
-
+    
     try:
+        try:
+            await verify_api_key_ws(websocket)
+        except HTTPException:
+            # Metric decrement is handled by outer finally
+            return
+
+        logger.info("WebSocket connection established")
+        
+        # Use a lock to ensure only one task can send over the websocket at a time
+        send_lock = asyncio.Lock()
+
+        async def safe_send_json(data: dict):
+            async with send_lock:
+                try:
+                    await websocket.send_json(data)
+                except Exception as e:
+                    # If the websocket is closed, we might get an error here
+                    logger.error(f"Error sending WS message: {e}")
+                    raise
+
         while True:
             try:
                 # Add a heartbeat timeout (client pings periodically)
@@ -337,12 +338,12 @@ async def websocket_endpoint(websocket: WebSocket):
                         "request_id": request_id,
                         "payload": {"detail": str(e)}
                     })
-                    # If store_task failed but gen was created, it's handled in store_task
             
             elif msg_type == "stop":
                 call_id = message.get("call_id")
+                # 1. Try to stop locally if started via this WS
                 if call_id in active_tasks:
-                    logger.info(f"Stopping task {call_id} via WebSocket request", extra={"call_id": call_id})
+                    logger.info(f"Stopping task {call_id} locally via WebSocket request", extra={"call_id": call_id})
                     active_tasks[call_id].cancel()
                     # Final progress update
                     await safe_send_json({
@@ -357,12 +358,28 @@ async def websocket_endpoint(websocket: WebSocket):
                         "request_id": request_id
                     })
                 else:
-                    await safe_send_json({
-                        "type": "error",
-                        "call_id": call_id,
-                        "request_id": request_id, 
-                        "payload": {"detail": f"No active task found with call_id: {call_id}"}
-                    })
+                    # 2. Try to stop globally if started via SSE or another WS
+                    task_data = await registry.get_task_no_consume(call_id)
+                    if task_data:
+                        logger.info(f"Stopping task {call_id} globally via WebSocket request", extra={"call_id": call_id})
+                        await task_data["gen"].aclose()
+                        # If it wasn't consumed yet, we should remove it manually
+                        if not task_data["consumed"]:
+                            await registry.remove_task(call_id)
+                        
+                        # Command acknowledgment
+                        await safe_send_json({
+                            "type": "stop_success",
+                            "call_id": call_id,
+                            "request_id": request_id
+                        })
+                    else:
+                        await safe_send_json({
+                            "type": "error",
+                            "call_id": call_id,
+                            "request_id": request_id, 
+                            "payload": {"detail": f"No active task found with call_id: {call_id}"}
+                        })
             
             elif msg_type == "input":
                 call_id = message.get("call_id")
