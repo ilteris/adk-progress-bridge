@@ -174,9 +174,12 @@ async def stop_task(
         await registry.remove_task(actual_call_id)
     return {"status": "stop signal sent"}
 
+@app.get("/health") 
+async def health_check(): 
+    return {"status": "healthy", "registry_size": len(registry.active_tasks), "timestamp": time.time()} 
 @app.get("/version") 
 async def get_version(): 
-    return {"version": "1.0.1", "status": "God Tier"} 
+    return {"version": "1.0.1", "status": "God Tier", "timestamp": time.time()} 
 @app.get("/metrics")
 async def metrics():
     from prometheus_client import generate_latest, CONTENT_TYPE_LATEST

@@ -27,7 +27,7 @@ def wait_for_server(url, timeout=30):
     return False
 
 def main():
-    print("=== ADK PROGRESS BRIDGE SUPREME VERIFICATION (v311) ===")
+    print("=== ADK PROGRESS BRIDGE SUPREME VERIFICATION (v312) ===")
     
     # 1. Backend Tests (unit/integration via pytest)
     if not run_command("./venv/bin/python -m pytest tests/"):
@@ -51,6 +51,10 @@ def main():
     )
     
     try:
+        if not wait_for_server("http://127.0.0.1:8000/health"): 
+            print("!!! Health check failed") 
+            backend_proc.terminate() 
+            sys.exit(1) 
         if not wait_for_server("http://127.0.0.1:8000/tools"):
             print("!!! Backend failed to start")
             backend_proc.terminate()
@@ -78,7 +82,7 @@ def main():
             print(f">>> Error shutting down backend: {e}")
             backend_proc.kill()
 
-    print("\n=== ALL VERIFICATIONS PASSED: SUPREME ABSOLUTE APEX ATTAINED (v311) ===")
+    print("\n=== ALL VERIFICATIONS PASSED: SUPREME ABSOLUTE APEX ATTAINED (v312) ===")
     print("Total verified components:")
     print("- 85 Backend Python tests (pytest)")
     print("- 16 Frontend unit tests (vitest)")
