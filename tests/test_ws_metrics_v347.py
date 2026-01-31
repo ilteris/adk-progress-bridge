@@ -12,8 +12,8 @@ def test_health_v347_metrics():
     assert response.status_code == 200
     data = response.json()
     
-    assert data["version"] == "1.3.7"
-    assert data["git_commit"] == "v347-singularity-ascension"
+    assert data["version"] == "1.3.8"
+    assert data["git_commit"] == "v348-nirvana"
     
     # Check new system metrics
     assert "percent" in data["system_memory"]
@@ -44,5 +44,5 @@ def test_version_v347():
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "1.3.7"
-    assert data["status"] == "SINGULARITY ASCENSION"
+    assert data["version"] == "1.3.8"
+    assert data["status"] == "NIRVANA"

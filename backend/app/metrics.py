@@ -552,6 +552,32 @@ PROCESS_THREADS_TOTAL_TIME_SYSTEM = Gauge(
     "Total system CPU time across all process threads in seconds"
 )
 
+# v348 Nirvana Metrics
+SYSTEM_DISK_READ_TIME_MS = Gauge(
+    "adk_system_disk_read_time_ms_total",
+    "Total time spent reading from disk in milliseconds"
+)
+
+SYSTEM_DISK_WRITE_TIME_MS = Gauge(
+    "adk_system_disk_write_time_ms_total",
+    "Total time spent writing to disk in milliseconds"
+)
+
+PROCESS_MEMORY_MAPS_COUNT = Gauge(
+    "adk_process_memory_maps_count",
+    "Number of memory maps for the process"
+)
+
+SYSTEM_NETWORK_INTERFACES_UP_COUNT = Gauge(
+    "adk_system_network_interfaces_up_count",
+    "Number of network interfaces that are currently up"
+)
+
+PROCESS_CONTEXT_SWITCHES_TOTAL = Gauge(
+    "adk_process_context_switches_total",
+    "Total number of context switches (voluntary + involuntary) for the process"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

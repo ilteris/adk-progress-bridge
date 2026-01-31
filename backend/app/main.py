@@ -61,7 +61,7 @@ from .metrics import (
     SYSTEM_SWAP_IN_BYTES_TOTAL, SYSTEM_SWAP_OUT_BYTES_TOTAL,
     PROCESS_MEMORY_VMS_PERCENT, SYSTEM_CPU_PHYSICAL_COUNT,
     SYSTEM_MEMORY_PERCENT, PROCESS_OPEN_FILES_COUNT, SYSTEM_DISK_BUSY_TIME_MS,
-    SYSTEM_NETWORK_INTERFACES_COUNT, PROCESS_THREADS_TOTAL_TIME_USER, PROCESS_THREADS_TOTAL_TIME_SYSTEM
+    SYSTEM_NETWORK_INTERFACES_COUNT, PROCESS_THREADS_TOTAL_TIME_USER, PROCESS_THREADS_TOTAL_TIME_SYSTEM, SYSTEM_DISK_READ_TIME_MS, SYSTEM_DISK_WRITE_TIME_MS, PROCESS_MEMORY_MAPS_COUNT, SYSTEM_NETWORK_INTERFACES_UP_COUNT, PROCESS_CONTEXT_SWITCHES_TOTAL
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -70,10 +70,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.3.7"
+APP_VERSION = "1.3.8"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v347-singularity-ascension"
-OPERATIONAL_APEX = "SINGULARITY ASCENSION"
+GIT_COMMIT = "v348-nirvana"
+OPERATIONAL_APEX = "NIRVANA"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -593,6 +593,39 @@ def get_process_threads_times_total():
         except:
             pass
     return 0.0, 0.0
+# v348 Nirvana Helpers
+def get_system_disk_io_times():
+    if psutil:
+        try:
+            io = psutil.disk_io_counters()
+            if io:
+                return io.read_time, io.write_time
+        except:
+            pass
+    return 0, 0
+
+def get_process_memory_maps_count():
+    if _process:
+        try:
+            # This can be slow and might require root on some platforms
+            return len(_process.memory_maps())
+        except:
+            pass
+    return 0
+
+def get_system_network_interfaces_up_count():
+    if psutil:
+        try:
+            stats = psutil.net_if_stats()
+            return sum(1 for s in stats.values() if s.isup)
+        except:
+            pass
+    return 0
+
+def get_process_context_switches_total():
+    voluntary, involuntary = get_context_switches()
+    return voluntary + involuntary
+
 
 
 def get_uptime_human(seconds: float) -> str:
@@ -963,6 +996,17 @@ async def health_check():
     PROCESS_THREADS_TOTAL_TIME_USER.set(pt_user)
     PROCESS_THREADS_TOTAL_TIME_SYSTEM.set(pt_sys)
 
+    # v348 metrics
+    sd_rt, sd_wt = get_system_disk_io_times()
+    SYSTEM_DISK_READ_TIME_MS.set(sd_rt)
+    SYSTEM_DISK_WRITE_TIME_MS.set(sd_wt)
+    p_mem_maps = get_process_memory_maps_count()
+    PROCESS_MEMORY_MAPS_COUNT.set(p_mem_maps)
+    sn_if_up = get_system_network_interfaces_up_count()
+    SYSTEM_NETWORK_INTERFACES_UP_COUNT.set(sn_if_up)
+    p_ctx_total = get_process_context_switches_total()
+    PROCESS_CONTEXT_SWITCHES_TOTAL.set(p_ctx_total)
+
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -1099,6 +1143,14 @@ async def health_check():
             "total_user_seconds": pt_user,
             "total_system_seconds": pt_sys
         },
+        "system_disk_io_times_ms": {
+            "read_time": sd_rt,
+            "write_time": sd_wt
+        },
+        "process_memory_maps_count": p_mem_maps,
+        "system_network_interfaces_up_count": sn_if_up,
+        "process_context_switches_total": p_ctx_total,
+
         "process_memory_advanced": {
             "shared_bytes": p_shared,
             "text_bytes": p_text,
@@ -1292,6 +1344,14 @@ async def metrics():
     pu, ps = get_process_threads_times_total()
     PROCESS_THREADS_TOTAL_TIME_USER.set(pu)
     PROCESS_THREADS_TOTAL_TIME_SYSTEM.set(ps)
+
+    # v348 Nirvana
+    n_sd_rt, n_sd_wt = get_system_disk_io_times()
+    SYSTEM_DISK_READ_TIME_MS.set(n_sd_rt)
+    SYSTEM_DISK_WRITE_TIME_MS.set(n_sd_wt)
+    PROCESS_MEMORY_MAPS_COUNT.set(get_process_memory_maps_count())
+    SYSTEM_NETWORK_INTERFACES_UP_COUNT.set(get_system_network_interfaces_up_count())
+    PROCESS_CONTEXT_SWITCHES_TOTAL.set(get_process_context_switches_total())
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
