@@ -2,11 +2,12 @@
 import { ref, onMounted, watch } from 'vue'
 import { useAgentStream } from '../composables/useAgentStream'
 
-const { state, runTool, stopTool, sendInput, reset, fetchTools: fetchToolsFromComposable } = useAgentStream()
+const { state, runTool, stopTool, sendInput, reset, fetchTools: fetchToolsFromComposable, fetchHealth } = useAgentStream()
 const auditDuration = ref(5)
 const selectedTool = ref('long_audit')
 const userInput = ref('')
 const availableTools = ref<{ id: string, name: string }[]>([])
+const showMetrics = ref(false)
 
 const fetchTools = async () => {
   try {
@@ -16,11 +17,10 @@ const fetchTools = async () => {
       name: id.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
     }))
     if (availableTools.value.length > 0 && !availableTools.value.find(t => t.id === selectedTool.value)) {
-      selectedTool.value = availableTools.value[0].id
+      selectedTool.value = availableTools.value[0]?.id || ""
     }
   } catch (err) {
     console.error('Failed to fetch tools:', err)
-    // Fallback to minimal set if fetch fails
     availableTools.value = [
       { id: 'long_audit', name: 'Audit Task' },
       { id: 'interactive_task', name: 'Interactive Task' }
@@ -28,7 +28,6 @@ const fetchTools = async () => {
   }
 }
 
-// Re-fetch tools when switching between SSE and WS to demonstrate bi-directional protocol
 watch(() => state.useWS, () => {
   if (!state.isStreaming) {
     fetchTools()
@@ -37,6 +36,7 @@ watch(() => state.useWS, () => {
 
 onMounted(() => {
   fetchTools()
+  fetchHealth() // Initial fetch
 })
 
 const startTask = () => {
@@ -53,6 +53,14 @@ const submitInput = () => {
 
 const handleReset = () => {
   reset()
+  fetchHealth()
+}
+
+const formatBps = (bps: number) => {
+    if (bps === undefined || bps === null) return '0 B/s'
+    if (bps > 1024 * 1024) return (bps / (1024 * 1024)).toFixed(2) + ' MB/s'
+    if (bps > 1024) return (bps / 1024).toFixed(2) + ' KB/s'
+    return bps.toFixed(0) + ' B/s'
 }
 </script>
 
@@ -61,21 +69,46 @@ const handleReset = () => {
     <div class="card shadow-sm">
       <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <h4 class="mb-0">Task Monitor</h4>
-        <div>
-          <span v-if="state.status === 'connected'" class="badge bg-success">Live ({{ state.useWS ? 'WS' : 'SSE' }})</span>
-          <span v-else-if="state.status === 'waiting_for_input'" class="badge bg-warning text-dark">Awaiting Input</span>
-          <span v-else-if="state.status === 'reconnecting'" class="badge bg-warning text-dark">
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-sm btn-outline-light" @click="showMetrics = !showMetrics">
+            {{ showMetrics ? 'Hide' : 'Show' }} Metrics
+          </button>
+          <span v-if="state.status === 'connected'" data-testid="status-badge" class="badge bg-success">Live ({{ state.useWS ? 'WS' : 'SSE' }})</span>
+          <span v-else-if="state.status === 'waiting_for_input'" data-testid="status-badge" class="badge bg-warning text-dark">Awaiting Input</span>
+          <span v-else-if="state.status === 'reconnecting'" data-testid="status-badge" class="badge bg-warning text-dark">
             <span class="spinner-border spinner-border-sm me-1" role="status"></span>
             Reconnecting...
           </span>
-          <span v-else-if="state.status === 'connecting'" class="badge bg-info text-dark">Connecting...</span>
-          <span v-else-if="state.status === 'error'" class="badge bg-danger">Error</span>
-          <span v-else-if="state.status === 'completed'" class="badge bg-light text-dark">Done</span>
-          <span v-else-if="state.status === 'cancelled'" class="badge bg-secondary">Cancelled</span>
+          <span v-else-if="state.status === 'connecting'" data-testid="status-badge" class="badge bg-info text-dark">Connecting...</span>
+          <span v-else-if="state.status === 'error'" data-testid="status-badge" class="badge bg-danger">Error</span>
+          <span v-else-if="state.status === 'completed'" data-testid="status-badge" class="badge bg-light text-dark">Done</span>
+          <span v-else-if="state.status === 'cancelled'" data-testid="status-badge" class="badge bg-secondary">Cancelled</span>
         </div>
       </div>
       
       <div class="card-body">
+        <!-- System Metrics Overlay/Panel -->
+        <div v-if="showMetrics && state.systemMetrics" class="mb-4 p-3 border rounded bg-dark text-success font-monospace" style="font-size: 0.8rem;">
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>CPU:</strong> {{ state.systemMetrics.cpu_usage_percent?.toFixed(1) }}%<br>
+                    <strong>Load:</strong> {{ state.systemMetrics.system_cpu_usage?.load_1m_percent?.toFixed(1) }}%
+                </div>
+                <div class="col-md-3">
+                    <strong>Syscalls:</strong> {{ state.systemMetrics.system_cpu_stats?.syscall_rate_per_sec?.toFixed(0) }}/s<br>
+                    <strong>SoftIRQ:</strong> {{ state.systemMetrics.system_cpu_stats?.soft_interrupt_rate_per_sec?.toFixed(0) }}/s
+                </div>
+                <div class="col-md-3">
+                    <strong>WS Sent:</strong> {{ formatBps(state.systemMetrics.network_io_total?.sent_throughput_bps) }}<br>
+                    <strong>WS Recv:</strong> {{ formatBps(state.systemMetrics.network_io_total?.recv_throughput_bps) }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Tasks:</strong> {{ state.systemMetrics.registry_size }} active<br>
+                    <strong>Uptime:</strong> {{ Math.floor(state.systemMetrics.boot_time_seconds ? (Date.now()/1000 - state.systemMetrics.boot_time_seconds) : 0) }}s
+                </div>
+            </div>
+        </div>
+
         <!-- Configuration Section -->
         <div class="mb-4 p-3 border rounded bg-body-tertiary">
           <h6>Task Configuration</h6>
@@ -151,7 +184,10 @@ const handleReset = () => {
 
         <!-- Log Console -->
         <div class="mb-4">
-          <h6>Log Console</h6>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6>Log Console</h6>
+            <button class="btn btn-sm btn-link text-decoration-none" @click="state.logs = []" :disabled="state.isStreaming">Clear</button>
+          </div>
           <div class="bg-dark text-light p-3 rounded" style="height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9rem;">
             <div v-for="(log, index) in state.logs" :key="index" class="mb-1">
               <span class="text-secondary">[{{ new Date().toLocaleTimeString() }}]</span> {{ log }}
@@ -198,6 +234,10 @@ const handleReset = () => {
 pre {
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+
+.font-monospace {
+    font-family: 'Courier New', Courier, monospace;
 }
 
 .animate-pulse {
