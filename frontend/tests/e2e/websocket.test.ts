@@ -22,13 +22,13 @@ test('websocket audit flow', async ({ page }) => {
   await startBtn.click();
 
   // Verify running state and WS badge
-  await expect(page.locator('.badge')).toContainText('WS');
+  await expect(page.getByTestId('status-badge')).toContainText('WS');
   const stopBtn = page.getByRole('button', { name: 'Stop Task' });
   await expect(stopBtn).toBeVisible();
 
   // Wait for completion
   await expect(page.locator('.alert-success')).toBeVisible({ timeout: 15000 });
-  await expect(page.locator('.badge')).toContainText('Done');
+  await expect(page.getByTestId('status-badge')).toContainText('Done');
 
   // Verify final result
   await expect(page.locator('pre')).toContainText('"status": "complete"');
@@ -48,7 +48,7 @@ test('websocket interactive flow', async ({ page }) => {
   
   // Wait for input request
   await expect(page.getByText('Agent Input Request')).toBeVisible({ timeout: 15000 });
-  await expect(page.locator('.badge')).toContainText('Awaiting Input');
+  await expect(page.getByTestId('status-badge')).toContainText('Awaiting Input');
   
   // Provide input "yes"
   const inputField = page.locator('input[placeholder="Type your response..."]');
@@ -57,7 +57,7 @@ test('websocket interactive flow', async ({ page }) => {
   
   // Wait for completion
   await expect(page.locator('.alert-success')).toBeVisible({ timeout: 15000 });
-  await expect(page.locator('.badge')).toContainText('Done');
+  await expect(page.getByTestId('status-badge')).toContainText('Done');
   await expect(page.locator('pre')).toContainText('"status": "complete"');
   await expect(page.locator('pre')).toContainText('user approval');
 });
@@ -75,7 +75,7 @@ test('websocket stop flow', async ({ page }) => {
   await page.getByRole('button', { name: 'Start Task' }).click();
   
   // Verify running state
-  await expect(page.locator('.badge')).toContainText('WS');
+  await expect(page.getByTestId('status-badge')).toContainText('WS');
   const stopBtn = page.getByRole('button', { name: 'Stop Task' });
   await expect(stopBtn).toBeVisible();
   
@@ -83,7 +83,7 @@ test('websocket stop flow', async ({ page }) => {
   await stopBtn.click();
   
   // Verify cancelled state
-  await expect(page.locator('.badge')).toContainText('Cancelled');
+  await expect(page.getByTestId('status-badge')).toContainText('Cancelled');
   await expect(page.locator('.progress-bar')).toHaveCSS('background-color', 'rgb(108, 117, 125)'); // #6c757d
 });
 
