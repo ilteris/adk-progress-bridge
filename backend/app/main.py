@@ -69,7 +69,9 @@ from .metrics import (
     SYSTEM_MEMORY_SHARED_BYTES, PROCESS_MEMORY_PSS_BYTES, SYSTEM_NETWORK_INTERFACES_MTU_TOTAL,
     PROCESS_MEMORY_SWAP_BYTES, SYSTEM_NETWORK_ERRORS_TOTAL,
     SYSTEM_NETWORK_INTERFACES_SPEED_TOTAL_MBPS, SYSTEM_NETWORK_INTERFACES_DUPLEX_FULL_COUNT,
-    PROCESS_MEMORY_USS_PERCENT
+    PROCESS_MEMORY_USS_PERCENT,
+    SYSTEM_PROCESS_COUNT, PROCESS_MEMORY_PSS_PERCENT,
+    SYSTEM_CPU_LOAD_1M_PERCENT, SYSTEM_MEMORY_AVAILABLE_PERCENT
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -78,10 +80,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.4.1"
+APP_VERSION = "1.4.2"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v351-ultima"
-OPERATIONAL_APEX = "ULTIMA"
+GIT_COMMIT = "v352-omnipresence"
+OPERATIONAL_APEX = "OMNIPRESENCE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -737,6 +739,36 @@ def get_process_memory_uss_percent():
             pass
     return 0.0
 
+# v352 Omnipresence Helpers
+def get_process_memory_pss_percent():
+    if _process and psutil:
+        try:
+            pss = get_process_memory_pss()
+            total = psutil.virtual_memory().total
+            if total > 0:
+                return (pss / total) * 100
+        except:
+            pass
+    return 0.0
+
+def get_system_process_count():
+    if psutil:
+        try:
+            return len(psutil.pids())
+        except:
+            pass
+    return 0
+
+def get_system_memory_available_percent():
+    if psutil:
+        try:
+            mem = psutil.virtual_memory()
+            if mem.total > 0:
+                return (mem.available / mem.total) * 100
+        except:
+            pass
+    return 0.0
+
 
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
@@ -1003,6 +1035,16 @@ async def get_health_data():
     p_uss_p = get_process_memory_uss_percent()
     PROCESS_MEMORY_USS_PERCENT.set(p_uss_p)
 
+    # v352 metrics
+    p_pss_p = get_process_memory_pss_percent()
+    PROCESS_MEMORY_PSS_PERCENT.set(p_pss_p)
+    s_proc_count = get_system_process_count()
+    SYSTEM_PROCESS_COUNT.set(s_proc_count)
+    s_load_1m_p = (load_avg[0] / cpu_count * 100) if cpu_count > 0 else 0.0
+    SYSTEM_CPU_LOAD_1M_PERCENT.set(s_load_1m_p)
+    sm_avail_p = get_system_memory_available_percent()
+    SYSTEM_MEMORY_AVAILABLE_PERCENT.set(sm_avail_p)
+
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -1041,7 +1083,8 @@ async def get_health_data():
             "guest_percent": s_guest,
             "iowait_percent": s_iowait,
             "irq_percent": s_irq,
-            "softirq_percent": s_softirq
+            "softirq_percent": s_softirq,
+            "load_1m_percent": s_load_1m_p
         },
         "system_cpu_stats": {
             "interrupts": s_ints,
@@ -1098,6 +1141,7 @@ async def get_health_data():
         "system_load_1m": load_avg[0],
         "system_load_5m": load_avg[1],
         "system_load_15m": load_avg[2],
+        "system_process_count": s_proc_count,
         "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
         "peak_ws_connections": getattr(app.state, "peak_ws_connections", 0),
         "ws_messages_received": int(ws_received_count),
@@ -1126,7 +1170,8 @@ async def get_health_data():
             "slab_bytes": m_slab,
             "wired_bytes": m_wired,
             "shared_bytes": m_shared,
-            "percent": sm_percent
+            "percent": sm_percent,
+            "available_percent": sm_avail_p
         },
         "system_memory_extended": { # backward compatibility
             "used_bytes": sys_mem_used,
@@ -1168,7 +1213,8 @@ async def get_health_data():
             "pss_bytes": p_pss,
             "swap_bytes": p_swap,
             "vms_percent": p_vms_p,
-            "uss_percent": p_uss_p
+            "uss_percent": p_uss_p,
+            "pss_percent": p_pss_p
         },
         "process_env_var_count": p_env_count,
         "process_nice_value": p_nice,
@@ -1378,7 +1424,8 @@ async def metrics():
     PAGE_FAULTS_MINOR.set(min_pf)
     PAGE_FAULTS_MAJOR.set(maj_pf)
     
-    SYSTEM_CPU_COUNT.set(psutil.cpu_count() if psutil else os.cpu_count())
+    cpu_count = psutil.cpu_count() if psutil else os.cpu_count()
+    SYSTEM_CPU_COUNT.set(cpu_count)
     SYSTEM_BOOT_TIME.set(psutil.boot_time() if psutil else 0)
     SWAP_MEMORY_USAGE_PERCENT.set(get_swap_memory_percent())
     net_sent, net_recv = get_network_io()
@@ -1530,6 +1577,12 @@ async def metrics():
     SYSTEM_NETWORK_INTERFACES_SPEED_TOTAL_MBPS.set(get_system_network_speed_total())
     SYSTEM_NETWORK_INTERFACES_DUPLEX_FULL_COUNT.set(get_system_network_duplex_full_count())
     PROCESS_MEMORY_USS_PERCENT.set(get_process_memory_uss_percent())
+
+    # v352 Omnipresence
+    SYSTEM_PROCESS_COUNT.set(get_system_process_count())
+    PROCESS_MEMORY_PSS_PERCENT.set(get_process_memory_pss_percent())
+    SYSTEM_CPU_LOAD_1M_PERCENT.set((load_avg[0] / cpu_count * 100) if cpu_count > 0 else 0.0)
+    SYSTEM_MEMORY_AVAILABLE_PERCENT.set(get_system_memory_available_percent())
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

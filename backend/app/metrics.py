@@ -147,7 +147,7 @@ SYSTEM_CPU_COUNT = Gauge(
 
 SYSTEM_BOOT_TIME = Gauge(
     "adk_system_boot_time_seconds",
-    "System boot time in seconds since epoch"
+    "System_boot time in seconds since epoch"
 )
 
 SWAP_MEMORY_USAGE_PERCENT = Gauge(
@@ -645,6 +645,27 @@ SYSTEM_NETWORK_INTERFACES_DUPLEX_FULL_COUNT = Gauge(
 PROCESS_MEMORY_USS_PERCENT = Gauge(
     "adk_process_memory_uss_percent",
     "Unique Set Size memory usage as a percentage of total system memory"
+)
+
+# v352 Omnipresence Metrics
+SYSTEM_PROCESS_COUNT = Gauge(
+    "adk_system_process_count",
+    "Total number of processes currently running on the system"
+)
+
+PROCESS_MEMORY_PSS_PERCENT = Gauge(
+    "adk_process_memory_pss_percent",
+    "Proportional Set Size memory usage as a percentage of total system memory"
+)
+
+SYSTEM_CPU_LOAD_1M_PERCENT = Gauge(
+    "adk_system_cpu_load_1m_percent",
+    "System load average over the last 1 minute as a percentage of CPU count"
+)
+
+SYSTEM_MEMORY_AVAILABLE_PERCENT = Gauge(
+    "adk_system_memory_available_percent",
+    "Percentage of system memory that is available"
 )
 
 BUILD_INFO = Info("adk_build", "Application build information")
