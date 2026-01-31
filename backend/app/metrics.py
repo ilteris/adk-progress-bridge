@@ -693,6 +693,37 @@ SYSTEM_NETWORK_INTERFACES_BYTES_RECV = Gauge(
     ["interface"]
 )
 
+# v354 THE ONE Metrics
+PROCESS_LIMIT_NOFILE_SOFT = Gauge(
+    "adk_process_resource_limit_nofile_soft",
+    "Process soft limit for open file descriptors"
+)
+
+PROCESS_LIMIT_NOFILE_HARD = Gauge(
+    "adk_process_resource_limit_nofile_hard",
+    "Process hard limit for open file descriptors"
+)
+
+PROCESS_LIMIT_AS_SOFT = Gauge(
+    "adk_process_resource_limit_as_soft_bytes",
+    "Process soft limit for address space (virtual memory)"
+)
+
+PROCESS_LIMIT_AS_HARD = Gauge(
+    "adk_process_resource_limit_as_hard_bytes",
+    "Process hard limit for address space (virtual memory)"
+)
+
+SYSTEM_LOAD_5M_PERCENT = Gauge(
+    "adk_system_load_5m_percent",
+    "System load average over the last 5 minutes as a percentage of CPU count"
+)
+
+SYSTEM_LOAD_15M_PERCENT = Gauge(
+    "adk_system_load_15m_percent",
+    "System load average over the last 15 minutes as a percentage of CPU count"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

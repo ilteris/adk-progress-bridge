@@ -21,6 +21,11 @@ except ImportError:
     psutil = None
     _process = None
 
+try:
+    import resource
+except ImportError:
+    resource = None
+
 from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_manager
 from .logger import logger
 from .context import call_id_var, tool_name_var
@@ -73,7 +78,10 @@ from .metrics import (
     SYSTEM_PROCESS_COUNT, PROCESS_MEMORY_PSS_PERCENT,
     SYSTEM_CPU_LOAD_1M_PERCENT, SYSTEM_MEMORY_AVAILABLE_PERCENT,
     SYSTEM_CPU_CORES_USAGE_PERCENT, SYSTEM_DISK_PARTITIONS_USAGE_PERCENT,
-    SYSTEM_NETWORK_INTERFACES_BYTES_SENT, SYSTEM_NETWORK_INTERFACES_BYTES_RECV
+    SYSTEM_NETWORK_INTERFACES_BYTES_SENT, SYSTEM_NETWORK_INTERFACES_BYTES_RECV,
+    PROCESS_LIMIT_NOFILE_SOFT, PROCESS_LIMIT_NOFILE_HARD,
+    PROCESS_LIMIT_AS_SOFT, PROCESS_LIMIT_AS_HARD,
+    SYSTEM_LOAD_5M_PERCENT, SYSTEM_LOAD_15M_PERCENT
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -82,10 +90,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.4.3"
+APP_VERSION = "1.4.4"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v353-the-source"
-OPERATIONAL_APEX = "THE SOURCE"
+GIT_COMMIT = "v354-the-one"
+OPERATIONAL_APEX = "THE ONE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -805,6 +813,22 @@ def get_system_disk_partitions_usage():
             pass
     return {}
 
+# v354 THE ONE Helpers
+def get_process_resource_limits():
+    limits = {}
+    if resource:
+        try:
+            nofile_soft, nofile_hard = resource.getrlimit(resource.RLIMIT_NOFILE)
+            limits["nofile_soft"] = nofile_soft
+            limits["nofile_hard"] = nofile_hard
+            
+            as_soft, as_hard = resource.getrlimit(resource.RLIMIT_AS)
+            limits["as_soft"] = as_soft
+            limits["as_hard"] = as_hard
+        except:
+            pass
+    return limits
+
 
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
@@ -1082,18 +1106,31 @@ async def get_health_data():
     SYSTEM_MEMORY_AVAILABLE_PERCENT.set(sm_avail_p)
 
     # v353 metrics
-    cpu_cores_usage = get_system_cpu_cores_usage()
-    for i, usage in enumerate(cpu_cores_usage):
-        SYSTEM_CPU_CORES_USAGE_PERCENT.labels(core=str(i)).set(usage)
+    cpu_cores_p = get_system_cpu_cores_usage()
+    for i, p in enumerate(cpu_cores_p):
+        SYSTEM_CPU_CORES_USAGE_PERCENT.labels(core=str(i)).set(p)
     
-    disk_part_usage = get_system_disk_partitions_usage()
-    for part, usage in disk_part_usage.items():
-        SYSTEM_DISK_PARTITIONS_USAGE_PERCENT.labels(partition=part).set(usage)
+    disk_p_u = get_system_disk_partitions_usage()
+    for part, p in disk_p_u.items():
+        SYSTEM_DISK_PARTITIONS_USAGE_PERCENT.labels(partition=part).set(p)
         
     net_io_per_nic = get_system_network_io_per_nic()
     for nic, io in net_io_per_nic.items():
         SYSTEM_NETWORK_INTERFACES_BYTES_SENT.labels(interface=nic).set(io.bytes_sent)
         SYSTEM_NETWORK_INTERFACES_BYTES_RECV.labels(interface=nic).set(io.bytes_recv)
+
+    # v354 THE ONE
+    s_load_5m_p = (load_avg[1] / cpu_count * 100) if cpu_count > 0 else 0.0
+    s_load_15m_p = (load_avg[2] / cpu_count * 100) if cpu_count > 0 else 0.0
+    SYSTEM_LOAD_5M_PERCENT.set(s_load_5m_p)
+    SYSTEM_LOAD_15M_PERCENT.set(s_load_15m_p)
+    
+    p_limits = get_process_resource_limits()
+    if "nofile_soft" in p_limits:
+        PROCESS_LIMIT_NOFILE_SOFT.set(p_limits["nofile_soft"])
+        PROCESS_LIMIT_NOFILE_HARD.set(p_limits["nofile_hard"])
+        PROCESS_LIMIT_AS_SOFT.set(p_limits["as_soft"])
+        PROCESS_LIMIT_AS_HARD.set(p_limits["as_hard"])
 
 
     active_tasks_list = await registry.list_active_tasks()
@@ -1135,7 +1172,9 @@ async def get_health_data():
             "irq_percent": s_irq,
             "softirq_percent": s_softirq,
             "load_1m_percent": s_load_1m_p,
-            "cores": cpu_cores_usage
+            "load_5m_percent": s_load_5m_p,
+            "load_15m_percent": s_load_15m_p,
+            "cores": cpu_cores_p
         },
         "system_cpu_stats": {
             "interrupts": s_ints,
@@ -1146,6 +1185,7 @@ async def get_health_data():
         "thread_count": thread_count,
         "open_fds": open_fds,
         "process_open_files_count": p_open_files,
+        "process_resource_limits": p_limits,
         "context_switches": {
             "voluntary": voluntary_ctx,
             "involuntary": involuntary_ctx
@@ -1187,7 +1227,7 @@ async def get_health_data():
             "read_merged_count": sd_rm,
             "write_merged_count": sd_wm,
             "busy_time_ms": sd_busy,
-            "partitions_usage_percent": disk_part_usage
+            "partitions_usage_percent": disk_p_u
         },
         "system_network_connections_count": s_conn_count,
         "process_connections_count": proc_conn_count,
@@ -1650,6 +1690,16 @@ async def metrics():
     for nic, io in net_io_per_nic.items():
         SYSTEM_NETWORK_INTERFACES_BYTES_SENT.labels(interface=nic).set(io.bytes_sent)
         SYSTEM_NETWORK_INTERFACES_BYTES_RECV.labels(interface=nic).set(io.bytes_recv)
+
+    # v354 THE ONE
+    SYSTEM_LOAD_5M_PERCENT.set((load_avg[1] / cpu_count * 100) if cpu_count > 0 else 0.0)
+    SYSTEM_LOAD_15M_PERCENT.set((load_avg[2] / cpu_count * 100) if cpu_count > 0 else 0.0)
+    p_limits = get_process_resource_limits()
+    if "nofile_soft" in p_limits:
+        PROCESS_LIMIT_NOFILE_SOFT.set(p_limits["nofile_soft"])
+        PROCESS_LIMIT_NOFILE_HARD.set(p_limits["nofile_hard"])
+        PROCESS_LIMIT_AS_SOFT.set(p_limits["as_soft"])
+        PROCESS_LIMIT_AS_HARD.set(p_limits["as_hard"])
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
