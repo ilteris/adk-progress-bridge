@@ -1,7 +1,7 @@
 {
   "id": "advanced-examples",
   "status": "completed",
-  "description": "Create more complex dummy tools showing parallel work or sub-task progress in bridge.py.",
+  "description": "Create more complex dummy tools showing parallel work or sub-task progress in bridge.py. REFINED: Updated TaskMonitor.vue to allow user-defined parameters for all advanced tools.",
   "governance": {
     "plan_approved": false,
     "evaluated": true
