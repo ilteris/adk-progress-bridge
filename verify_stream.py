@@ -12,7 +12,7 @@ def test_stream():
 
     # 1. Start Task
     print("Starting task...")
-    resp = requests.post("http://localhost:8000/start_task/long_audit", json={"duration": 2}, headers=headers)
+    resp = requests.post("http://127.0.0.1:8000/start_task/long_audit", json={"duration": 2}, headers=headers)
     if resp.status_code != 200:
         print(f"Failed to start task: {resp.status_code} {resp.text}")
         return
@@ -26,7 +26,7 @@ def test_stream():
     if api_key:
         params["api_key"] = api_key
         
-    stream_resp = requests.get(f"http://localhost:8000/stream/{call_id}", params=params, stream=True)
+    stream_resp = requests.get(f"http://127.0.0.1:8000/stream/{call_id}", params=params, stream=True)
     
     if stream_resp.status_code != 200:
         print(f"Failed to connect to stream: {stream_resp.status_code} {stream_resp.text}")

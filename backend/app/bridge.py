@@ -99,6 +99,10 @@ class ToolRegistry:
             return func
         return decorator
 
+    @property
+    def active_task_count(self) -> int:
+        return len(self._active_tasks)
+
     def list_tools(self) -> List[str]:
         return list(self._tools.keys())
 
