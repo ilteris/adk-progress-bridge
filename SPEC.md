@@ -10,7 +10,7 @@ The system consists of a Python backend (FastAPI) acting as the ADK Agent host a
 #### `ProgressEvent` (Pydantic Model)
 A structured container for event data.
 *   `call_id`: UUID string.
-*   `type`: Literal ["progress", "result", "error", "input_request", "task_started"].
+*   `type`: Literal ["progress", "result", "error", "input_request", "task_started", "system_metrics"].
 *   `payload`: Any event-specific data.
 
 #### `ToolRegistry`
@@ -23,6 +23,13 @@ Manages tool registration and active task sessions.
 #### `InputManager`
 Manages bi-directional input for tasks that require user interaction.
 *   `provide_input(call_id, value)`: Signals a waiting generator with user input.
+
+#### `BroadcastMetricsManager`
+Centralized singleton for broadcasting real-time health metrics.
+*   `start()`: Begins periodic metrics gathering.
+*   `stop()`: Halts gathering.
+*   `subscribe(call_id)`: Returns an asyncio.Queue for receiving metrics.
+*   `unsubscribe(call_id)`: Removes a listener.
 
 ### 2.2 API Endpoints (`backend/main.py`)
 
