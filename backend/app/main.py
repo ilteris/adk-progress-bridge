@@ -28,7 +28,9 @@ from .metrics import (
     ACTIVE_WS_CONNECTIONS, WS_MESSAGES_RECEIVED_TOTAL, WS_MESSAGES_SENT_TOTAL, BUILD_INFO,
     PEAK_ACTIVE_TASKS, WS_BYTES_RECEIVED_TOTAL, WS_BYTES_SENT_TOTAL,
     WS_REQUEST_LATENCY, WS_CONNECTION_DURATION, MEMORY_PERCENT, TOTAL_TASKS_STARTED,
-    CPU_USAGE_PERCENT, PEAK_ACTIVE_WS_CONNECTIONS, OPEN_FDS, THREAD_COUNT
+    CPU_USAGE_PERCENT, PEAK_ACTIVE_WS_CONNECTIONS, OPEN_FDS, THREAD_COUNT,
+    WS_THROUGHPUT_RECEIVED_BPS, WS_THROUGHPUT_SENT_BPS,
+    CONTEXT_SWITCHES_VOLUNTARY, CONTEXT_SWITCHES_INVOLUNTARY
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -37,9 +39,9 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.2.2"
+APP_VERSION = "1.2.3"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v332-supreme"
+GIT_COMMIT = "v333-supreme"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -47,6 +49,10 @@ ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.peak_ws_connections = 0
+    app.state.last_throughput_time = time.time()
+    app.state.last_bytes_received = 0
+    app.state.last_bytes_sent = 0
+    
     cleanup_task = asyncio.create_task(cleanup_background_task())
     logger.info("Background cleanup task started")
     yield
@@ -111,6 +117,15 @@ def get_open_fds():
         except:
             pass
     return 0
+
+def get_context_switches():
+    if psutil:
+        try:
+            switches = psutil.Process().num_ctx_switches()
+            return switches.voluntary, switches.involuntary
+        except:
+            pass
+    return 0, 0
 
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
@@ -271,17 +286,39 @@ async def health_check():
     load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
     
     # Calculate totals from metrics
-    ws_received = 0
+    ws_received_count = 0
     for m in WS_MESSAGES_RECEIVED_TOTAL.collect():
         for s in m.samples:
             if s.name.endswith("_total"):
-                ws_received += s.value
+                ws_received_count += s.value
                 
-    ws_sent = 0
+    ws_sent_count = 0
     for m in WS_MESSAGES_SENT_TOTAL.collect():
         for s in m.samples:
             if s.name.endswith("_total"):
-                ws_sent += s.value
+                ws_sent_count += s.value
+
+    ws_bytes_received = int(WS_BYTES_RECEIVED_TOTAL._value.get())
+    ws_bytes_sent = int(WS_BYTES_SENT_TOTAL._value.get())
+
+    # Calculate throughput
+    now = time.time()
+    last_time = getattr(app.state, "last_throughput_time", APP_START_TIME)
+    last_received = getattr(app.state, "last_bytes_received", 0)
+    last_sent = getattr(app.state, "last_bytes_sent", 0)
+    
+    dt = now - last_time
+    if dt >= 1.0:
+        throughput_received = (ws_bytes_received - last_received) / dt
+        throughput_sent = (ws_bytes_sent - last_sent) / dt
+        WS_THROUGHPUT_RECEIVED_BPS.set(throughput_received)
+        WS_THROUGHPUT_SENT_BPS.set(throughput_sent)
+        app.state.last_throughput_time = now
+        app.state.last_bytes_received = ws_bytes_received
+        app.state.last_bytes_sent = ws_bytes_sent
+    else:
+        throughput_received = int(WS_THROUGHPUT_RECEIVED_BPS._value.get())
+        throughput_sent = int(WS_THROUGHPUT_SENT_BPS._value.get())
 
     uptime_seconds = time.time() - APP_START_TIME
     mem_percent = get_memory_percent()
@@ -293,10 +330,25 @@ async def health_check():
     thread_count = threading.active_count()
     THREAD_COUNT.set(thread_count)
     
+    voluntary_ctx, involuntary_ctx = get_context_switches()
+    CONTEXT_SWITCHES_VOLUNTARY.set(voluntary_ctx)
+    CONTEXT_SWITCHES_INVOLUNTARY.set(involuntary_ctx)
+    
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
     for t in active_tasks_list:
         tools_summary[t["tool_name"]] = tools_summary.get(t["tool_name"], 0) + 1
+
+    # Task success rate
+    total_finished = 0
+    total_success = 0
+    for m in TASKS_TOTAL.collect():
+        for s in m.samples:
+            total_finished += s.value
+            if s.labels.get("status") == "success":
+                total_success += s.value
+    
+    success_rate = (total_success / total_finished * 100) if total_finished > 0 else 100.0
 
     return { 
         "status": "healthy", 
@@ -310,23 +362,32 @@ async def health_check():
         "cpu_usage_percent": cpu_percent,
         "thread_count": thread_count,
         "open_fds": open_fds,
+        "context_switches": {
+            "voluntary": voluntary_ctx,
+            "involuntary": involuntary_ctx
+        },
         "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
         "peak_ws_connections": getattr(app.state, "peak_ws_connections", 0),
-        "ws_messages_received": int(ws_received),
-        "ws_messages_sent": int(ws_sent),
-        "ws_bytes_received": int(WS_BYTES_RECEIVED_TOTAL._value.get()),
-        "ws_bytes_sent": int(WS_BYTES_SENT_TOTAL._value.get()),
+        "ws_messages_received": int(ws_received_count),
+        "ws_messages_sent": int(ws_sent_count),
+        "ws_bytes_received": ws_bytes_received,
+        "ws_bytes_sent": ws_bytes_sent,
+        "ws_throughput_bps": {
+            "received": throughput_received,
+            "sent": throughput_sent
+        },
         "load_avg": load_avg,
         "memory_rss_kb": get_memory_usage_kb(),
         "memory_percent": mem_percent,
         "registry_size": registry.active_task_count, 
         "peak_registry_size": registry.peak_active_tasks,
         "total_tasks_started": registry.total_tasks_started,
+        "task_success_rate_percent": success_rate,
         "registry_summary": tools_summary,
-        "uptime_seconds": uptime_seconds, 
+        "uptime_seconds": uptime_seconds,
         "uptime_human": get_uptime_human(uptime_seconds),
         "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APP_START_TIME)), 
-        "timestamp": time.time(),
+        "timestamp": now,
         "config": {
             "ws_heartbeat_timeout": WS_HEARTBEAT_TIMEOUT,
             "cleanup_interval": CLEANUP_INTERVAL,
@@ -356,6 +417,9 @@ async def metrics():
     CPU_USAGE_PERCENT.set(get_cpu_percent())
     OPEN_FDS.set(get_open_fds())
     THREAD_COUNT.set(threading.active_count())
+    v, i = get_context_switches()
+    CONTEXT_SWITCHES_VOLUNTARY.set(v)
+    CONTEXT_SWITCHES_INVOLUNTARY.set(i)
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

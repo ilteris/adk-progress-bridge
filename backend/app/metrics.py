@@ -68,6 +68,16 @@ WS_BYTES_SENT_TOTAL = Counter(
     "Total number of bytes sent via WebSocket"
 )
 
+WS_THROUGHPUT_RECEIVED_BPS = Gauge(
+    "adk_ws_throughput_received_bps",
+    "Current WebSocket received throughput in bytes per second"
+)
+
+WS_THROUGHPUT_SENT_BPS = Gauge(
+    "adk_ws_throughput_sent_bps",
+    "Current WebSocket sent throughput in bytes per second"
+)
+
 WS_REQUEST_LATENCY = Histogram(
     "adk_ws_request_latency_seconds",
     "Latency of WebSocket request processing",
@@ -97,6 +107,16 @@ OPEN_FDS = Gauge(
 THREAD_COUNT = Gauge(
     "adk_thread_count",
     "Number of active threads in the process"
+)
+
+CONTEXT_SWITCHES_VOLUNTARY = Gauge(
+    "adk_context_switches_voluntary",
+    "Number of voluntary context switches"
+)
+
+CONTEXT_SWITCHES_INVOLUNTARY = Gauge(
+    "adk_context_switches_involuntary",
+    "Number of involuntary context switches"
 )
 
 TOTAL_TASKS_STARTED = Counter(
