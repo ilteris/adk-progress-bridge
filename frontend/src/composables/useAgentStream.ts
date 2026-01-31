@@ -9,7 +9,7 @@ interface ProgressPayload {
 
 interface AgentEvent {
   call_id: string
-  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list'
+  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list' | 'system_metrics'
   payload: any
   request_id?: string
   tools?: string[]
@@ -30,6 +30,7 @@ export interface AgentState {
   useWS: boolean
   inputPrompt: string | null
   tools: string[]
+  systemMetrics: any | null
 }
 
 // Support VITE_API_URL environment variable, defaulting to localhost for dev
@@ -39,17 +40,11 @@ const WS_BASE_URL = API_BASE_URL.replace('http', 'ws')
 const BRIDGE_API_KEY = import.meta.env.VITE_BRIDGE_API_KEY || ''
 
 // Configuration Constants for WebSocket behavior
-// WS_HEARTBEAT_INTERVAL: Frequency (ms) to send a ping to the server to keep connection alive.
 const WS_HEARTBEAT_INTERVAL = 30000
-// WS_RECONNECT_MAX_ATTEMPTS: Maximum number of times to try reconnecting before giving up.
 const WS_RECONNECT_MAX_ATTEMPTS = 10
-// WS_REQUEST_TIMEOUT: Max time (ms) to wait for a response to start/list_tools commands.
 const WS_REQUEST_TIMEOUT = 5000
-// WS_RECONNECT_INITIAL_DELAY: Initial delay (ms) for exponential backoff during reconnection.
 const WS_RECONNECT_INITIAL_DELAY = 1000
-// WS_RECONNECT_MAX_DELAY: Maximum delay (ms) between reconnection attempts.
 const WS_RECONNECT_MAX_DELAY = 30000
-// WS_BUFFER_SIZE: Number of messages to buffer if they arrive before a subscriber is ready.
 const WS_BUFFER_SIZE = 1000
 
 /**
@@ -68,7 +63,6 @@ export class WebSocketManager {
   private maxReconnectAttempts: number = WS_RECONNECT_MAX_ATTEMPTS
   private isManuallyClosed: boolean = false
 
-  // For testing
   public reset() {
     this.isManuallyClosed = true
     this.stopHeartbeat()
@@ -117,10 +111,8 @@ export class WebSocketManager {
       this.ws.onmessage = (event) => {
         try {
             const data: any = JSON.parse(event.data)
-            // Handle pong for heartbeat
             if (data.type === 'pong') return
 
-            // Handle request_id correlations
             if (data.request_id && this.requestCallbacks.has(data.request_id)) {
                 const { resolve: reqResolve, reject: reqReject, timeout } = this.requestCallbacks.get(data.request_id)!
                 clearTimeout(timeout)
@@ -134,12 +126,11 @@ export class WebSocketManager {
                 return
             }
 
-            // Handle task-specific events
             const callback = this.subscribers.get(data.call_id)
             if (callback) {
                 callback(data)
-            } else if (data.call_id) {
-                // Buffer message if no subscriber yet
+            } else if (data.call_id || data.type === 'system_metrics') {
+                // Buffer message if no subscriber yet, or if it's a broadcast like system_metrics
                 this.messageBuffer.push(data)
                 if (this.messageBuffer.length > WS_BUFFER_SIZE) {
                     this.messageBuffer.shift()
@@ -166,12 +157,10 @@ export class WebSocketManager {
             this.notifyStatusToAll('reconnecting')
             this.scheduleReconnect()
         } else {
-            // Error out all active subscribers if manually closed or failed permanently
             this.notifyErrorToAll('WebSocket connection closed')
             this.subscribers.clear()
             this.messageBuffer = []
             
-            // Reject all pending requests
             for (const [reqId, req] of this.requestCallbacks.entries()) {
                 clearTimeout(req.timeout)
                 req.reject(new Error('WebSocket connection closed'))
@@ -221,7 +210,6 @@ export class WebSocketManager {
         this.reconnectAttempts++
         this.connect().catch(err => {
             console.error('[WS] Reconnect failed', err)
-            // onclose will be triggered again if connection fails during handshake
         })
     }, delay)
   }
@@ -252,18 +240,15 @@ export class WebSocketManager {
   subscribe(callId: string, callback: (event: AgentEvent) => void) {
     this.subscribers.set(callId, callback)
     
-    // Replay and clear buffered messages for this callId
-    const relevantMessages = this.messageBuffer.filter(msg => msg.call_id === callId)
+    const relevantMessages = this.messageBuffer.filter(msg => msg.call_id === callId || msg.type === 'system_metrics')
     if (relevantMessages.length > 0) {
-        console.log(`[WS] Replaying ${relevantMessages.length} buffered messages for ${callId}`)
         relevantMessages.forEach(msg => callback(msg))
-        this.messageBuffer = this.messageBuffer.filter(msg => msg.call_id !== callId)
+        this.messageBuffer = this.messageBuffer.filter(msg => msg.call_id !== callId && msg.type !== 'system_metrics')
     }
   }
 
   unsubscribe(callId: string) {
     this.subscribers.delete(callId)
-    // Also clear any remaining buffered messages for this callId to prevent leaks
     this.messageBuffer = this.messageBuffer.filter(msg => msg.call_id !== callId)
   }
 
@@ -332,7 +317,8 @@ export function useAgentStream() {
     isStreaming: false,
     useWS: false,
     inputPrompt: null,
-    tools: []
+    tools: [],
+    systemMetrics: null
   })
 
   let eventSource: EventSource | null = null
@@ -352,6 +338,7 @@ export function useAgentStream() {
     state.error = null
     state.isStreaming = false
     state.inputPrompt = null
+    state.systemMetrics = null
     
     if (eventSource) {
       eventSource.close()
@@ -378,6 +365,21 @@ export function useAgentStream() {
     } catch (err: any) {
       console.error('Failed to fetch tools:', err)
       return []
+    }
+  }
+
+  const fetchHealth = async () => {
+    try {
+      const headers: Record<string, string> = {}
+      if (BRIDGE_API_KEY) {
+        headers['X-API-Key'] = BRIDGE_API_KEY
+      }
+      const response = await fetch(`${API_BASE_URL}/health`, { headers })
+      if (response.ok) {
+        state.systemMetrics = await response.json()
+      }
+    } catch (err) {
+      console.error('Failed to fetch health metrics:', err)
     }
   }
 
@@ -546,6 +548,8 @@ export function useAgentStream() {
       state.currentStep = payload.step
       state.progressPct = payload.pct
       if (payload.log) state.logs.push(payload.log)
+    } else if (data.type === 'system_metrics') {
+        state.systemMetrics = data.payload
     } else if (data.type === 'input_request') {
         state.status = 'waiting_for_input'
         state.inputPrompt = data.payload.prompt
@@ -556,7 +560,6 @@ export function useAgentStream() {
         state.logs.push('WebSocket connection lost. Reconnecting...')
     } else if (data.type === 'stop_success') {
         state.logs.push('Stop command acknowledged by server.')
-        // stop_success is the final acknowledgement for a stop command
         closeFn()
     } else if (data.type === 'input_success') {
         state.logs.push('Input command acknowledged by server.')
@@ -603,5 +606,5 @@ export function useAgentStream() {
     })
   }
   
-  return { state, runTool, stopTool, sendInput, reset, fetchTools }
+  return { state, runTool, stopTool, sendInput, reset, fetchTools, fetchHealth }
 }
