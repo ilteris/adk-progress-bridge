@@ -7,8 +7,8 @@ def test_health_v323_metadata():
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "1.1.2"
-    assert data["git_commit"] == "2825c9d"
+    assert data["version"] == "1.1.3"
+    assert data["git_commit"] == "6e9b58a"
     assert data["operational_apex"] == "SUPREME ABSOLUTE APEX"
 
 def test_version_v323():
@@ -16,5 +16,5 @@ def test_version_v323():
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "1.1.2"
-    assert data["git_commit"] == "2825c9d"
+    assert data["version"] == "1.1.3"
+    assert data["git_commit"] == "6e9b58a"

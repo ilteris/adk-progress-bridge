@@ -111,6 +111,19 @@ class ToolRegistry:
     def list_tools(self) -> List[str]:
         return list(self._tools.keys())
 
+    async def list_active_tasks(self) -> List[Dict[str, Any]]:
+        """Returns a list of all active tasks in the registry."""
+        async with self._lock:
+            return [
+                {
+                    "call_id": call_id,
+                    "tool_name": data["tool_name"],
+                    "created_at": data["created_at"],
+                    "consumed": data["consumed"]
+                }
+                for call_id, data in self._active_tasks.items()
+            ]
+
     def get_tool(self, name: str):
         return self._tools.get(name)
 
@@ -189,7 +202,6 @@ class ToolRegistry:
                 await self.remove_task(call_id)
 
     async def cleanup_stale_tasks(self, max_age_seconds: int):
-        """Closes tasks that were created more than max_age_seconds ago and never consumed."""
         import time
         now = time.time()
         stale_tasks = []

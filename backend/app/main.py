@@ -27,9 +27,9 @@ WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
-APP_VERSION = "1.1.2"
+APP_VERSION = "1.1.3"
 APP_START_TIME = time.time()
-GIT_COMMIT = "2825c9d"
+GIT_COMMIT = "6e9b58a"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -98,6 +98,10 @@ AUTH_RESPONSES = {401: {"description": "Unauthorized"}}
 @app.get("/tools", response_model=List[str], responses=AUTH_RESPONSES)
 async def list_tools(authenticated: bool = Depends(verify_api_key)):
     return registry.list_tools()
+
+@app.get("/tasks", responses=AUTH_RESPONSES)
+async def list_active_tasks(authenticated: bool = Depends(verify_api_key)):
+    return await registry.list_active_tasks()
 
 @app.post("/start_task/{tool_name}", response_model=TaskStartResponse, responses=AUTH_RESPONSES)
 async def start_task(
@@ -353,6 +357,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 await safe_send_json({
                     "type": "tools_list",
                     "tools": tools,
+                    "request_id": request_id
+                })
+                continue
+            if msg_type == "list_active_tasks":
+                tasks = await registry.list_active_tasks()
+                await safe_send_json({
+                    "type": "active_tasks_list",
+                    "tasks": tasks,
                     "request_id": request_id
                 })
                 continue
