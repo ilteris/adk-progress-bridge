@@ -9,7 +9,7 @@ interface ProgressPayload {
 
 interface AgentEvent {
   call_id: string
-  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list'
+  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'connected' | 'stop_success' | 'input_success' | 'tools_list'
   payload: any
   request_id?: string
   tools?: string[]
@@ -38,19 +38,19 @@ const WS_BASE_URL = API_BASE_URL.replace('http', 'ws')
 // Support VITE_BRIDGE_API_KEY for authenticated requests
 const BRIDGE_API_KEY = import.meta.env.VITE_BRIDGE_API_KEY || ''
 
-// Configuration Constants for WebSocket behavior
+// Configuration Constants for WebSocket behavior (Configurable via Environment Variables)
 // WS_HEARTBEAT_INTERVAL: Frequency (ms) to send a ping to the server to keep connection alive.
-const WS_HEARTBEAT_INTERVAL = 30000
+const WS_HEARTBEAT_INTERVAL = Number(import.meta.env.VITE_WS_HEARTBEAT_INTERVAL) || 30000
 // WS_RECONNECT_MAX_ATTEMPTS: Maximum number of times to try reconnecting before giving up.
-const WS_RECONNECT_MAX_ATTEMPTS = 10
+const WS_RECONNECT_MAX_ATTEMPTS = Number(import.meta.env.VITE_WS_RECONNECT_MAX_ATTEMPTS) || 10
 // WS_REQUEST_TIMEOUT: Max time (ms) to wait for a response to start/list_tools commands.
-const WS_REQUEST_TIMEOUT = 5000
+const WS_REQUEST_TIMEOUT = Number(import.meta.env.VITE_WS_REQUEST_TIMEOUT) || 5000
 // WS_RECONNECT_INITIAL_DELAY: Initial delay (ms) for exponential backoff during reconnection.
-const WS_RECONNECT_INITIAL_DELAY = 1000
+const WS_RECONNECT_INITIAL_DELAY = Number(import.meta.env.VITE_WS_RECONNECT_INITIAL_DELAY) || 1000
 // WS_RECONNECT_MAX_DELAY: Maximum delay (ms) between reconnection attempts.
-const WS_RECONNECT_MAX_DELAY = 30000
+const WS_RECONNECT_MAX_DELAY = Number(import.meta.env.VITE_WS_RECONNECT_MAX_DELAY) || 30000
 // WS_BUFFER_SIZE: Number of messages to buffer if they arrive before a subscriber is ready.
-const WS_BUFFER_SIZE = 1000
+const WS_BUFFER_SIZE = Number(import.meta.env.VITE_WS_BUFFER_SIZE) || 1000
 
 /**
  * Shared WebSocket Manager to support multiple concurrent tasks over a single connection.
@@ -109,6 +109,7 @@ export class WebSocketManager {
       this.ws.onopen = () => {
         console.log('[WS] Connection established')
         this.startHeartbeat()
+        this.notifyStatusToAll('connected')
         this.reconnectAttempts = 0
         this.connectionPromise = null
         resolve()
@@ -131,7 +132,9 @@ export class WebSocketManager {
                 } else {
                     reqResolve(data)
                 }
-                return
+                
+                // If it also has a call_id, don't return so subscribers can also handle it
+                if (!data.call_id) return
             }
 
             // Handle task-specific events
@@ -184,7 +187,7 @@ export class WebSocketManager {
     return this.connectionPromise
   }
 
-  private notifyStatusToAll(type: 'reconnecting') {
+  private notifyStatusToAll(type: 'reconnecting' | 'connected') {
     for (const [callId, callback] of this.subscribers.entries()) {
         callback({
             call_id: callId,
@@ -277,7 +280,11 @@ export class WebSocketManager {
     }
   }
 
-  private async sendWithCorrelation(data: any, timeoutMs: number = WS_REQUEST_TIMEOUT): Promise<any> {
+  /**
+   * Sends a message over WebSocket and waits for a response with a matching request_id.
+   * Enables reliable command-response cycles for high-concurrency environments.
+   */
+  public async sendWithCorrelation(data: any, timeoutMs: number = WS_REQUEST_TIMEOUT): Promise<any> {
       await this.connect()
       const requestId = Math.random().toString(36).substring(2, 11)
       data.request_id = requestId
@@ -463,17 +470,15 @@ export function useAgentStream() {
 
   const stopTool = async () => {
     if (state.useWS && state.callId && state.isStreaming) {
-      const requestId = Math.random().toString(36).substring(2, 11)
-      const sent = wsManager.send({
-        type: 'stop',
-        call_id: state.callId,
-        request_id: requestId
-      })
-      if (sent) {
-        state.status = 'cancelled'
-        state.isStreaming = false
-      } else {
-          state.error = 'Failed to send stop command: WebSocket connection lost'
+      try {
+        await wsManager.sendWithCorrelation({
+          type: 'stop',
+          call_id: state.callId
+        })
+        state.logs.push('Stop command sent via WebSocket.')
+        // Note: status will be updated to 'cancelled' in handleEvent when stop_success arrives
+      } catch (err: any) {
+          state.error = `Failed to send stop command: ${err.message}`
           state.status = 'error'
           state.isStreaming = false
           reset()
@@ -506,15 +511,16 @@ export function useAgentStream() {
   const sendInput = async (value: string) => {
     if (state.callId && state.status === 'waiting_for_input') {
         if (state.useWS) {
-            const requestId = Math.random().toString(36).substring(2, 11)
-            const sent = wsManager.send({
-                type: 'input',
-                call_id: state.callId,
-                value: value,
-                request_id: requestId
-            })
-            if (!sent) {
-                state.error = 'Failed to send input: WebSocket connection lost'
+            try {
+                await wsManager.sendWithCorrelation({
+                    type: 'input',
+                    call_id: state.callId,
+                    value: value
+                })
+                state.logs.push('Input command acknowledged by server.')
+                state.logs.push(`Sent input: ${value}`)
+            } catch (err: any) {
+                state.error = `Failed to send input: ${err.message}`
                 state.status = 'error'
                 return
             }
@@ -532,11 +538,11 @@ export function useAgentStream() {
                         value: value
                     })
                 })
+                state.logs.push(`Sent input: ${value}`)
             } catch (err) {}
         }
         state.status = 'connected'
         state.inputPrompt = null
-        state.logs.push(`Sent input: ${value}`)
     }
   }
 
@@ -554,9 +560,14 @@ export function useAgentStream() {
         state.status = 'reconnecting'
         state.isConnected = false
         state.logs.push('WebSocket connection lost. Reconnecting...')
+    } else if (data.type === 'connected') {
+        state.status = 'connected'
+        state.isConnected = true
+        state.logs.push('WebSocket connection re-established.')
     } else if (data.type === 'stop_success') {
         state.logs.push('Stop command acknowledged by server.')
-        // stop_success is the final acknowledgement for a stop command
+        state.status = 'cancelled'
+        state.isStreaming = false
         closeFn()
     } else if (data.type === 'input_success') {
         state.logs.push('Input command acknowledged by server.')
