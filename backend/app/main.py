@@ -46,7 +46,10 @@ from .metrics import (
     PROCESS_IO_READ_COUNT, PROCESS_IO_WRITE_COUNT,
     PROCESS_CPU_PERCENT_TOTAL, SYSTEM_NETWORK_ERRORS_IN, SYSTEM_NETWORK_ERRORS_OUT,
     SYSTEM_NETWORK_DROPS_IN, SYSTEM_NETWORK_DROPS_OUT,
-    SYSTEM_MEMORY_ACTIVE_BYTES, SYSTEM_MEMORY_INACTIVE_BYTES
+    SYSTEM_MEMORY_ACTIVE_BYTES, SYSTEM_MEMORY_INACTIVE_BYTES,
+    SYSTEM_CPU_INTERRUPTS, SYSTEM_CPU_SOFT_INTERRUPTS, SYSTEM_CPU_SYSCALLS,
+    PROCESS_MEMORY_SHARED_BYTES, PROCESS_MEMORY_TEXT_BYTES, PROCESS_MEMORY_DATA_BYTES,
+    PROCESS_NUM_THREADS
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -55,10 +58,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v340-ultimate"
-OPERATIONAL_APEX = "SUPREME ABSOLUTE APEX OMEGA ULTRA ULTIMATE"
+GIT_COMMIT = "v341-god-tier"
+OPERATIONAL_APEX = "GOD TIER OMEGA PLUS ULTRA"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -315,6 +318,36 @@ def get_system_memory_advanced():
         except:
             pass
     return 0, 0
+
+# v341 God Tier Helpers
+def get_system_cpu_stats():
+    if psutil:
+        try:
+            stats = psutil.cpu_stats()
+            return stats.interrupts, stats.soft_interrupts, stats.syscalls
+        except:
+            pass
+    return 0, 0, 0
+
+def get_process_memory_advanced():
+    if _process:
+        try:
+            mem = _process.memory_info()
+            shared = getattr(mem, "shared", 0)
+            text = getattr(mem, "text", 0)
+            data = getattr(mem, "data", 0)
+            return shared, text, data
+        except:
+            pass
+    return 0, 0, 0
+
+def get_process_num_threads():
+    if _process:
+        try:
+            return _process.num_threads()
+        except:
+            pass
+    return 0
 
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
@@ -601,6 +634,18 @@ async def health_check():
     SYSTEM_MEMORY_ACTIVE_BYTES.set(m_active)
     SYSTEM_MEMORY_INACTIVE_BYTES.set(m_inactive)
 
+    # v341 metrics
+    s_ints, s_sints, s_sysc = get_system_cpu_stats()
+    SYSTEM_CPU_INTERRUPTS.set(s_ints)
+    SYSTEM_CPU_SOFT_INTERRUPTS.set(s_sints)
+    SYSTEM_CPU_SYSCALLS.set(s_sysc)
+    p_shared, p_text, p_data = get_process_memory_advanced()
+    PROCESS_MEMORY_SHARED_BYTES.set(p_shared)
+    PROCESS_MEMORY_TEXT_BYTES.set(p_text)
+    PROCESS_MEMORY_DATA_BYTES.set(p_data)
+    p_num_threads = get_process_num_threads()
+    PROCESS_NUM_THREADS.set(p_num_threads)
+
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
     for t in active_tasks_list:
@@ -633,6 +678,11 @@ async def health_check():
             "user_percent": user_cpu,
             "system_percent": sys_cpu,
             "idle_percent": idle_p
+        },
+        "system_cpu_stats": {
+            "interrupts": s_ints,
+            "soft_interrupts": s_sints,
+            "syscalls": s_sysc
         },
         "thread_count": thread_count,
         "open_fds": open_fds,
@@ -705,6 +755,12 @@ async def health_check():
             "system_seconds": proc_sys_cpu,
             "percent": p_cpu_p
         },
+        "process_memory_advanced": {
+            "shared_bytes": p_shared,
+            "text_bytes": p_text,
+            "data_bytes": p_data
+        },
+        "process_num_threads": p_num_threads,
         "system_network_packets": {
             "sent": sys_net_psent,
             "recv": sys_net_precv
@@ -818,6 +874,17 @@ async def metrics():
     sm_active, sm_inactive = get_system_memory_advanced()
     SYSTEM_MEMORY_ACTIVE_BYTES.set(sm_active)
     SYSTEM_MEMORY_INACTIVE_BYTES.set(sm_inactive)
+
+    # v341
+    ints, sints, sysc = get_system_cpu_stats()
+    SYSTEM_CPU_INTERRUPTS.set(ints)
+    SYSTEM_CPU_SOFT_INTERRUPTS.set(sints)
+    SYSTEM_CPU_SYSCALLS.set(sysc)
+    pshared, ptext, pdata = get_process_memory_advanced()
+    PROCESS_MEMORY_SHARED_BYTES.set(pshared)
+    PROCESS_MEMORY_TEXT_BYTES.set(ptext)
+    PROCESS_MEMORY_DATA_BYTES.set(pdata)
+    PROCESS_NUM_THREADS.set(get_process_num_threads())
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

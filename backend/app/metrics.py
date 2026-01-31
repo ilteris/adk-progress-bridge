@@ -340,6 +340,42 @@ SYSTEM_MEMORY_INACTIVE_BYTES = Gauge(
     "System-wide inactive memory in bytes"
 )
 
+# v341 God Tier Omega Plus Ultra Metrics
+SYSTEM_CPU_INTERRUPTS = Gauge(
+    "adk_system_cpu_interrupts_total",
+    "Total number of interrupts since boot"
+)
+
+SYSTEM_CPU_SOFT_INTERRUPTS = Gauge(
+    "adk_system_cpu_soft_interrupts_total",
+    "Total number of soft interrupts since boot"
+)
+
+SYSTEM_CPU_SYSCALLS = Gauge(
+    "adk_system_cpu_syscalls_total",
+    "Total number of system calls since boot"
+)
+
+PROCESS_MEMORY_SHARED_BYTES = Gauge(
+    "adk_process_memory_shared_bytes",
+    "Shared memory usage of the process in bytes"
+)
+
+PROCESS_MEMORY_TEXT_BYTES = Gauge(
+    "adk_process_memory_text_bytes",
+    "Text segment memory usage of the process in bytes"
+)
+
+PROCESS_MEMORY_DATA_BYTES = Gauge(
+    "adk_process_memory_data_bytes",
+    "Data segment memory usage of the process in bytes"
+)
+
+PROCESS_NUM_THREADS = Gauge(
+    "adk_process_num_threads",
+    "Number of threads used by the process"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():
