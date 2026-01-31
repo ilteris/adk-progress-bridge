@@ -28,8 +28,8 @@ Manages bi-directional input for tasks that require user interaction.
 
 *   **REST Flow (SSE):**
     *   `GET /tools`: Returns a list of all registered tool names.
-    *   `GET /health`: Returns system health status, version, git commit, uptime, CPU count, thread count, active WebSocket connections, load average, active task count, total tasks started, memory usage, and configuration parameters (heartbeat timeout, cleanup interval, etc.).
-    *   `GET /version`: Returns current API version, git commit hash, and operational status (e.g., "SUPREME ABSOLUTE APEX").
+    *   `GET /health`: Returns system health status, version (**1.1.0**), git commit, uptime, CPU count, thread count, active WebSocket connections, **WebSocket messages received/sent counters**, load average, active task count, total tasks started, memory usage, and configuration parameters (heartbeat timeout, cleanup interval, etc.).
+    *   `GET /version`: Returns current API version (**1.1.0**), git commit hash, and operational status (e.g., "SUPREME ABSOLUTE APEX").
     *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id`.
     *   `GET /stream/{call_id}`: SSE endpoint for progress streaming.
     *   `POST /stop_task/{call_id}`: Manual termination.
@@ -100,3 +100,4 @@ All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` hea
 4.  **Stale Task Cleanup:** A background task on the backend cleans up tasks that were initiated but never streamed/consumed within a timeout period (default 300s).
 5.  **Thread-Safe Writes:** The backend uses an `asyncio.Lock` to ensure WebSocket frames are not interleaved during concurrent task streaming.
 6.  **Message Buffering:** The frontend buffers incoming WebSocket messages that arrive before the UI has fully subscribed to a task, preventing race conditions.
+7.  **Operational Visibility:** Enhanced health monitoring with real-time tracking of active WebSocket connections and total message throughput.

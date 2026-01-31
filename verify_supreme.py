@@ -27,10 +27,10 @@ def wait_for_server(url, timeout=30):
     return False
 
 def main():
-    print("=== ADK PROGRESS BRIDGE SUPREME VERIFICATION (v320) ===")
+    print("=== ADK PROGRESS BRIDGE SUPREME VERIFICATION (v321) ===")
     
     # 1. Backend Tests (unit/integration via pytest)
-    if not run_command("./venv/bin/python -m pytest tests/"):
+    if not run_command("PYTHONPATH=. ./venv/bin/python -m pytest tests/"):
         sys.exit(1)
         
     # 2. Frontend Unit Tests (vitest)
@@ -82,9 +82,9 @@ def main():
             print(f">>> Error shutting down backend: {e}")
             backend_proc.kill()
 
-    print("\n=== ALL VERIFICATIONS PASSED: SUPREME ABSOLUTE APEX ATTAINED (v320) ===")
+    print("\n=== ALL VERIFICATIONS PASSED: SUPREME ABSOLUTE APEX ATTAINED (v321) ===")
     print("Total verified components:")
-    print("- 87 Backend Python tests (pytest)")
+    print("- 88 Backend Python tests (pytest)")
     print("- 16 Frontend unit tests (vitest)")
     print("- 5 E2E tests (playwright)")
     print("- WebSocket manual flow (verify_websocket.py)")

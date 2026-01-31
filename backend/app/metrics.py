@@ -36,5 +36,17 @@ ACTIVE_WS_CONNECTIONS = Gauge(
     "Number of active WebSocket connections"
 )
 
+WS_MESSAGES_RECEIVED_TOTAL = Counter(
+    "adk_ws_messages_received_total",
+    "Total number of messages received via WebSocket",
+    ["message_type"]
+)
+
+WS_MESSAGES_SENT_TOTAL = Counter(
+    "adk_ws_messages_sent_total",
+    "Total number of messages sent via WebSocket",
+    ["message_type"]
+)
+
 def get_metrics():
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)

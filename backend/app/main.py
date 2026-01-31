@@ -17,14 +17,17 @@ from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_
 from .logger import logger
 from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
-from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, ACTIVE_WS_CONNECTIONS
+from .metrics import (
+    TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, 
+    ACTIVE_WS_CONNECTIONS, WS_MESSAGES_RECEIVED_TOTAL, WS_MESSAGES_SENT_TOTAL
+)
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
 WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
-APP_VERSION = "1.0.9"
+APP_VERSION = "1.1.0"
 APP_START_TIME = time.time()
 GIT_COMMIT = "0eb2578"
 
@@ -199,6 +202,20 @@ async def stop_task(
 @app.get("/health") 
 async def health_check(): 
     load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
+    
+    # Calculate totals from metrics
+    ws_received = 0
+    for m in WS_MESSAGES_RECEIVED_TOTAL.collect():
+        for s in m.samples:
+            if s.name.endswith("_total"):
+                ws_received += s.value
+                
+    ws_sent = 0
+    for m in WS_MESSAGES_SENT_TOTAL.collect():
+        for s in m.samples:
+            if s.name.endswith("_total"):
+                ws_sent += s.value
+
     return { 
         "status": "healthy", 
         "version": APP_VERSION, 
@@ -209,6 +226,8 @@ async def health_check():
         "cpu_count": os.cpu_count(),
         "thread_count": threading.active_count(),
         "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
+        "ws_messages_received": int(ws_received),
+        "ws_messages_sent": int(ws_sent),
         "load_avg": load_avg,
         "memory_rss_kb": get_memory_usage_kb(),
         "registry_size": registry.active_task_count, 
@@ -257,6 +276,8 @@ async def websocket_endpoint(websocket: WebSocket):
         async def safe_send_json(data: dict):
             async with send_lock:
                 try:
+                    msg_type = data.get("type", "unknown")
+                    WS_MESSAGES_SENT_TOTAL.labels(message_type=msg_type).inc()
                     await websocket.send_json(data)
                 except Exception as e:
                     logger.error(f"Error sending WS message: {e}")
@@ -275,6 +296,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     continue
 
                 if "bytes" in msg:
+                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="binary").inc()
                     logger.warning("Received binary frame over WebSocket")
                     await safe_send_json({
                         "type": "error",
@@ -285,6 +307,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 data = msg.get("text", "")
                 
                 if len(data) > WS_MESSAGE_SIZE_LIMIT:
+                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="oversized").inc()
                     logger.warning(f"WebSocket message exceeded size limit: {len(data)} bytes")
                     await safe_send_json({
                         "type": "error",
@@ -294,16 +317,21 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 message = json.loads(data)
                 if not isinstance(message, dict):
+                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="invalid_format").inc()
                     logger.warning(f"Received non-dictionary message over WebSocket: {type(message)}")
                     await safe_send_json({
                         "type": "error",
                         "payload": {"detail": "Message must be a JSON object (dictionary)"}
                     })
                     continue
+                
+                msg_type = message.get("type", "unknown")
+                WS_MESSAGES_RECEIVED_TOTAL.labels(message_type=msg_type).inc()
             except asyncio.TimeoutError:
                 logger.warning("WebSocket heartbeat timeout exceeded")
                 break
             except json.JSONDecodeError:
+                WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="invalid_json").inc()
                 logger.warning("Received invalid JSON over WebSocket")
                 await safe_send_json({
                     "type": "error",
@@ -314,7 +342,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.error(f"Error receiving WS message: {e}")
                 break
             
-            msg_type = message.get("type")
             request_id = message.get("request_id")
             
             if msg_type == "ping":

@@ -2,7 +2,7 @@
 
 A real-time progress bridge between long-running agent tools and a frontend/TUI. Built for high-fidelity agent status monitoring.
 
-**Current Version:** 1.0.9 ("SUPREME ABSOLUTE APEX")
+**Current Version:** 1.1.0 ("SUPREME ABSOLUTE APEX")
 
 ## 🚀 Key Features
 
@@ -17,7 +17,9 @@ A real-time progress bridge between long-running agent tools and a frontend/TUI.
   - Message buffering to prevent race conditions.
   - Stale task cleanup on the backend.
 - **Security:** API Key authentication for all communication channels.
-- **Observability:** Integrated Prometheus metrics for task duration and status.
+- **Observability:** 
+  - Integrated Prometheus metrics for task duration, status, and **WebSocket throughput**.
+  - Enhanced `/health` endpoint with real-time operational metrics.
 
 ## 🛠️ Tech Stack
 
@@ -45,7 +47,7 @@ npm run dev
 ```
 
 ### 3. Verification
-Run the supreme verification suite to ensure all 108 tests pass:
+Run the supreme verification suite to ensure all tests pass:
 ```bash
 python3 verify_supreme.py
 ```
