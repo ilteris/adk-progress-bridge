@@ -192,3 +192,15 @@ def test_websocket_non_dict_json():
         data = websocket.receive_json()
         assert data["type"] == "error"
         assert "must be a JSON object" in data["payload"]["detail"]
+
+def test_websocket_unknown_type():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "type": "unknown_command_123",
+            "request_id": "unknown_req"
+        })
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert data.get("request_id") == "unknown_req"
+        assert "Unknown message type" in data["payload"]["detail"]
