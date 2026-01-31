@@ -15,9 +15,9 @@ async def test_health_metrics_v328():
     assert response.status_code == 200
     data = response.json()
     
-    # Check version and commit
-    assert data["version"] == "1.1.8"
-    assert data["git_commit"] == "v328-apex"
+    # Check version and commit (updated to use constants to support v329 progression)
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT
     
     # Check new system metrics
     assert "cpu_usage_percent" in data

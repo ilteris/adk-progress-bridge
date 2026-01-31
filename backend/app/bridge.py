@@ -2,7 +2,7 @@ import asyncio
 from typing import Any, Dict, List, AsyncGenerator, Callable, Literal, Union, Optional
 from pydantic import BaseModel, Field, validate_call
 from .logger import logger
-from .metrics import ACTIVE_TASKS, PEAK_ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL
+from .metrics import ACTIVE_TASKS, PEAK_ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL, TOTAL_TASKS_STARTED
 
 class ProgressPayload(BaseModel):
     """
@@ -155,6 +155,7 @@ class ToolRegistry:
             }
             ACTIVE_TASKS.labels(tool_name=tool_name).inc()
             self._total_tasks_started += 1
+            TOTAL_TASKS_STARTED.inc()
             
             current_count = len(self._active_tasks)
             if current_count > self._peak_active_tasks:

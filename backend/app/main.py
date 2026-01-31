@@ -26,7 +26,8 @@ from .auth import verify_api_key, verify_api_key_ws
 from .metrics import (
     TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, 
     ACTIVE_WS_CONNECTIONS, WS_MESSAGES_RECEIVED_TOTAL, WS_MESSAGES_SENT_TOTAL, BUILD_INFO,
-    PEAK_ACTIVE_TASKS
+    PEAK_ACTIVE_TASKS, WS_BYTES_RECEIVED_TOTAL, WS_BYTES_SENT_TOTAL,
+    WS_REQUEST_LATENCY, WS_CONNECTION_DURATION, MEMORY_PERCENT, TOTAL_TASKS_STARTED
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -35,9 +36,9 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.1.8"
+APP_VERSION = "1.2.0"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v328-apex"
+GIT_COMMIT = "v330-apex"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -80,6 +81,14 @@ def get_memory_usage_kb():
     except:
         pass
     return 0
+
+def get_memory_percent():
+    if psutil:
+        try:
+            return psutil.Process().memory_percent()
+        except:
+            pass
+    return 0.0
 
 def get_cpu_percent():
     if psutil:
@@ -261,6 +270,8 @@ async def health_check():
                 ws_sent += s.value
 
     uptime_seconds = time.time() - APP_START_TIME
+    mem_percent = get_memory_percent()
+    MEMORY_PERCENT.set(mem_percent)
     
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -281,8 +292,11 @@ async def health_check():
         "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
         "ws_messages_received": int(ws_received),
         "ws_messages_sent": int(ws_sent),
+        "ws_bytes_received": int(WS_BYTES_RECEIVED_TOTAL._value.get()),
+        "ws_bytes_sent": int(WS_BYTES_SENT_TOTAL._value.get()),
         "load_avg": load_avg,
         "memory_rss_kb": get_memory_usage_kb(),
+        "memory_percent": mem_percent,
         "registry_size": registry.active_task_count, 
         "peak_registry_size": registry.peak_active_tasks,
         "total_tasks_started": registry.total_tasks_started,
@@ -314,11 +328,16 @@ async def get_version():
 async def metrics():
     from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
     from fastapi.responses import Response
+    
+    # Update some gauges before returning
+    MEMORY_PERCENT.set(get_memory_percent())
+    
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    conn_start_time = time.perf_counter()
     ACTIVE_WS_CONNECTIONS.inc()
     active_tasks: Dict[str, asyncio.Task] = {}
     try:
@@ -335,7 +354,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 try:
                     msg_type = data.get("type", "unknown")
                     WS_MESSAGES_SENT_TOTAL.labels(message_type=msg_type).inc()
-                    await websocket.send_json(data)
+                    json_str = json.dumps(data)
+                    WS_BYTES_SENT_TOTAL.inc(len(json_str))
+                    await websocket.send_text(json_str)
                 except Exception as e:
                     logger.error(f"Error sending WS message: {e}")
                     raise
@@ -353,6 +374,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     continue
 
                 if "bytes" in msg:
+                    WS_BYTES_RECEIVED_TOTAL.inc(len(msg["bytes"]))
                     WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="binary").inc()
                     logger.warning("Received binary frame over WebSocket")
                     await safe_send_json({
@@ -362,6 +384,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     continue
                 
                 data = msg.get("text", "")
+                WS_BYTES_RECEIVED_TOTAL.inc(len(data))
                 
                 if len(data) > WS_MESSAGE_SIZE_LIMIT:
                     WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="oversized").inc()
@@ -372,6 +395,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     })
                     continue
 
+                req_start_time = time.perf_counter()
                 message = json.loads(data)
                 if not isinstance(message, dict):
                     WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="invalid_format").inc()
@@ -401,90 +425,125 @@ async def websocket_endpoint(websocket: WebSocket):
             
             request_id = message.get("request_id")
             
-            if msg_type == "ping":
-                await safe_send_json({"type": "pong"})
-                continue
-            if msg_type == "list_tools":
-                tools = registry.list_tools()
-                await safe_send_json({
-                    "type": "tools_list",
-                    "tools": tools,
-                    "request_id": request_id
-                })
-                continue
-            if msg_type == "list_active_tasks":
-                tasks = await registry.list_active_tasks()
-                await safe_send_json({
-                    "type": "active_tasks_list",
-                    "tasks": tasks,
-                    "request_id": request_id
-                })
-                continue
-            if msg_type == "start":
-                if registry.active_task_count >= MAX_CONCURRENT_TASKS:
+            try:
+                if msg_type == "ping":
+                    await safe_send_json({"type": "pong"})
+                elif msg_type == "list_tools":
+                    tools = registry.list_tools()
                     await safe_send_json({
-                        "type": "error",
-                        "request_id": request_id,
-                        "payload": {"detail": f"Server busy: Maximum concurrent tasks ({MAX_CONCURRENT_TASKS}) reached."}
-                    })
-                    continue
-
-                tool_name = message.get("tool_name")
-                args = message.get("args", {})
-                tool = registry.get_tool(tool_name)
-                if not tool:
-                    await safe_send_json({
-                        "type": "error",
-                        "request_id": request_id,
-                        "payload": {"detail": f"Tool not found: {tool_name}"}
-                    })
-                    continue
-                call_id = str(uuid.uuid4())
-                try:
-                    gen = tool(**args)
-                    await registry.store_task(call_id, gen, tool_name)
-                    await registry.mark_consumed(call_id)
-                    await safe_send_json({
-                        "type": "task_started", 
-                        "call_id": call_id, 
-                        "tool_name": tool_name, 
+                        "type": "tools_list",
+                        "tools": tools,
                         "request_id": request_id
                     })
-                    task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
-                    active_tasks[call_id] = task
-                except Exception as e:
-                    logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
+                elif msg_type == "list_active_tasks":
+                    tasks = await registry.list_active_tasks()
                     await safe_send_json({
-                        "type": "error",
-                        "call_id": call_id,
-                        "request_id": request_id,
-                        "payload": {"detail": str(e)}
-                    })
-            elif msg_type == "stop":
-                call_id = message.get("call_id")
-                if call_id in active_tasks:
-                    logger.info(f"Stopping task {call_id} via WebSocket request", extra={"call_id": call_id})
-                    active_tasks[call_id].cancel()
-                    await safe_send_json({
-                        "call_id": call_id,
-                        "type": "progress",
-                        "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}
-                    })
-                    await safe_send_json({
-                        "type": "stop_success",
-                        "call_id": call_id,
+                        "type": "active_tasks_list",
+                        "tasks": tasks,
                         "request_id": request_id
                     })
-                else:
-                    # Try to stop task that might be in the registry but not in active_tasks (e.g. not being streamed yet)
-                    task_data = await registry.get_task_no_consume(call_id)
-                    if task_data:
-                        logger.info(f"Stopping non-streamed task {call_id} via WebSocket request", extra={"call_id": call_id})
-                        await task_data["gen"].aclose()
-                        if not task_data["consumed"]:
-                            await registry.remove_task(call_id)
+                elif msg_type == "start":
+                    if registry.active_task_count >= MAX_CONCURRENT_TASKS:
+                        await safe_send_json({
+                            "type": "error",
+                            "request_id": request_id,
+                            "payload": {"detail": f"Server busy: Maximum concurrent tasks ({MAX_CONCURRENT_TASKS}) reached."}
+                        })
+                    else:
+                        tool_name = message.get("tool_name")
+                        args = message.get("args", {})
+                        tool = registry.get_tool(tool_name)
+                        if not tool:
+                            await safe_send_json({
+                                "type": "error",
+                                "request_id": request_id,
+                                "payload": {"detail": f"Tool not found: {tool_name}"}
+                            })
+                        else:
+                            call_id = str(uuid.uuid4())
+                            try:
+                                gen = tool(**args)
+                                await registry.store_task(call_id, gen, tool_name)
+                                await registry.mark_consumed(call_id)
+                                await safe_send_json({
+                                    "type": "task_started", 
+                                    "call_id": call_id, 
+                                    "tool_name": tool_name, 
+                                    "request_id": request_id
+                                })
+                                task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
+                                active_tasks[call_id] = task
+                            except Exception as e:
+                                logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
+                                await safe_send_json({
+                                    "type": "error",
+                                    "call_id": call_id,
+                                    "request_id": request_id,
+                                    "payload": {"detail": str(e)}
+                                })
+                elif msg_type == "stop":
+                    call_id = message.get("call_id")
+                    if call_id in active_tasks:
+                        logger.info(f"Stopping task {call_id} via WebSocket request", extra={"call_id": call_id})
+                        active_tasks[call_id].cancel()
+                        await safe_send_json({
+                            "call_id": call_id,
+                            "type": "progress",
+                            "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}
+                        })
                         await safe_send_json({
                             "type": "stop_success",
+                            "call_id": call_id,
+                            "request_id": request_id
+                        })
+                    else:
+                        # Try to stop task that might be in the registry but not in active_tasks (e.g. not being streamed yet)
+                        task_data = await registry.get_task_no_consume(call_id)
+                        if task_data:
+                            logger.info(f"Stopping non-streamed task {call_id} via WebSocket request", extra={"call_id": call_id})
+                            await task_data["gen"].aclose()
+                            if not task_data["consumed"]:
+                                await registry.remove_task(call_id)
+                            await safe_send_json({
+                                "type": "stop_success",
+                                "call_id": call_id,
+                                "request_id": request_id
+                            })
+                        else:
+                            await safe_send_json({
+                                "type": "error",
+                                "call_id": call_id,
+                                "request_id": request_id, 
+                                "payload": {"detail": f"No active task found with call_id: {call_id}"}
+                            })
+                elif msg_type == "subscribe":
+                    call_id = message.get("call_id")
+                    task_data = await registry.get_task(call_id)
+                    if task_data:
+                        tool_name = task_data["tool_name"]
+                        gen = task_data["gen"]
+                        await safe_send_json({
+                            "type": "task_started", 
+                            "call_id": call_id, 
+                            "tool_name": tool_name, 
+                            "request_id": request_id
+                        })
+                        task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
+                        active_tasks[call_id] = task
+                    else:
+                        await safe_send_json({
+                            "type": "error",
+                            "call_id": call_id,
+                            "request_id": request_id, 
+                            "payload": {"detail": f"Task not found or already being streamed: {call_id}"}
+                        })
+                elif msg_type == "input":
+                    call_id = message.get("call_id")
+                    value = message.get("value")
+                    if await input_manager.provide_input(call_id, value):
+                        logger.info(f"Input received for task {call_id}", extra={"call_id": call_id})
+                        await safe_send_json({
+                            "type": "input_success",
                             "call_id": call_id,
                             "request_id": request_id
                         })
@@ -493,57 +552,24 @@ async def websocket_endpoint(websocket: WebSocket):
                             "type": "error",
                             "call_id": call_id,
                             "request_id": request_id, 
-                            "payload": {"detail": f"No active task found with call_id: {call_id}"}
+                            "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
                         })
-            elif msg_type == "subscribe":
-                call_id = message.get("call_id")
-                task_data = await registry.get_task(call_id)
-                if task_data:
-                    tool_name = task_data["tool_name"]
-                    gen = task_data["gen"]
-                    await safe_send_json({
-                        "type": "task_started", 
-                        "call_id": call_id, 
-                        "tool_name": tool_name, 
-                        "request_id": request_id
-                    })
-                    task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
-                    active_tasks[call_id] = task
                 else:
+                    logger.warning(f"Unknown WebSocket message type: {msg_type}", extra={"ws_message": message})
                     await safe_send_json({
                         "type": "error",
-                        "call_id": call_id,
                         "request_id": request_id, 
-                        "payload": {"detail": f"Task not found or already being streamed: {call_id}"}
+                        "payload": {"detail": f"Unknown message type: {msg_type}"}
                     })
-            elif msg_type == "input":
-                call_id = message.get("call_id")
-                value = message.get("value")
-                if await input_manager.provide_input(call_id, value):
-                    logger.info(f"Input received for task {call_id}", extra={"call_id": call_id})
-                    await safe_send_json({
-                        "type": "input_success",
-                        "call_id": call_id,
-                        "request_id": request_id
-                    })
-                else:
-                    await safe_send_json({
-                        "type": "error",
-                        "call_id": call_id,
-                        "request_id": request_id, 
-                        "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
-                    })
-            else:
-                logger.warning(f"Unknown WebSocket message type: {msg_type}", extra={"ws_message": message})
-                await safe_send_json({
-                    "type": "error",
-                    "request_id": request_id, 
-                    "payload": {"detail": f"Unknown message type: {msg_type}"}
-                })
+            finally:
+                req_latency = time.perf_counter() - req_start_time
+                WS_REQUEST_LATENCY.labels(message_type=msg_type).observe(req_latency)
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
         ACTIVE_WS_CONNECTIONS.dec()
+        conn_duration = time.perf_counter() - conn_start_time
+        WS_CONNECTION_DURATION.observe(conn_duration)
         if active_tasks:
             logger.info(f"Cleaning up {len(active_tasks)} WebSocket tasks due to disconnect/timeout")
             for task in active_tasks.values():

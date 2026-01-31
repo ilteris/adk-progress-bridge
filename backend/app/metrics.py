@@ -53,6 +53,37 @@ WS_MESSAGES_SENT_TOTAL = Counter(
     ["message_type"]
 )
 
+WS_BYTES_RECEIVED_TOTAL = Counter(
+    "adk_ws_bytes_received_total",
+    "Total number of bytes received via WebSocket"
+)
+
+WS_BYTES_SENT_TOTAL = Counter(
+    "adk_ws_bytes_sent_total",
+    "Total number of bytes sent via WebSocket"
+)
+
+WS_REQUEST_LATENCY = Histogram(
+    "adk_ws_request_latency_seconds",
+    "Latency of WebSocket request processing",
+    ["message_type"]
+)
+
+WS_CONNECTION_DURATION = Histogram(
+    "adk_ws_connection_duration_seconds",
+    "Duration of WebSocket connections"
+)
+
+MEMORY_PERCENT = Gauge(
+    "adk_memory_percent",
+    "Memory usage percentage of the process"
+)
+
+TOTAL_TASKS_STARTED = Counter(
+    "adk_total_tasks_started_total",
+    "Total number of tasks started since application launch"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():
