@@ -1,0 +1,16 @@
+{"timestamp": "2026-01-30T15:12:07.638554", "level": "INFO", "message": "Tool registered: long_audit", "module": "bridge", "func": "decorator", "tool_name": "long_audit", "taskName": "Task-1"}
+{"timestamp": "2026-01-30T15:12:07.638738", "level": "INFO", "message": "Tool registered: security_scan", "module": "bridge", "func": "decorator", "tool_name": "security_scan", "taskName": "Task-1"}
+{"timestamp": "2026-01-30T15:12:07.638842", "level": "INFO", "message": "Tool registered: multi_stage_analysis", "module": "bridge", "func": "decorator", "tool_name": "multi_stage_analysis", "taskName": "Task-1"}
+{"timestamp": "2026-01-30T15:12:07.638927", "level": "INFO", "message": "Tool registered: parallel_report_generation", "module": "bridge", "func": "decorator", "tool_name": "parallel_report_generation", "taskName": "Task-1"}
+{"timestamp": "2026-01-30T15:12:07.639008", "level": "INFO", "message": "Tool registered: brittle_process", "module": "bridge", "func": "decorator", "tool_name": "brittle_process", "taskName": "Task-1"}
+{"timestamp": "2026-01-30T15:12:07.639060", "level": "INFO", "message": "Tool registered: interactive_task", "module": "bridge", "func": "decorator", "tool_name": "interactive_task", "taskName": "Task-1"}
+{"timestamp": "2026-01-30T15:12:07.639118", "level": "INFO", "message": "Tool registered: large_payload_tool", "module": "bridge", "func": "decorator", "tool_name": "large_payload_tool", "taskName": "Task-1"}
+INFO:     Started server process [21419]
+INFO:     Waiting for application startup.
+{"timestamp": "2026-01-30T15:12:07.639311", "level": "INFO", "message": "Background cleanup task started", "module": "main", "func": "lifespan", "taskName": "Task-2"}
+INFO:     Application startup complete.
+ERROR:    [Errno 48] error while attempting to bind on address ('127.0.0.1', 8000): [errno 48] address already in use
+INFO:     Waiting for application shutdown.
+{"timestamp": "2026-01-30T15:12:07.639540", "level": "INFO", "message": "Server shutdown: Cleaned up active tasks", "module": "main", "func": "lifespan", "taskName": "Task-2"}
+{"timestamp": "2026-01-30T15:12:07.639584", "level": "INFO", "message": "Background cleanup task cancelled", "module": "main", "func": "cleanup_background_task", "taskName": "Task-3"}
+INFO:     Application shutdown complete.

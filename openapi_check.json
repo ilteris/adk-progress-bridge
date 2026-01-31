@@ -2,25 +2,44 @@
   "openapi": "3.1.0",
   "info": {
     "title": "ADK Progress Bridge",
-    "description": "\nA real-time bridge for Google Agent Development Kit (ADK) tools. \nTransforms long-running backend tasks into streaming Server-Sent Events (SSE) \nto provide immediate feedback to the frontend.\n\n### Key Features:\n* **Tool Execution**: Start any registered tool with arbitrary arguments.\n* **Progress Streaming**: Receive granular progress updates, logs, and metadata via SSE.\n* **Observability**: Built-in Prometheus metrics and structured logging.\n* **Resilience**: Automatic cleanup of stale sessions and graceful shutdown.\n",
-    "contact": {
-      "name": "Teddy",
-      "url": "https://github.com/google-marketing-solutions/adk-progress-bridge"
-    },
-    "license": {
-      "name": "MIT"
-    },
-    "version": "1.0.0"
+    "description": "A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
+    "version": "1.6.4"
   },
   "paths": {
-    "/metrics": {
+    "/tools": {
       "get": {
-        "tags": [
-          "Observability"
-        ],
-        "summary": "Get Prometheus Metrics",
-        "description": "Exposes application metrics in Prometheus format for monitoring.",
-        "operationId": "metrics_metrics_get",
+        "summary": "List Tools",
+        "operationId": "list_tools_tools_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response List Tools Tools Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/tasks": {
+      "get": {
+        "summary": "List Active Tasks",
+        "operationId": "list_active_tasks_tasks_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -29,17 +48,21 @@
                 "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
-        }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
       }
     },
     "/start_task/{tool_name}": {
       "post": {
-        "tags": [
-          "Execution"
-        ],
-        "summary": "Start a Tool Task",
-        "description": "Initializes a registered tool with the provided arguments and returns a session call_id.",
+        "summary": "Start Task",
         "operationId": "start_task_start_task__tool_name__post",
         "security": [
           {
@@ -53,26 +76,23 @@
             "required": true,
             "schema": {
               "type": "string",
-              "description": "The name of the registered tool to execute.",
               "title": "Tool Name"
-            },
-            "description": "The name of the registered tool to execute."
+            }
           }
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": true,
-                "description": "Key-value pairs of arguments to pass to the tool function.",
-                "examples": [
+                "anyOf": [
                   {
-                    "duration": 10
+                    "$ref": "#/components/schemas/TaskStartRequest"
+                  },
+                  {
+                    "type": "null"
                   }
                 ],
-                "default": {},
-                "title": "Args"
+                "title": "Request"
               }
             }
           }
@@ -83,19 +103,65 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StartTaskResponse"
+                  "$ref": "#/components/schemas/TaskStartResponse"
                 }
               }
             }
           },
-          "404": {
-            "description": "Tool not found in registry"
+          "401": {
+            "description": "Unauthorized"
           },
-          "400": {
-            "description": "Invalid arguments provided for the tool"
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stream": {
+      "get": {
+        "summary": "Stream Task",
+        "operationId": "stream_task_stream_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Call Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
           },
           "401": {
-            "description": "Invalid or missing API Key"
+            "description": "Unauthorized"
           },
           "422": {
             "description": "Validation Error",
@@ -112,41 +178,58 @@
     },
     "/stream/{call_id}": {
       "get": {
-        "tags": [
-          "Execution"
-        ],
-        "summary": "Stream Task Progress",
-        "description": "Connect to this endpoint via EventSource (SSE) to receive progress updates for a previously started task.\nThe stream yields events of type 'progress', 'result', or 'error'.",
+        "summary": "Stream Task",
         "operationId": "stream_task_stream__call_id__get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "call_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "description": "The unique session ID returned by the /start_task endpoint.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Call Id"
-            },
-            "description": "The unique session ID returned by the /start_task endpoint."
+            }
+          },
+          {
+            "name": "call_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Call Id"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "SSE Stream of ProgressEvent objects.",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProgressEvent"
-                }
+                "schema": {}
               }
             }
           },
-          "404": {
-            "description": "Task not found or already consumed."
-          },
           "401": {
-            "description": "Invalid or missing API Key"
+            "description": "Unauthorized"
           },
           "422": {
             "description": "Validation Error",
@@ -155,6 +238,218 @@
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/provide_input": {
+      "post": {
+        "summary": "Provide Input",
+        "operationId": "provide_input_provide_input_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InputProvideRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/stop_task": {
+      "post": {
+        "summary": "Stop Task",
+        "operationId": "stop_task_stop_task_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Call Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stop_task/{call_id}": {
+      "post": {
+        "summary": "Stop Task",
+        "operationId": "stop_task_stop_task__call_id__post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Call Id"
+            }
+          },
+          {
+            "name": "call_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Call Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "summary": "Get Version",
+        "operationId": "get_version_version_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Metrics",
+        "operationId": "metrics_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -177,6 +472,86 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "InputProvideRequest": {
+        "properties": {
+          "call_id": {
+            "type": "string",
+            "title": "Call Id"
+          },
+          "value": {
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "call_id",
+          "value"
+        ],
+        "title": "InputProvideRequest"
+      },
+      "TaskStartRequest": {
+        "properties": {
+          "args": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Args",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "title": "TaskStartRequest"
+      },
+      "TaskStartResponse": {
+        "properties": {
+          "call_id": {
+            "type": "string",
+            "title": "Call Id"
+          },
+          "stream_url": {
+            "type": "string",
+            "title": "Stream Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "call_id",
+          "stream_url"
+        ],
+        "title": "TaskStartResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
       "ProgressEvent": {
         "properties": {
           "call_id": {
@@ -190,9 +565,12 @@
           "type": {
             "type": "string",
             "enum": [
+              "task_started",
+              "input_request",
               "progress",
               "result",
-              "error"
+              "error",
+              "system_metrics"
             ],
             "title": "Type",
             "description": "The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, and 'error' signifies a failure.",
@@ -285,57 +663,6 @@
         ],
         "title": "ProgressPayload",
         "description": "Standard schema for progress updates yielded by tools."
-      },
-      "StartTaskResponse": {
-        "properties": {
-          "call_id": {
-            "type": "string",
-            "title": "Call Id",
-            "description": "The unique identifier (UUID) for the started task session. Use this to connect to the /stream/{call_id} endpoint.",
-            "examples": [
-              "550e8400-e29b-41d4-a716-446655440000"
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "call_id"
-        ],
-        "title": "StartTaskResponse",
-        "description": "Response returned after successfully starting a task."
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
       }
     },
     "securitySchemes": {
