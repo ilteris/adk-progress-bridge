@@ -354,6 +354,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     await safe_send_json({
                         "call_id": call_id,
                         "type": "progress",
+                        "protocol_version": PROTOCOL_VERSION,
                         "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."},
                         "timestamp": time.time()
                     })
@@ -386,8 +387,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             "type": "error", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time(),
                             "call_id": call_id,
                             "request_id": request_id, 
-                            "payload": {"detail": f"No active task found with call_id: {call_id}"},
-                            "timestamp": time.time()
+                            "payload": {"detail": f"No active task found with call_id: {call_id}"}
                         })
             
             elif msg_type == "input":
@@ -407,8 +407,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "type": "error", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time(),
                         "call_id": call_id,
                         "request_id": request_id, 
-                        "payload": {"detail": f"No task waiting for input with call_id: {call_id}"},
-                        "timestamp": time.time()
+                        "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
                     })
             
             else:
@@ -416,8 +415,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 await safe_send_json({
                     "type": "error", "protocol_version": PROTOCOL_VERSION, "timestamp": time.time(),
                     "request_id": request_id, 
-                    "payload": {"detail": f"Unknown message type: {msg_type}"},
-                    "timestamp": time.time()
+                    "payload": {"detail": f"Unknown message type: {msg_type}"}
                 })
 
     except WebSocketDisconnect:
