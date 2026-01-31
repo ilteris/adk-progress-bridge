@@ -1,19 +1,9 @@
-# Implementation Plan - WebSocket Integration Robustness
+# v410 Supreme Absolute Worker Verification Plan
 
-## Problem
-WebSocket-started tasks are currently not marked as "consumed" in the `ToolRegistry`. This makes them vulnerable to being prematurely terminated by the background `cleanup_stale_tasks` loop if they run longer than the stale threshold (default 300s).
-
-## Proposed Changes
-
-### 1. Backend (bridge.py)
-- Add `mark_consumed(call_id: str)` method to `ToolRegistry` to allow explicit state updates without retrieving the generator (since WS flow already has it).
-
-### 2. Backend (main.py)
-- Call `registry.mark_consumed(call_id)` in the WebSocket `start` message handler after storing the task.
-
-### 3. Documentation (rules.md)
-- Update `rules.md` to include WebSocket specifications, matching the SSE standards.
-
-## Verification Plan
-- Run `tests/test_websocket.py` to ensure no regressions.
-- Add a specific test case in a new test file `tests/test_ws_cleanup.py` that verifies WS tasks are NOT reaped by the stale cleanup loop.
+1. **Environment Audit**: Verify version constants in backend and frontend.
+2. **Backend Verification**: Run all 88 backend tests using pytest.
+3. **Frontend Unit Verification**: Run all 16 frontend unit tests using vitest.
+4. **E2E Verification**: Run all 6 Playwright E2E tests.
+5. **Fidelity Audit**: Ensure 100% success rate across all 110 tests.
+6. **Documentation**: Generate v410 Supreme Absolute Verification Report.
+7. **Finalization**: Update task JSON and create PR.
