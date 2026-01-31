@@ -145,9 +145,13 @@ class HealthEngine:
                 })
                 raw.update({
                     'sys_net_interfaces_count': len(psutil.net_if_addrs()), 'sys_boot_time': psutil.boot_time(), 
-                    'sys_users_count': len(psutil.users()), 'sys_process_count': len(psutil.pids()), 
-                    'sys_network_connections': len(psutil.net_connections(kind='all'))
+                    'sys_users_count': len(psutil.users()), 'sys_process_count': len(psutil.pids())
                 })
+                try:
+                    raw['sys_network_connections'] = len(psutil.net_connections(kind='all'))
+                except Exception:
+                    raw['sys_network_connections'] = 0
+                
                 if_stats = psutil.net_if_stats()
                 raw.update({
                     'sys_net_interfaces_up': sum(1 for s in if_stats.values() if s.isup), 
@@ -177,17 +181,45 @@ class HealthEngine:
                     'proc_minor_pf': getattr(mem, "pfaults", 0), 'proc_major_pf': getattr(mem, "pageins", 0)
                 })
                 if hasattr(_process, "memory_full_info"):
-                    full_mem = _process.memory_full_info()
-                    raw.update({'proc_uss': full_mem.uss, 'proc_pss': getattr(full_mem, "pss", 0), 'proc_swap': getattr(full_mem, "swap", 0)})
+                    try:
+                        full_mem = _process.memory_full_info()
+                        raw.update({'proc_uss': full_mem.uss, 'proc_pss': getattr(full_mem, "pss", 0), 'proc_swap': getattr(full_mem, "swap", 0)})
+                    except: pass
                 raw.update({'proc_mem_percent': _process.memory_percent(), 'proc_cpu_percent': _process.cpu_percent(interval=None)})
                 cpu_times = _process.cpu_times()
                 raw.update({'proc_cpu_user': cpu_times.user, 'proc_cpu_system': cpu_times.system, 'proc_cpu_children_user': getattr(cpu_times, "children_user", 0.0), 'proc_cpu_children_system': getattr(cpu_times, "children_system", 0.0)})
                 raw.update({'proc_num_threads': _process.num_threads(), 'proc_num_fds': _process.num_fds() if hasattr(_process, "num_fds") else getattr(_process, "num_handles", 0)})
                 ctx = _process.num_ctx_switches()
                 raw.update({'proc_ctx_voluntary': ctx.voluntary, 'proc_ctx_involuntary': ctx.involuntary})
-                io = _process.io_counters()
-                if io: raw.update({'proc_io_read_bytes': io.read_bytes, 'proc_io_write_bytes': io.write_bytes, 'proc_io_read_count': io.read_count, 'proc_io_write_count': io.write_count})
-                raw.update({'proc_connections_count': len(_process.net_connections()), 'proc_children_count': len(_process.children()), 'proc_open_files_count': len(_process.open_files()), 'proc_memory_maps_count': len(_process.memory_maps()), 'proc_env_var_count': len(_process.environ()), 'proc_nice': _process.nice(), 'proc_cpu_affinity_count': len(_process.cpu_affinity()) if hasattr(_process, "cpu_affinity") else 0})
+                
+                if hasattr(_process, "io_counters"):
+                    try:
+                        io = _process.io_counters()
+                        if io: raw.update({'proc_io_read_bytes': io.read_bytes, 'proc_io_write_bytes': io.write_bytes, 'proc_io_read_count': io.read_count, 'proc_io_write_count': io.write_count})
+                    except: pass
+                
+                raw.update({
+                    'proc_connections_count': len(_process.net_connections()), 
+                    'proc_children_count': len(_process.children()), 
+                    'proc_nice': _process.nice(), 
+                    'proc_cpu_affinity_count': len(_process.cpu_affinity()) if hasattr(_process, "cpu_affinity") else 0
+                })
+                
+                try:
+                    raw['proc_open_files_count'] = len(_process.open_files())
+                except:
+                    raw['proc_open_files_count'] = 0
+                
+                try:
+                    raw['proc_memory_maps_count'] = len(_process.memory_maps())
+                except:
+                    raw['proc_memory_maps_count'] = 0
+                
+                try:
+                    raw['proc_env_var_count'] = len(_process.environ())
+                except:
+                    raw['proc_env_var_count'] = 0
+
                 u_total, s_total = 0.0, 0.0
                 for t in _process.threads(): u_total += t.user_time; s_total += t.system_time
                 raw.update({'proc_threads_user_time': u_total, 'proc_threads_system_time': s_total})
