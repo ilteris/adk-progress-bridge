@@ -30,8 +30,8 @@ Manages bi-directional input for tasks that require user interaction.
 *   **REST Flow (SSE):**
     *   `GET /tools`: Returns a list of all registered tool names.
     *   `GET /tasks`: Returns a list of all currently active task sessions in the registry.
-    *   `GET /health`: Returns system health status, version (**1.3.6**), git commit, uptime, CPU count, thread count, active WebSocket connections, **WebSocket messages received/sent counters**, load average, active task count, total tasks started, memory usage, CPU usage, **Open File Descriptors count**, **Thread count**, **Network Throughput (Bytes/sec)**, **Context Switches (Voluntary/Involuntary)**, **Task Success Rate %**, and configuration parameters (heartbeat timeout, cleanup interval, max concurrent tasks, etc.). and `adk_build_info` metric. Includes comprehensive system metrics: Disk usage, Swap memory, Page faults, Network packets, CPU frequency, Disk I/O, and **Process-specific IO counters**.
-    *   `GET /version`: Returns current API version (**1.3.6**), git commit hash, and operational status (e.g., "NIRVANA").
+    *   `GET /health`: Returns system health status, version (**1.4.1**), git commit, uptime, CPU count, thread count, active WebSocket connections, **WebSocket messages received/sent counters**, load average, active task count, total tasks started, memory usage, CPU usage, **Open File Descriptors count**, **Thread count**, **Network Throughput (Bytes/sec)**, **Context Switches (Voluntary/Involuntary)**, **Task Success Rate %**, and configuration parameters (heartbeat timeout, cleanup interval, max concurrent tasks, etc.). and `adk_build_info` metric. Includes comprehensive system metrics: Disk usage, Swap memory, Page faults, Network packets, CPU frequency, Disk I/O, and **Process-specific IO counters**.
+    *   `GET /version`: Returns current API version (**1.4.1**), git commit hash, and operational status (e.g., "ULTIMA").
     *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id`. Returns 503 if `MAX_CONCURRENT_TASKS` (100) is reached.
     *   `GET /stream/{call_id}`: SSE endpoint for progress streaming.
     *   `POST /stop_task/{call_id}`: Manual termination.
@@ -42,6 +42,8 @@ Manages bi-directional input for tasks that require user interaction.
         *   Response: `{"type": "tools_list", "tools": [...], "request_id": "..."}`
     *   Message `{"type": "list_active_tasks", "request_id": "..."}` requests all currently active task sessions.
         *   Response: `{"type": "active_tasks_list", "tasks": [...], "request_id": "..."}`
+    *   Message `{"type": "get_health", "request_id": "..."}` requests comprehensive system health data.
+        *   Response: `{"type": "health_data", "data": {...}, "request_id": "..."}`
     *   Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task. Returns error if `MAX_CONCURRENT_TASKS` is reached.
         *   Response: `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}`
     *   Message `{"type": "subscribe", "call_id": "...", "request_id": "..."}` subscribes to an existing task.
@@ -94,6 +96,7 @@ The WebSocket layer allows for:
 5.  **Native Interaction:** Interactive input is sent directly back over the same socket.
 6.  **Cross-Protocol Monitoring:** The `subscribe` command allows a WebSocket client to monitor a task started via REST/SSE.
 7.  **Real-time Monitoring:** The `list_active_tasks` message enables clients to monitor all ongoing task sessions across the system.
+8.  **Native Health Protocol:** The `get_health` message allows clients to fetch full system telemetry without secondary HTTP polling.
 
 ### 4.2 Security
 All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` header or `api_key` query parameter.
@@ -107,4 +110,4 @@ All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` hea
 6.  **Message Buffering:** The frontend buffers incoming WebSocket messages that arrive before the UI has fully subscribed to a task, preventing race conditions.
 7.  **Operational Visibility:** Enhanced health monitoring with real-time tracking of active WebSocket connections, total message throughput (**Bytes/sec**), and resource utilization (CPU, Memory, FDs, Threads, **Context Switches**).
 8.  **Concurrency Management:** Backend enforces a hard limit on the number of concurrent task generators in the registry to protect server resources.
-9.  **NIRVANA Observability:** Version 1.3.8 (v348) reaches the ultimate tier of observability, adding system-wide disk I/O times, process memory maps, and system-wide network interface UP counts. Includes all previous tiers: Beyond Singularity, Ascension Singularity, Transcendence, and Omnipotence.
+9.  **ULTIMA Observability:** Version 1.4.1 (v351) reaches the final frontier of observability, adding `get_health` native WebSocket protocol support, interface speed totals, and Proportional/Unique memory percentage tracking. Includes all previous tiers: Apotheosis, Nirvana, Beyond Singularity, Ascension Singularity, Transcendence, and Omnipotence.

@@ -67,7 +67,9 @@ from .metrics import (
     PROCESS_CPU_TIMES_CHILDREN_USER, PROCESS_CPU_TIMES_CHILDREN_SYSTEM,
     SYSTEM_NETWORK_INTERFACES_DOWN_COUNT, SYSTEM_DISK_READ_MERGED_COUNT, SYSTEM_DISK_WRITE_MERGED_COUNT,
     SYSTEM_MEMORY_SHARED_BYTES, PROCESS_MEMORY_PSS_BYTES, SYSTEM_NETWORK_INTERFACES_MTU_TOTAL,
-    PROCESS_MEMORY_SWAP_BYTES, SYSTEM_NETWORK_ERRORS_TOTAL
+    PROCESS_MEMORY_SWAP_BYTES, SYSTEM_NETWORK_ERRORS_TOTAL,
+    SYSTEM_NETWORK_INTERFACES_SPEED_TOTAL_MBPS, SYSTEM_NETWORK_INTERFACES_DUPLEX_FULL_COUNT,
+    PROCESS_MEMORY_USS_PERCENT
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -76,10 +78,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.4.0"
+APP_VERSION = "1.4.1"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v350-apotheosis"
-OPERATIONAL_APEX = "APOTHEOSIS"
+GIT_COMMIT = "v351-ultima"
+OPERATIONAL_APEX = "ULTIMA"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -704,6 +706,37 @@ def get_system_network_errors_total():
             pass
     return 0
 
+# v351 Ultima Helpers
+def get_system_network_speed_total():
+    if psutil:
+        try:
+            stats = psutil.net_if_stats()
+            return sum(s.speed for s in stats.values() if s.speed > 0)
+        except:
+            pass
+    return 0
+
+def get_system_network_duplex_full_count():
+    if psutil:
+        try:
+            stats = psutil.net_if_stats()
+            # NIC_DUPLEX_FULL is 2
+            return sum(1 for s in stats.values() if getattr(s, "duplex", 0) == 2)
+        except:
+            pass
+    return 0
+
+def get_process_memory_uss_percent():
+    if _process and psutil:
+        try:
+            uss = get_process_memory_uss()
+            total = psutil.virtual_memory().total
+            if total > 0:
+                return (uss / total) * 100
+        except:
+            pass
+    return 0.0
+
 
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
@@ -716,151 +749,7 @@ def get_uptime_human(seconds: float) -> str:
     parts.append(f"{seconds}s")
     return " ".join(parts)
 
-app = FastAPI(
-    title="ADK Progress Bridge",
-    description="A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
-    version=APP_VERSION,
-    lifespan=lifespan
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-class TaskStartRequest(BaseModel):
-    args: Dict[str, Any] = {}
-
-class TaskStartResponse(BaseModel):
-    call_id: str
-    stream_url: str
-
-class InputProvideRequest(BaseModel):
-    call_id: str
-    value: Any
-
-AUTH_RESPONSES = {401: {"description": "Unauthorized"}}
-
-@app.get("/tools", response_model=List[str], responses=AUTH_RESPONSES)
-async def list_tools(authenticated: bool = Depends(verify_api_key)):
-    return registry.list_tools()
-
-@app.get("/tasks", responses=AUTH_RESPONSES)
-async def list_active_tasks(authenticated: bool = Depends(verify_api_key)):
-    return await registry.list_active_tasks()
-
-@app.post("/start_task/{tool_name}", response_model=TaskStartResponse, responses=AUTH_RESPONSES)
-async def start_task(
-    tool_name: str, 
-    request: Optional[TaskStartRequest] = None, 
-    authenticated: bool = Depends(verify_api_key)
-):
-    if registry.active_task_count >= MAX_CONCURRENT_TASKS:
-        raise HTTPException(
-            status_code=503, 
-            detail=f"Server busy: Maximum concurrent tasks ({MAX_CONCURRENT_TASKS}) reached."
-        )
-
-    tool = registry.get_tool(tool_name)
-    if not tool:
-        raise HTTPException(status_code=404, detail=f"Tool not found: {tool_name}")
-    
-    call_id = str(uuid.uuid4())
-    args = request.args if request else {}
-    
-    try:
-        gen = tool(**args)
-        await registry.store_task(call_id, gen, tool_name)
-    except Exception as e:
-        logger.error(f"Error starting tool {tool_name}: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-    
-    return TaskStartResponse(
-        call_id=call_id,
-        stream_url=f"/stream/{call_id}"
-    )
-
-@app.get("/stream/{call_id}", responses=AUTH_RESPONSES)
-@app.get("/stream", responses=AUTH_RESPONSES)
-async def stream_task(
-    call_id: Optional[str] = None,
-    cid: Optional[str] = Query(None, alias="call_id"),
-    authenticated: bool = Depends(verify_api_key)
-):
-    actual_call_id = call_id or cid
-    if not actual_call_id:
-        raise HTTPException(status_code=400, detail="call_id is required")
-
-    task_data = await registry.get_task(actual_call_id)
-    if not task_data:
-        raise HTTPException(status_code=404, detail="Task not found or already being streamed")
-    
-    gen = task_data["gen"]
-    tool_name = task_data["tool_name"]
-
-    async def event_generator():
-        call_id_var.set(actual_call_id)
-        tool_name_var.set(tool_name)
-        start_time = time.perf_counter()
-        status = "success"
-        try:
-            async for item in gen:
-                if isinstance(item, ProgressPayload):
-                    TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                    event = ProgressEvent(call_id=actual_call_id, type="progress", payload=item)
-                elif isinstance(item, dict) and item.get("type") == "input_request":
-                    event = ProgressEvent(call_id=actual_call_id, type="input_request", payload=item["payload"])
-                else:
-                    event = ProgressEvent(call_id=actual_call_id, type="result", payload=item)
-                yield await format_sse(event)
-        except asyncio.CancelledError:
-            status = "cancelled"
-            logger.info(f"Task {actual_call_id} was cancelled by client")
-            await gen.aclose()
-        except Exception as e:
-            status = "error"
-            logger.error(f"Error during task {actual_call_id} execution: {e}")
-            error_event = ProgressEvent(call_id=actual_call_id, type="error", payload={"detail": str(e)})
-            yield await format_sse(error_event)
-        finally:
-            duration = time.perf_counter() - start_time
-            TASK_DURATION.labels(tool_name=tool_name).observe(duration)
-            TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
-            await registry.remove_task(actual_call_id)
-            logger.info(f"Stream finished for task: {actual_call_id} (duration: {duration:.2f}s, status: {status})")
-
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
-
-@app.post("/provide_input", responses=AUTH_RESPONSES)
-async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
-    if await input_manager.provide_input(request.call_id, request.value):
-        return {"status": "input accepted"}
-    else:
-        raise HTTPException(status_code=404, detail=f"No task waiting for input with call_id: {request.call_id}")
-
-@app.post("/stop_task/{call_id}", responses=AUTH_RESPONSES)
-@app.post("/stop_task", responses=AUTH_RESPONSES)
-async def stop_task(
-    call_id: Optional[str] = None, 
-    cid: Optional[str] = Query(None, alias="call_id"),
-    authenticated: bool = Depends(verify_api_key)
-):
-    actual_call_id = call_id or cid
-    if not actual_call_id:
-        raise HTTPException(status_code=400, detail="call_id is required")
-    task_data = await registry.get_task_no_consume(actual_call_id)
-    if not task_data:
-        raise HTTPException(status_code=404, detail="Task not found or already finished")
-    await task_data["gen"].aclose()
-    if not task_data["consumed"]:
-        await registry.remove_task(actual_call_id)
-    return {"status": "stop signal sent"}
-
-@app.get("/health") 
-async def health_check(): 
+async def get_health_data():
     load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
     SYSTEM_LOAD_1M.set(load_avg[0])
     SYSTEM_LOAD_5M.set(load_avg[1])
@@ -1106,6 +995,14 @@ async def health_check():
     sn_err_total = get_system_network_errors_total()
     SYSTEM_NETWORK_ERRORS_TOTAL.set(sn_err_total)
 
+    # v351 metrics
+    sn_speed_total = get_system_network_speed_total()
+    SYSTEM_NETWORK_INTERFACES_SPEED_TOTAL_MBPS.set(sn_speed_total)
+    sn_duplex_full = get_system_network_duplex_full_count()
+    SYSTEM_NETWORK_INTERFACES_DUPLEX_FULL_COUNT.set(sn_duplex_full)
+    p_uss_p = get_process_memory_uss_percent()
+    PROCESS_MEMORY_USS_PERCENT.set(p_uss_p)
+
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -1135,7 +1032,7 @@ async def health_check():
         "cpu_physical_count": s_cpu_phys,
         "cpu_frequency_current_mhz": cpu_freq,
         "cpu_usage_percent": cpu_percent,
-        "system_cpu_idle_percent": idle_p, # backward compatibility
+        "system_cpu_idle_percent": idle_p,
         "system_cpu_usage": {
             "user_percent": user_cpu,
             "system_percent": sys_cpu,
@@ -1183,7 +1080,9 @@ async def health_check():
             "interfaces_count": sn_if_count,
             "interfaces_up_count": sn_if_up,
             "interfaces_down_count": sn_if_down,
-            "mtu_total": sn_mtu_total
+            "mtu_total": sn_mtu_total,
+            "speed_total_mbps": sn_speed_total,
+            "duplex_full_count": sn_duplex_full
         },
         "disk_io_total": {
             "read_bytes": disk_read,
@@ -1268,7 +1167,8 @@ async def health_check():
             "uss_bytes": p_uss,
             "pss_bytes": p_pss,
             "swap_bytes": p_swap,
-            "vms_percent": p_vms_p
+            "vms_percent": p_vms_p,
+            "uss_percent": p_uss_p
         },
         "process_env_var_count": p_env_count,
         "process_nice_value": p_nice,
@@ -1300,6 +1200,153 @@ async def health_check():
             "allowed_origins": ALLOWED_ORIGINS
         }
     }
+
+app = FastAPI(
+    title="ADK Progress Bridge",
+    description="A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
+    version=APP_VERSION,
+    lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class TaskStartRequest(BaseModel):
+    args: Dict[str, Any] = {}
+
+class TaskStartResponse(BaseModel):
+    call_id: str
+    stream_url: str
+
+class InputProvideRequest(BaseModel):
+    call_id: str
+    value: Any
+
+AUTH_RESPONSES = {401: {"description": "Unauthorized"}}
+
+@app.get("/tools", response_model=List[str], responses=AUTH_RESPONSES)
+async def list_tools(authenticated: bool = Depends(verify_api_key)):
+    return registry.list_tools()
+
+@app.get("/tasks", responses=AUTH_RESPONSES)
+async def list_active_tasks(authenticated: bool = Depends(verify_api_key)):
+    return await registry.list_active_tasks()
+
+@app.post("/start_task/{tool_name}", response_model=TaskStartResponse, responses=AUTH_RESPONSES)
+async def start_task(
+    tool_name: str, 
+    request: Optional[TaskStartRequest] = None, 
+    authenticated: bool = Depends(verify_api_key)
+):
+    if registry.active_task_count >= MAX_CONCURRENT_TASKS:
+        raise HTTPException(
+            status_code=503, 
+            detail=f"Server busy: Maximum concurrent tasks ({MAX_CONCURRENT_TASKS}) reached."
+        )
+
+    tool = registry.get_tool(tool_name)
+    if not tool:
+        raise HTTPException(status_code=404, detail=f"Tool not found: {tool_name}")
+    
+    call_id = str(uuid.uuid4())
+    args = request.args if request else {}
+    
+    try:
+        gen = tool(**args)
+        await registry.store_task(call_id, gen, tool_name)
+    except Exception as e:
+        logger.error(f"Error starting tool {tool_name}: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    return TaskStartResponse(
+        call_id=call_id,
+        stream_url=f"/stream/{call_id}"
+    )
+
+@app.get("/stream/{call_id}", responses=AUTH_RESPONSES)
+@app.get("/stream", responses=AUTH_RESPONSES)
+async def stream_task(
+    call_id: Optional[str] = None,
+    cid: Optional[str] = Query(None, alias="call_id"),
+    authenticated: bool = Depends(verify_api_key)
+):
+    actual_call_id = call_id or cid
+    if not actual_call_id:
+        raise HTTPException(status_code=400, detail="call_id is required")
+
+    task_data = await registry.get_task(actual_call_id)
+    if not task_data:
+        raise HTTPException(status_code=404, detail="Task not found or already being streamed")
+    
+    gen = task_data["gen"]
+    tool_name = task_data["tool_name"]
+
+    async def event_generator():
+        call_id_var.set(actual_call_id)
+        tool_name_var.set(tool_name)
+        start_time = time.perf_counter()
+        status = "success"
+        try:
+            async for item in gen:
+                if isinstance(item, ProgressPayload):
+                    TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
+                    event = ProgressEvent(call_id=actual_call_id, type="progress", payload=item)
+                elif isinstance(item, dict) and item.get("type") == "input_request":
+                    event = ProgressEvent(call_id=actual_call_id, type="input_request", payload=item["payload"])
+                else:
+                    event = ProgressEvent(call_id=actual_call_id, type="result", payload=item)
+                yield await format_sse(event)
+        except asyncio.CancelledError:
+            status = "cancelled"
+            logger.info(f"Task {actual_call_id} was cancelled by client")
+            await gen.aclose()
+        except Exception as e:
+            status = "error"
+            logger.error(f"Error during task {actual_call_id} execution: {e}")
+            error_event = ProgressEvent(call_id=actual_call_id, type="error", payload={"detail": str(e)})
+            yield await format_sse(error_event)
+        finally:
+            duration = time.perf_counter() - start_time
+            TASK_DURATION.labels(tool_name=tool_name).observe(duration)
+            TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
+            await registry.remove_task(actual_call_id)
+            logger.info(f"Stream finished for task: {actual_call_id} (duration: {duration:.2f}s, status: {status})")
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+@app.post("/provide_input", responses=AUTH_RESPONSES)
+async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
+    if await input_manager.provide_input(request.call_id, request.value):
+        return {"status": "input accepted"}
+    else:
+        raise HTTPException(status_code=404, detail=f"No task waiting for input with call_id: {request.call_id}")
+
+@app.post("/stop_task/{call_id}", responses=AUTH_RESPONSES)
+@app.post("/stop_task", responses=AUTH_RESPONSES)
+async def stop_task(
+    call_id: Optional[str] = None, 
+    cid: Optional[str] = Query(None, alias="call_id"),
+    authenticated: bool = Depends(verify_api_key)
+):
+    actual_call_id = call_id or cid
+    if not actual_call_id:
+        raise HTTPException(status_code=400, detail="call_id is required")
+    task_data = await registry.get_task_no_consume(actual_call_id)
+    if not task_data:
+        raise HTTPException(status_code=404, detail="Task not found or already finished")
+    await task_data["gen"].aclose()
+    if not task_data["consumed"]:
+        await registry.remove_task(actual_call_id)
+    return {"status": "stop signal sent"}
+
+@app.get("/health") 
+async def health_check(): 
+    return await get_health_data()
 
 @app.get("/version") 
 async def get_version(): 
@@ -1478,6 +1525,11 @@ async def metrics():
     SYSTEM_NETWORK_INTERFACES_MTU_TOTAL.set(get_system_network_interfaces_mtu_total())
     PROCESS_MEMORY_SWAP_BYTES.set(get_process_memory_swap())
     SYSTEM_NETWORK_ERRORS_TOTAL.set(get_system_network_errors_total())
+
+    # v351 Ultima
+    SYSTEM_NETWORK_INTERFACES_SPEED_TOTAL_MBPS.set(get_system_network_speed_total())
+    SYSTEM_NETWORK_INTERFACES_DUPLEX_FULL_COUNT.set(get_system_network_duplex_full_count())
+    PROCESS_MEMORY_USS_PERCENT.set(get_process_memory_uss_percent())
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
@@ -1594,6 +1646,13 @@ async def websocket_endpoint(websocket: WebSocket):
                     await safe_send_json({
                         "type": "active_tasks_list",
                         "tasks": tasks,
+                        "request_id": request_id
+                    })
+                elif msg_type == "get_health":
+                    health_data = await get_health_data()
+                    await safe_send_json({
+                        "type": "health_data",
+                        "data": health_data,
                         "request_id": request_id
                     })
                 elif msg_type == "start":

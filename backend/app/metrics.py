@@ -631,6 +631,22 @@ SYSTEM_NETWORK_ERRORS_TOTAL = Gauge(
     "Total sum of all network errors (in, out, drops) across all interfaces"
 )
 
+# v351 Ultima Metrics
+SYSTEM_NETWORK_INTERFACES_SPEED_TOTAL_MBPS = Gauge(
+    "adk_system_network_interfaces_speed_total_mbps",
+    "Total sum of interface speeds in Mbps across all network interfaces"
+)
+
+SYSTEM_NETWORK_INTERFACES_DUPLEX_FULL_COUNT = Gauge(
+    "adk_system_network_interfaces_duplex_full_count",
+    "Total number of network interfaces in full duplex mode"
+)
+
+PROCESS_MEMORY_USS_PERCENT = Gauge(
+    "adk_process_memory_uss_percent",
+    "Unique Set Size memory usage as a percentage of total system memory"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

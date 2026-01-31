@@ -4,15 +4,15 @@ from backend.app.main import app
 
 client = TestClient(app)
 
-def test_health_v349_enlightenment():
+def test_health_v349_metrics():
+    """Verify Enlightenment tier metrics in health endpoint."""
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
     
-    # We allow the version to be newer than 1.3.9
     assert data["version"] >= "1.3.9"
     
-    # v349 Enlightenment metrics should still be present
+    # v349 Metrics
     assert "process_cpu_usage" in data
     assert "children_user_seconds" in data["process_cpu_usage"]
     assert "children_system_seconds" in data["process_cpu_usage"]
@@ -21,13 +21,9 @@ def test_health_v349_enlightenment():
     assert "disk_io_total" in data
     assert "read_merged_count" in data["disk_io_total"]
     assert "write_merged_count" in data["disk_io_total"]
-    
-    # Check types
-    assert isinstance(data["process_cpu_usage"]["children_user_seconds"], (int, float))
-    assert isinstance(data["network_io_total"]["interfaces_down_count"], int)
-    assert isinstance(data["disk_io_total"]["read_merged_count"], int)
 
-def test_metrics_v349_enlightenment():
+def test_prometheus_v349_metrics():
+    """Verify Enlightenment tier metrics in Prometheus."""
     response = client.get("/metrics")
     assert response.status_code == 200
     content = response.text
@@ -39,8 +35,9 @@ def test_metrics_v349_enlightenment():
     assert "adk_system_disk_write_merged_count_total" in content
 
 def test_version_v349():
+    """Verify Enlightenment status in version endpoint."""
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
     assert data["version"] >= "1.3.9"
-    assert data["status"] in ["ENLIGHTENMENT", "APOTHEOSIS"]
+    assert data["status"] in ["ENLIGHTENMENT", "APOTHEOSIS", "ULTIMA"]

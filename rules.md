@@ -30,10 +30,12 @@ The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 #### WebSocket Flow (Bi-directional)
 - `WS /ws`: Bi-directional connection for task control and streaming.
 - Message `{"type": "list_tools", "request_id": "..."}` -> Server responds with `{"type": "tools_list", "tools": [...], "request_id": "..."}`.
+- Message `{"type": "list_active_tasks", "request_id": "..."}` -> Server responds with `{"type": "active_tasks_list", "tasks": [...], "request_id": "..."}`.
+- Message `{"type": "get_health", "request_id": "..."}` -> Server responds with `{"type": "health_data", "data": {...}, "request_id": "..."}`.
 - Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task -> Server responds with `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` to confirm start.
 - Message `{"type": "subscribe", "call_id": "...", "request_id": "..."}` subscribes to an existing task -> Server responds with `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` followed by the event stream.
 - Message `{"type": "stop", "call_id": "...", "request_id": "..."}` stops a task -> Server responds with `{"type": "stop_success", "call_id": "...", "request_id": "..."}`.
-- Message `{"type": "input", "call_id": "...", "value": "...", "request_id": "..."}` provides interactive input -> Server responds with `{"type": "input_success", "call_id": "...", "request_id": "..."}`.
+- Message `{"type": "input", "call_id": "...", "value": "...", "request_id": "..."}` provides interactive input -> Server responds with `{"input_success", "call_id": "...", "request_id": "..."}`.
 - Message `{"type": "ping"}` -> Server responds with `{"type": "pong"}`.
 
 #### Event Schema
@@ -73,3 +75,4 @@ The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 - Use `verify_websocket.py` for manual WebSocket testing.
 - Frontend composables should be testable in isolation using Vitest.
 - Robustness tests (concurrency, timeouts, size limits) MUST be included in the backend test suite.
+- **ULTIMA Observability**: All new metrics MUST be verified in `tests/test_ws_metrics_vXXX.py`.
