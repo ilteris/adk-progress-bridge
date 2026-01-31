@@ -27,7 +27,7 @@ def wait_for_server(url, timeout=30):
     return False
 
 def main():
-    print("=== ADK PROGRESS BRIDGE SUPREME VERIFICATION (v302) ===")
+    print("=== ADK PROGRESS BRIDGE SUPREME VERIFICATION (v303) ===")
     
     # 1. Backend Tests (unit/integration via pytest)
     if not run_command("./venv/bin/python -m pytest tests/"):
@@ -73,7 +73,7 @@ def main():
         os.killpg(os.getpgid(backend_proc.pid), signal.SIGTERM)
         backend_proc.wait()
 
-    print("\n=== ALL VERIFICATIONS PASSED: SUPREME ABSOLUTE APEX ATTAINED (v302) ===")
+    print("\n=== ALL VERIFICATIONS PASSED: SUPREME ABSOLUTE APEX ATTAINED (v303) ===")
 
 if __name__ == "__main__":
     main()

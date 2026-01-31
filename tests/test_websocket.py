@@ -192,3 +192,32 @@ def test_websocket_non_dict_json():
         data = websocket.receive_json()
         assert data["type"] == "error"
         assert "must be a JSON object" in data["payload"]["detail"]
+
+def test_websocket_unknown_type():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "type": "unknown_message_xyz",
+            "request_id": "unknown_type_req"
+        })
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert data.get("request_id") == "unknown_type_req"
+        assert "Unknown message type" in data["payload"]["detail"]
+
+def test_websocket_message_size_limit():
+    from backend.app.main import WS_MESSAGE_SIZE_LIMIT
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        # Create a message slightly larger than the limit
+        large_payload = "x" * (WS_MESSAGE_SIZE_LIMIT + 100)
+        websocket.send_text(json.dumps({
+            "type": "start",
+            "tool_name": "long_audit",
+            "args": {"data": large_payload}
+        }))
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert "Message too large" in data["payload"]["detail"]
