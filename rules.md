@@ -28,8 +28,8 @@ The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 #### WebSocket Flow (Bi-directional)
 - `WS /ws`: Bi-directional connection for task control and streaming.
 - Message `{"type": "list_tools", "request_id": "..."}` -> Server responds with `{"type": "tools_list", "tools": [...], "request_id": "..."}`.
-- Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task.
-- Server responds with `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` to confirm start.
+- Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task -> Server responds with `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` to confirm start.
+- Message `{"type": "subscribe", "call_id": "...", "request_id": "..."}` subscribes to an existing task -> Server responds with `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` followed by the event stream.
 - Message `{"type": "stop", "call_id": "...", "request_id": "..."}` stops a task -> Server responds with `{"type": "stop_success", "call_id": "...", "request_id": "..."}`.
 - Message `{"type": "input", "call_id": "...", "value": "...", "request_id": "..."}` provides interactive input -> Server responds with `{"type": "input_success", "call_id": "...", "request_id": "..."}`.
 - Message `{"type": "ping"}` -> Server responds with `{"type": "pong"}`.
