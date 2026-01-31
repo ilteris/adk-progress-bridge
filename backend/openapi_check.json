@@ -3,7 +3,7 @@
   "info": {
     "title": "ADK Progress Bridge",
     "description": "A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
-    "version": "1.6.5"
+    "version": "1.6.6"
   },
   "paths": {
     "/tools": {
@@ -24,8 +24,16 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
-        }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
       }
     },
     "/tasks": {
@@ -37,20 +45,30 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "title": "Response List Active Tasks Tasks Get"
-                }
+                "schema": {}
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
-        }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
       }
     },
     "/start_task/{tool_name}": {
       "post": {
         "summary": "Start Task",
         "operationId": "start_task_start_task__tool_name__post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "tool_name",
@@ -66,7 +84,15 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TaskStartRequest"
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/TaskStartRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Request"
               }
             }
           }
@@ -82,68 +108,8 @@
               }
             }
           },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/stream/{call_id}": {
-      "get": {
-        "summary": "Stream Task",
-        "operationId": "stream_task_stream__call_id__get",
-        "parameters": [
-          {
-            "name": "call_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Call Id"
-            }
-          },
-          {
-            "name": "call_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Call Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string",
-                  "title": "Response Stream Task Stream  Call Id  Get"
-                }
-              }
-            }
+          "401": {
+            "description": "Unauthorized"
           },
           "422": {
             "description": "Validation Error",
@@ -162,6 +128,11 @@
       "get": {
         "summary": "Stream Task",
         "operationId": "stream_task_stream_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "call_id",
@@ -185,12 +156,80 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
                 "schema": {
-                  "type": "string",
-                  "title": "Response Stream Task Stream Get"
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/stream/{call_id}": {
+      "get": {
+        "summary": "Stream Task",
+        "operationId": "stream_task_stream__call_id__get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Call Id"
+            }
+          },
+          {
+            "name": "call_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Call Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
           },
           "422": {
             "description": "Validation Error",
@@ -224,12 +263,69 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
                 "schema": {
-                  "type": "object",
-                  "title": "Response Provide Input Provide Input Post"
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/stop_task": {
+      "post": {
+        "summary": "Stop Task",
+        "operationId": "stop_task_stop_task_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Call Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
           },
           "422": {
             "description": "Validation Error",
@@ -248,6 +344,11 @@
       "post": {
         "summary": "Stop Task",
         "operationId": "stop_task_stop_task__call_id__post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "call_id",
@@ -287,59 +388,12 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "title": "Response Stop Task Stop Task  Call Id  Post"
-                }
+                "schema": {}
               }
             }
           },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/stop_task": {
-      "post": {
-        "summary": "Stop Task",
-        "operationId": "stop_task_stop_task_post",
-        "parameters": [
-          {
-            "name": "call_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Call Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "title": "Response Stop Task Stop Task Post"
-                }
-              }
-            }
+          "401": {
+            "description": "Unauthorized"
           },
           "422": {
             "description": "Validation Error",
@@ -363,10 +417,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "title": "Response Health Check Health Get"
-                }
+                "schema": {}
               }
             }
           }
@@ -382,10 +433,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "title": "Response Get Version Version Get"
-                }
+                "schema": {}
               }
             }
           }
@@ -401,10 +449,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "title": "Response Metrics Metrics Get"
-                }
+                "schema": {}
               }
             }
           }
@@ -434,7 +479,6 @@
             "title": "Call Id"
           },
           "value": {
-            "type": "object",
             "title": "Value"
           }
         },
@@ -448,6 +492,7 @@
       "TaskStartRequest": {
         "properties": {
           "args": {
+            "additionalProperties": true,
             "type": "object",
             "title": "Args",
             "default": {}
@@ -506,6 +551,13 @@
           "type"
         ],
         "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-API-Key"
       }
     }
   }

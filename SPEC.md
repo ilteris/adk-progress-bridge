@@ -117,6 +117,6 @@ All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` hea
 6.  **Message Buffering:** The frontend buffers incoming WebSocket messages that arrive before the UI has fully subscribed to a task, preventing race conditions.
 
 ## 6. Versioning & Identity
-- **APP_VERSION**: 1.6.5
-- **GIT_COMMIT**: v365-supreme-broadcaster
-- **OPERATIONAL_APEX**: THE NEBULA (v365 SUPREME BROADCASTER)
+- **APP_VERSION**: 1.6.6
+- **GIT_COMMIT**: v371-supreme-worker-audit
+- **OPERATIONAL_APEX**: GOD TIER FIDELITY (v371 SUPREME WORKER AUDIT)
