@@ -81,7 +81,8 @@ from .metrics import (
     SYSTEM_NETWORK_INTERFACES_BYTES_SENT, SYSTEM_NETWORK_INTERFACES_BYTES_RECV,
     PROCESS_LIMIT_NOFILE_SOFT, PROCESS_LIMIT_NOFILE_HARD,
     PROCESS_LIMIT_AS_SOFT, PROCESS_LIMIT_AS_HARD,
-    SYSTEM_LOAD_5M_PERCENT, SYSTEM_LOAD_15M_PERCENT
+    SYSTEM_LOAD_5M_PERCENT, SYSTEM_LOAD_15M_PERCENT,
+    PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT, PROCESS_LIMIT_AS_UTILIZATION_PERCENT
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -90,10 +91,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.4.4"
+APP_VERSION = "1.4.5"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v354-the-one"
-OPERATIONAL_APEX = "THE ONE"
+GIT_COMMIT = "v355-the-singularity"
+OPERATIONAL_APEX = "THE SINGULARITY"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -1035,7 +1036,7 @@ async def get_health_data():
     SYSTEM_DISK_WRITE_COUNT_TOTAL.set(sd_wc)
     ss_sin, ss_sout = get_system_swap_io()
     SYSTEM_SWAP_IN_BYTES_TOTAL.set(ss_sin)
-    SYSTEM_SWAP_OUT_BYTES_TOTAL.set(ss_sout)
+    SYSTEM_SWAP_OUT_BYTES_TOTAL.set(ss_sout) # fixed naming
     p_vms_p = get_process_memory_vms_percent()
     PROCESS_MEMORY_VMS_PERCENT.set(p_vms_p)
     s_cpu_phys = get_system_cpu_physical_count()
@@ -1132,6 +1133,13 @@ async def get_health_data():
         PROCESS_LIMIT_AS_SOFT.set(p_limits["as_soft"])
         PROCESS_LIMIT_AS_HARD.set(p_limits["as_hard"])
 
+    # v355 THE SINGULARITY
+    nofile_util = (open_fds / p_limits["nofile_soft"] * 100) if "nofile_soft" in p_limits and p_limits["nofile_soft"] > 0 else 0.0
+    PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT.set(nofile_util)
+    
+    as_util = (vms / p_limits["as_soft"] * 100) if "as_soft" in p_limits and p_limits["as_soft"] > 0 else 0.0
+    PROCESS_LIMIT_AS_UTILIZATION_PERCENT.set(as_util)
+
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -1186,6 +1194,10 @@ async def get_health_data():
         "open_fds": open_fds,
         "process_open_files_count": p_open_files,
         "process_resource_limits": p_limits,
+        "process_resource_utilization_percent": {
+            "nofile": nofile_util,
+            "as": as_util
+        },
         "context_switches": {
             "voluntary": voluntary_ctx,
             "involuntary": involuntary_ctx
@@ -1700,6 +1712,15 @@ async def metrics():
         PROCESS_LIMIT_NOFILE_HARD.set(p_limits["nofile_hard"])
         PROCESS_LIMIT_AS_SOFT.set(p_limits["as_soft"])
         PROCESS_LIMIT_AS_HARD.set(p_limits["as_hard"])
+
+    # v355 THE SINGULARITY
+    open_fds = get_open_fds()
+    if "nofile_soft" in p_limits and p_limits["nofile_soft"] > 0:
+        PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT.set((open_fds / p_limits["nofile_soft"]) * 100)
+    
+    if "as_soft" in p_limits and p_limits["as_soft"] > 0:
+        rss, vms = get_process_memory_bytes()
+        PROCESS_LIMIT_AS_UTILIZATION_PERCENT.set((vms / p_limits["as_soft"]) * 100)
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

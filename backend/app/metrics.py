@@ -724,6 +724,17 @@ SYSTEM_LOAD_15M_PERCENT = Gauge(
     "System load average over the last 15 minutes as a percentage of CPU count"
 )
 
+# v355 THE SINGULARITY Metrics
+PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT = Gauge(
+    "adk_process_resource_limit_nofile_utilization_percent",
+    "Percentage of open file descriptors relative to the soft limit"
+)
+
+PROCESS_LIMIT_AS_UTILIZATION_PERCENT = Gauge(
+    "adk_process_resource_limit_as_utilization_percent",
+    "Percentage of address space used relative to the soft limit"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():
