@@ -8,10 +8,12 @@ The system consists of a Python backend (FastAPI) acting as the ADK Agent host a
 ### 2.1 Core Components (`backend/app/`)
 
 #### `ProgressEvent` (Pydantic Model)
-A structured container for event data.
+A structured container for event data. Every event sent to the client (SSE or WS) follows this schema.
 *   `call_id`: UUID string.
 *   `type`: Literal ["progress", "result", "error", "input_request", "task_started"].
 *   `payload`: Any event-specific data.
+*   `protocol_version`: String (e.g., "1.1.0").
+*   `timestamp`: Float (Unix timestamp).
 
 #### `ToolRegistry`
 Manages tool registration and active task sessions.
@@ -34,16 +36,17 @@ Manages bi-directional input for tasks that require user interaction.
     *   `POST /provide_input`: REST fallback for providing input for SSE tasks.
 *   **WebSocket Flow:**
     *   `WS /ws`: Bi-directional connection for task control and streaming.
+    *   **Common Fields:** Every response from the server includes `protocol_version` and `timestamp`.
     *   Message `{"type": "list_tools", "request_id": "..."}` requests all tool names.
-        *   Response: `{"type": "tools_list", "tools": [...], "request_id": "..."}`
+        *   Response: `{"type": "tools_list", "tools": [...], "request_id": "...", "protocol_version": "...", "timestamp": ...}`
     *   Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task.
-        *   Response: `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}`
+        *   Response: `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "...", "protocol_version": "...", "timestamp": ...}`
     *   Message `{"type": "stop", "call_id": "...", "request_id": "..."}` stops a task.
-        *   Response: `{"type": "stop_success", "call_id": "...", "request_id": "..."}`
+        *   Response: `{"type": "stop_success", "call_id": "...", "request_id": "...", "protocol_version": "...", "timestamp": ...}`
     *   Message `{"type": "input", "call_id": "...", "value": "...", "request_id": "..."}` provides interactive input.
-        *   Response: `{"type": "input_success", "call_id": "...", "request_id": "..."}`
+        *   Response: `{"type": "input_success", "call_id": "...", "request_id": "...", "protocol_version": "...", "timestamp": ...}`
     *   Message `{"type": "ping"}` requests a heartbeat check.
-        *   Response: `{"type": "pong"}`
+        *   Response: `{"type": "pong", "protocol_version": "...", "timestamp": ...}`
 
 ## 3. Frontend Specification (Vue.js)
 
