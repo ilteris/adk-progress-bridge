@@ -6,7 +6,7 @@ import sys
 
 async def run_ws_full():
     api_key = os.getenv("BRIDGE_API_KEY", "")
-    url = "ws://localhost:8000/ws"
+    url = "ws://127.0.0.1:8000/ws"
     if api_key:
         url += f"?api_key={api_key}"
         print(f"Using API Key in WS URL")
@@ -61,7 +61,7 @@ async def run_ws_full():
 
 async def run_ws_interactive():
     api_key = os.getenv("BRIDGE_API_KEY", "")
-    url = "ws://localhost:8000/ws"
+    url = "ws://127.0.0.1:8000/ws"
     if api_key:
         url += f"?api_key={api_key}"
 
@@ -119,7 +119,7 @@ async def run_ws_interactive():
 
 async def run_ws_list_tools():
     api_key = os.getenv("BRIDGE_API_KEY", "")
-    url = "ws://localhost:8000/ws"
+    url = "ws://127.0.0.1:8000/ws"
     if api_key:
         url += f"?api_key={api_key}"
 
