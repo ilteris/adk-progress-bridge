@@ -73,16 +73,16 @@ const formatBps = (bps: number) => {
           <button class="btn btn-sm btn-outline-light" @click="showMetrics = !showMetrics">
             {{ showMetrics ? 'Hide' : 'Show' }} Metrics
           </button>
-          <span v-if="state.status === 'connected'" class="badge bg-success">Live ({{ state.useWS ? 'WS' : 'SSE' }})</span>
-          <span v-else-if="state.status === 'waiting_for_input'" class="badge bg-warning text-dark">Awaiting Input</span>
-          <span v-else-if="state.status === 'reconnecting'" class="badge bg-warning text-dark">
+          <span v-if="state.status === 'connected'" data-testid="status-badge" class="badge bg-success">Live ({{ state.useWS ? 'WS' : 'SSE' }})</span>
+          <span v-else-if="state.status === 'waiting_for_input'" data-testid="status-badge" class="badge bg-warning text-dark">Awaiting Input</span>
+          <span v-else-if="state.status === 'reconnecting'" data-testid="status-badge" class="badge bg-warning text-dark">
             <span class="spinner-border spinner-border-sm me-1" role="status"></span>
             Reconnecting...
           </span>
-          <span v-else-if="state.status === 'connecting'" class="badge bg-info text-dark">Connecting...</span>
-          <span v-else-if="state.status === 'error'" class="badge bg-danger">Error</span>
-          <span v-else-if="state.status === 'completed'" class="badge bg-light text-dark">Done</span>
-          <span v-else-if="state.status === 'cancelled'" class="badge bg-secondary">Cancelled</span>
+          <span v-else-if="state.status === 'connecting'" data-testid="status-badge" class="badge bg-info text-dark">Connecting...</span>
+          <span v-else-if="state.status === 'error'" data-testid="status-badge" class="badge bg-danger">Error</span>
+          <span v-else-if="state.status === 'completed'" data-testid="status-badge" class="badge bg-light text-dark">Done</span>
+          <span v-else-if="state.status === 'cancelled'" data-testid="status-badge" class="badge bg-secondary">Cancelled</span>
         </div>
       </div>
       

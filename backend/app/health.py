@@ -243,7 +243,7 @@ class HealthEngine:
         
         # Mapping to Prometheus Gauges
         gauge_mappings = {
-            SYSTEM_LOAD_1M: raw.get('sys_load_1m', 0), SYSTEM_LOAD_5M: raw.get('sys_load_1m', 0), SYSTEM_LOAD_15M: raw.get('sys_load_1m', 0),
+            SYSTEM_LOAD_1M: raw.get('sys_load_1m', 0), SYSTEM_LOAD_5M: raw.get('sys_load_5m', 0), SYSTEM_LOAD_15M: raw.get('sys_load_15m', 0),
             SYSTEM_UPTIME: now - raw.get('sys_boot_time', now), SYSTEM_MEMORY_AVAILABLE: raw.get('sys_mem_available', 0),
             SYSTEM_MEMORY_TOTAL: raw.get('sys_mem_total', 0), SYSTEM_MEMORY_USED: raw.get('sys_mem_used', 0),
             SYSTEM_MEMORY_FREE: raw.get('sys_mem_free', 0), SYSTEM_MEMORY_PERCENT: raw.get('sys_mem_percent', 0),
@@ -378,8 +378,8 @@ class HealthEngine:
             "system_cpu_usage": {
                 "user_percent": raw.get('sys_cpu_user', 0.0), "system_percent": raw.get('sys_cpu_system', 0.0), "idle_percent": raw.get('sys_cpu_idle', 0.0), "steal_percent": raw.get('sys_cpu_steal', 0.0),
                 "guest_percent": raw.get('sys_cpu_guest', 0.0), "iowait_percent": raw.get('sys_cpu_iowait', 0.0), "irq_percent": raw.get('sys_cpu_irq', 0.0), "softirq_percent": raw.get('sys_cpu_softirq', 0.0),
-                "load_1m_percent": (raw.get('sys_load_1m', 0) / cpu_count * 100) if cpu_count > 0 else 0.0, "load_5m_percent": (raw.get('sys_load_1m', 0) / cpu_count * 100) if cpu_count > 0 else 0.0,
-                "load_15m_percent": (raw.get('sys_load_1m', 0) / cpu_count * 100) if cpu_count > 0 else 0.0, "cores": raw.get('sys_cpu_cores_usage', [])
+                "load_1m_percent": (raw.get('sys_load_1m', 0) / cpu_count * 100) if cpu_count > 0 else 0.0, "load_5m_percent": (raw.get('sys_load_5m', 0) / cpu_count * 100) if cpu_count > 0 else 0.0,
+                "load_15m_percent": (raw.get('sys_load_15m', 0) / cpu_count * 100) if cpu_count > 0 else 0.0, "cores": raw.get('sys_cpu_cores_usage', [])
             },
             "system_cpu_stats": {
                 "interrupts": raw.get('sys_cpu_interrupts', 0), "soft_interrupts": raw.get('sys_cpu_soft_interrupts', 0), "syscalls": raw.get('sys_cpu_syscalls', 0),
@@ -408,7 +408,7 @@ class HealthEngine:
                 "read_count": raw.get('sys_disk_read_count', 0), "write_count": raw.get('sys_disk_write_count', 0), "read_merged_count": raw.get('sys_disk_read_merged', 0), "write_merged_count": raw.get('sys_disk_write_merged', 0), "busy_time_ms": raw.get('sys_disk_busy_time', 0), "partitions_usage_percent": raw.get('sys_disk_partitions_usage', {})
             },
             "system_network_connections_count": raw.get('sys_network_connections', 0), "process_connections_count": raw.get('proc_connections_count', 0),
-            "system_load_1m": raw.get('sys_load_1m', 0.0), "system_load_5m": raw.get('sys_load_1m', 0.0), "system_load_15m": raw.get('sys_load_1m', 0.0), "system_process_count": raw.get('sys_process_count', 0),
+            "system_load_1m": raw.get('sys_load_1m', 0.0), "system_load_5m": raw.get('sys_load_5m', 0.0), "system_load_15m": raw.get('sys_load_15m', 0.0), "system_process_count": raw.get('sys_process_count', 0),
             "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()), "peak_ws_connections": getattr(app_state, "peak_ws_connections", 0),
             "ws_messages_received": int(ws_rc), "ws_messages_sent": int(ws_sc), "ws_bytes_received": ws_rb, "ws_bytes_sent": ws_sb,
             "ws_throughput_bps": {"received": float(WS_THROUGHPUT_RECEIVED_BPS._value.get()), "sent": float(WS_THROUGHPUT_SENT_BPS._value.get())},

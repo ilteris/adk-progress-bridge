@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v1.7.5
+# Specification: ADK Progress Bridge v1.7.6
 
 ## 1. System Overview
 The system consists of a Python backend (FastAPI) acting as the ADK Agent host and a Vue.js frontend client. They communicate via **Server-Sent Events (SSE)** or **WebSockets** for real-time progress updates.
@@ -97,6 +97,6 @@ The bridge provides deep visibility into the host system performance:
 *   **Thread Safety:** `asyncio.Lock` ensures frame integrity during concurrent streaming.
 
 ## 6. Versioning & Identity
-- **APP_VERSION**: 1.7.2
-- **GIT_COMMIT**: v386-supreme-apex
-- **OPERATIONAL_APEX**: SUPREME APEX FIDELITY (v386)
+- **APP_VERSION**: 1.7.6
+- **GIT_COMMIT**: v393-supreme-apex-final-signoff
+- **OPERATIONAL_APEX**: SUPREME APEX FINAL SIGNOFF (v393)

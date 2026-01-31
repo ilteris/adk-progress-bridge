@@ -6,7 +6,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 
 const monitors = ref([1])
 const nextId = ref(2)
-const version = "1.7.5"
+const version = "1.7.6"
 
 const addMonitor = () => {
   monitors.value.push(nextId.value++)
@@ -24,7 +24,7 @@ const removeMonitor = (id: number) => {
     <div class="container">
       <div class="d-flex align-items-center gap-2">
         <span class="navbar-brand mb-0 h1">ADK Bridge</span>
-        <span class="badge bg-secondary opacity-75" style="font-size: 0.7rem;">v{{ version }}</span>
+        <span class="badge bg-secondary opacity-75" style="font-size: 0.7rem;" data-testid="version-badge">v{{ version }}</span>
       </div>
       <div class="d-flex align-items-center gap-3">
         <button @click="addMonitor" class="btn btn-sm btn-outline-primary">
