@@ -17,14 +17,14 @@ from .auth import verify_api_key, verify_api_key_ws
 from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
-# WS_HEARTBEAT_TIMEOUT: Max time to wait for a client message (ping/pong) before closing connection.
-WS_HEARTBEAT_TIMEOUT = 60.0
+# WS_HEARTBEAT_TIMEOUT: Max time to wait for a client message (ping/pong) before closing connection (seconds).
+WS_HEARTBEAT_TIMEOUT = float(os.getenv("WS_HEARTBEAT_TIMEOUT", "60.0"))
 # CLEANUP_INTERVAL: Frequency (seconds) of the background stale task cleanup task.
-CLEANUP_INTERVAL = 60.0
+CLEANUP_INTERVAL = float(os.getenv("CLEANUP_INTERVAL", "60.0"))
 # STALE_TASK_MAX_AGE: Maximum age (seconds) of an unconsumed task before it is cleaned up.
-STALE_TASK_MAX_AGE = 300.0
+STALE_TASK_MAX_AGE = float(os.getenv("STALE_TASK_MAX_AGE", "300.0"))
 # WS_MESSAGE_SIZE_LIMIT: Maximum allowed size (bytes) for an incoming WebSocket message.
-WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
+WS_MESSAGE_SIZE_LIMIT = int(os.getenv("WS_MESSAGE_SIZE_LIMIT", str(1024 * 1024)))  # 1MB
 
 # CORS Configuration
 # Defaults to "*" for development but can be restricted via environment variable.
@@ -76,14 +76,16 @@ class InputProvideRequest(BaseModel):
     call_id: str
     value: Any
 
-@app.get("/tools", response_model=List[str])
+AUTH_RESPONSES = {401: {"description": "Unauthorized"}}
+
+@app.get("/tools", response_model=List[str], responses=AUTH_RESPONSES)
 async def list_tools(authenticated: bool = Depends(verify_api_key)):
     """
     Returns a list of all registered tools.
     """
     return registry.list_tools()
 
-@app.post("/start_task/{tool_name}", response_model=TaskStartResponse)
+@app.post("/start_task/{tool_name}", response_model=TaskStartResponse, responses=AUTH_RESPONSES)
 async def start_task(
     tool_name: str, 
     request: Optional[TaskStartRequest] = None, 
@@ -113,8 +115,8 @@ async def start_task(
         stream_url=f"/stream/{call_id}"
     )
 
-@app.get("/stream/{call_id}")
-@app.get("/stream")
+@app.get("/stream/{call_id}", responses=AUTH_RESPONSES)
+@app.get("/stream", responses=AUTH_RESPONSES)
 async def stream_task(
     call_id: Optional[str] = None,
     cid: Optional[str] = Query(None, alias="call_id"),
@@ -179,15 +181,15 @@ async def stream_task(
         media_type="text/event-stream"
     )
 
-@app.post("/provide_input")
+@app.post("/provide_input", responses=AUTH_RESPONSES)
 async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
     if await input_manager.provide_input(request.call_id, request.value):
         return {"status": "input accepted"}
     else:
         raise HTTPException(status_code=404, detail=f"No task waiting for input with call_id: {request.call_id}")
 
-@app.post("/stop_task/{call_id}")
-@app.post("/stop_task")
+@app.post("/stop_task/{call_id}", responses=AUTH_RESPONSES)
+@app.post("/stop_task", responses=AUTH_RESPONSES)
 async def stop_task(
     call_id: Optional[str] = None, 
     cid: Optional[str] = Query(None, alias="call_id"),
@@ -272,7 +274,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 logger.warning("Received invalid JSON over WebSocket")
                 await safe_send_json({
                     "type": "error",
-                    "payload": {"detail": "Invalid JSON received"}
+                    "payload": {"detail": "Invalid JSON received. Message must be a valid JSON string."}
                 })
                 continue
             except WebSocketDisconnect:
@@ -384,7 +386,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 await safe_send_json({
                     "type": "error",
                     "request_id": request_id, 
-                    "payload": {"detail": f"Unknown message type: {msg_type}"}
+                    "payload": {"detail": f"Unknown message type: {msg_type}. Supported types are: ping, list_tools, start, stop, input."}
                 })
 
     except WebSocketDisconnect:
