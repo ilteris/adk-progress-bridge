@@ -80,6 +80,7 @@ class ToolRegistry:
         self._tools: Dict[str, Callable] = {}
         # Stores call_id -> {"gen": gen, "tool_name": str, "created_at": timestamp, "consumed": bool}
         self._active_tasks: Dict[str, Dict[str, Any]] = {}
+        self._total_tasks_started = 0
         self._lock = asyncio.Lock()
 
     def register(self, name: Optional[str] = None):
@@ -98,6 +99,14 @@ class ToolRegistry:
             logger.info(f"Tool registered: {tool_name}", extra={"tool_name": tool_name})
             return func
         return decorator
+
+    @property
+    def active_task_count(self) -> int:
+        return len(self._active_tasks)
+
+    @property
+    def total_tasks_started(self) -> int:
+        return self._total_tasks_started
 
     def list_tools(self) -> List[str]:
         return list(self._tools.keys())
@@ -127,6 +136,7 @@ class ToolRegistry:
                 "consumed": False
             }
             ACTIVE_TASKS.labels(tool_name=tool_name).inc()
+            self._total_tasks_started += 1
         logger.debug(f"Task stored in registry: {call_id}", extra={"call_id": call_id, "tool_name": tool_name})
 
     async def get_task(self, call_id: str) -> Optional[Dict[str, Any]]:
