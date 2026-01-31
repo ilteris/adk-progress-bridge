@@ -3,13 +3,12 @@
   "info": {
     "title": "ADK Progress Bridge",
     "description": "A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
-    "version": "1.0.0"
+    "version": "1.5.0"
   },
   "paths": {
     "/tools": {
       "get": {
         "summary": "List Tools",
-        "description": "Returns a list of all registered tools.",
         "operationId": "list_tools_tools_get",
         "responses": {
           "200": {
@@ -37,10 +36,33 @@
         ]
       }
     },
+    "/tasks": {
+      "get": {
+        "summary": "List Active Tasks",
+        "operationId": "list_active_tasks_tasks_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
     "/start_task/{tool_name}": {
       "post": {
         "summary": "Start Task",
-        "description": "Starts a tool execution and returns a call_id to stream progress.",
         "operationId": "start_task_start_task__tool_name__post",
         "security": [
           {
@@ -105,7 +127,6 @@
     "/stream": {
       "get": {
         "summary": "Stream Task",
-        "description": "SSE endpoint to stream progress and results for a task.",
         "operationId": "stream_task_stream_get",
         "security": [
           {
@@ -158,7 +179,6 @@
     "/stream/{call_id}": {
       "get": {
         "summary": "Stream Task",
-        "description": "SSE endpoint to stream progress and results for a task.",
         "operationId": "stream_task_stream__call_id__get",
         "security": [
           {
@@ -382,6 +402,38 @@
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "summary": "Get Version",
+        "operationId": "get_version_version_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
