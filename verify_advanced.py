@@ -2,11 +2,17 @@ import requests
 import json
 import time
 import sys
+import os
 
 def test_tool(tool_name, args={}):
+    api_key = os.getenv("BRIDGE_API_KEY", "")
+    headers = {}
+    if api_key:
+        headers["X-API-Key"] = api_key
+
     print(f"\n--- Testing Tool: {tool_name} with args: {args} ---")
     # 1. Start Task
-    resp = requests.post(f"http://localhost:8000/start_task/{tool_name}", json=args)
+    resp = requests.post(f"http://localhost:8000/start_task/{tool_name}", json={"args": args}, headers=headers)
     if resp.status_code != 200:
         print(f"Failed to start task: {resp.text}")
         return
@@ -15,7 +21,11 @@ def test_tool(tool_name, args={}):
     print(f"Task started. Call ID: {call_id}")
     
     # 2. Stream
-    stream_resp = requests.get(f"http://localhost:8000/stream/{call_id}", stream=True)
+    params = {}
+    if api_key:
+        params["api_key"] = api_key
+        
+    stream_resp = requests.get(f"http://localhost:8000/stream/{call_id}", params=params, stream=True)
     
     for line in stream_resp.iter_lines():
         if line:
