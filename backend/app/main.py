@@ -17,14 +17,14 @@ from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_
 from .logger import logger
 from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
-from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
+from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, ACTIVE_WS_CONNECTIONS
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
 WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
-APP_VERSION = "1.0.8"
+APP_VERSION = "1.0.9"
 APP_START_TIME = time.time()
 GIT_COMMIT = "0eb2578"
 
@@ -208,6 +208,7 @@ async def health_check():
         "system_platform": sys.platform, 
         "cpu_count": os.cpu_count(),
         "thread_count": threading.active_count(),
+        "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
         "load_avg": load_avg,
         "memory_rss_kb": get_memory_usage_kb(),
         "registry_size": registry.active_task_count, 
@@ -242,24 +243,25 @@ async def metrics():
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    try:
-        await verify_api_key_ws(websocket)
-    except HTTPException:
-        return
-
-    logger.info("WebSocket connection established")
+    ACTIVE_WS_CONNECTIONS.inc()
     active_tasks: Dict[str, asyncio.Task] = {}
-    send_lock = asyncio.Lock()
-
-    async def safe_send_json(data: dict):
-        async with send_lock:
-            try:
-                await websocket.send_json(data)
-            except Exception as e:
-                logger.error(f"Error sending WS message: {e}")
-                raise
-
     try:
+        try:
+            await verify_api_key_ws(websocket)
+        except HTTPException:
+            return
+
+        logger.info("WebSocket connection established")
+        send_lock = asyncio.Lock()
+
+        async def safe_send_json(data: dict):
+            async with send_lock:
+                try:
+                    await websocket.send_json(data)
+                except Exception as e:
+                    logger.error(f"Error sending WS message: {e}")
+                    raise
+
         while True:
             try:
                 # Use raw receive to handle both text and binary frames gracefully
@@ -441,6 +443,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
+        ACTIVE_WS_CONNECTIONS.dec()
         if active_tasks:
             logger.info(f"Cleaning up {len(active_tasks)} WebSocket tasks due to disconnect/timeout")
             for task in active_tasks.values():

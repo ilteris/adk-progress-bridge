@@ -2,7 +2,7 @@
 
 A real-time progress bridge between long-running agent tools and a frontend/TUI. Built for high-fidelity agent status monitoring.
 
-**Current Version:** 1.0.8 ("SUPREME ABSOLUTE APEX")
+**Current Version:** 1.0.9 ("SUPREME ABSOLUTE APEX")
 
 ## 🚀 Key Features
 
@@ -45,7 +45,7 @@ npm run dev
 ```
 
 ### 3. Verification
-Run the supreme verification suite to ensure all 106 tests pass:
+Run the supreme verification suite to ensure all 108 tests pass:
 ```bash
 python3 verify_supreme.py
 ```
