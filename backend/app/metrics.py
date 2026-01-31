@@ -41,6 +41,11 @@ ACTIVE_WS_CONNECTIONS = Gauge(
     "Number of active WebSocket connections"
 )
 
+PEAK_ACTIVE_WS_CONNECTIONS = Gauge(
+    "adk_peak_active_ws_connections",
+    "Peak number of active WebSocket connections since start"
+)
+
 WS_MESSAGES_RECEIVED_TOTAL = Counter(
     "adk_ws_messages_received_total",
     "Total number of messages received via WebSocket",
@@ -77,6 +82,11 @@ WS_CONNECTION_DURATION = Histogram(
 MEMORY_PERCENT = Gauge(
     "adk_memory_percent",
     "Memory usage percentage of the process"
+)
+
+CPU_USAGE_PERCENT = Gauge(
+    "adk_cpu_usage_percent",
+    "CPU usage percentage of the process"
 )
 
 TOTAL_TASKS_STARTED = Counter(

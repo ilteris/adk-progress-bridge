@@ -27,7 +27,8 @@ from .metrics import (
     TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, 
     ACTIVE_WS_CONNECTIONS, WS_MESSAGES_RECEIVED_TOTAL, WS_MESSAGES_SENT_TOTAL, BUILD_INFO,
     PEAK_ACTIVE_TASKS, WS_BYTES_RECEIVED_TOTAL, WS_BYTES_SENT_TOTAL,
-    WS_REQUEST_LATENCY, WS_CONNECTION_DURATION, MEMORY_PERCENT, TOTAL_TASKS_STARTED
+    WS_REQUEST_LATENCY, WS_CONNECTION_DURATION, MEMORY_PERCENT, TOTAL_TASKS_STARTED,
+    CPU_USAGE_PERCENT, PEAK_ACTIVE_WS_CONNECTIONS
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -36,15 +37,16 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.1"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v330-apex"
+GIT_COMMIT = "v331-supreme"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    app.state.peak_ws_connections = 0
     cleanup_task = asyncio.create_task(cleanup_background_task())
     logger.info("Background cleanup task started")
     yield
@@ -272,6 +274,8 @@ async def health_check():
     uptime_seconds = time.time() - APP_START_TIME
     mem_percent = get_memory_percent()
     MEMORY_PERCENT.set(mem_percent)
+    cpu_percent = get_cpu_percent()
+    CPU_USAGE_PERCENT.set(cpu_percent)
     
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -287,9 +291,10 @@ async def health_check():
         "python_implementation": platform.python_implementation(),
         "system_platform": sys.platform, 
         "cpu_count": os.cpu_count(),
-        "cpu_usage_percent": get_cpu_percent(),
+        "cpu_usage_percent": cpu_percent,
         "thread_count": threading.active_count(),
         "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
+        "peak_ws_connections": getattr(app.state, "peak_ws_connections", 0),
         "ws_messages_received": int(ws_received),
         "ws_messages_sent": int(ws_sent),
         "ws_bytes_received": int(WS_BYTES_RECEIVED_TOTAL._value.get()),
@@ -329,8 +334,9 @@ async def metrics():
     from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
     from fastapi.responses import Response
     
-    # Update some gauges before returning
+    # Update gauges before returning
     MEMORY_PERCENT.set(get_memory_percent())
+    CPU_USAGE_PERCENT.set(get_cpu_percent())
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
@@ -339,6 +345,13 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     conn_start_time = time.perf_counter()
     ACTIVE_WS_CONNECTIONS.inc()
+    
+    # Update peak connections
+    current_ws = int(ACTIVE_WS_CONNECTIONS._value.get())
+    if current_ws > getattr(app.state, "peak_ws_connections", 0):
+        app.state.peak_ws_connections = current_ws
+        PEAK_ACTIVE_WS_CONNECTIONS.set(current_ws)
+        
     active_tasks: Dict[str, asyncio.Task] = {}
     try:
         try:

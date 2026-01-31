@@ -2,7 +2,7 @@ import pytest
 import asyncio
 import json
 from fastapi.testclient import TestClient
-from backend.app.main import app
+from backend.app.main import app, APP_VERSION, GIT_COMMIT
 
 def test_ws_metrics_v329_health():
     client = TestClient(app)
@@ -11,8 +11,8 @@ def test_ws_metrics_v329_health():
     data = response.json()
     assert "ws_bytes_received" in data
     assert "ws_bytes_sent" in data
-    assert data["version"] == "1.1.9"
-    assert data["git_commit"] == "v329-apex"
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT
 
 @pytest.mark.asyncio
 async def test_ws_metrics_v329_execution():
@@ -50,4 +50,4 @@ def test_ws_metrics_v329_version():
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
-    assert response.json()["version"] == "1.1.9"
+    assert response.json()["version"] == APP_VERSION
