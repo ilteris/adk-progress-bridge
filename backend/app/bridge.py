@@ -5,6 +5,9 @@ from pydantic import BaseModel, Field, validate_call
 from .logger import logger
 from .metrics import ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL
 
+# PROTOCOL_VERSION: Current version of the bridge protocol for compatibility tracking.
+PROTOCOL_VERSION = "1.1.0"
+
 class ProgressPayload(BaseModel):
     """
     Standard schema for progress updates yielded by tools.
@@ -49,6 +52,10 @@ class ProgressEvent(BaseModel):
     timestamp: float = Field(
         default_factory=time.time,
         description="The server-side Unix timestamp when this event was generated."
+    )
+    protocol_version: str = Field(
+        default=PROTOCOL_VERSION,
+        description="The version of the bridge protocol being used."
     )
     payload: Union[ProgressPayload, Dict[str, Any]] = Field(
         ..., 

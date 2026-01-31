@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_manager
+from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_manager, PROTOCOL_VERSION
 from .logger import logger
 from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
@@ -25,8 +25,6 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 # WS_MESSAGE_SIZE_LIMIT: Maximum allowed size (bytes) for an incoming WebSocket message.
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
-# PROTOCOL_VERSION: Current version of the bridge protocol for compatibility tracking.
-PROTOCOL_VERSION = "1.1.0"
 
 # CORS Configuration
 # Defaults to "*" for development but can be restricted via environment variable.
