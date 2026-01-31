@@ -315,12 +315,25 @@ async def websocket_endpoint(websocket: WebSocket):
                         "request_id": request_id
                     })
                 else:
-                    await safe_send_json({
-                        "type": "error",
-                        "call_id": call_id,
-                        "request_id": request_id, 
-                        "payload": {"detail": f"No active task found with call_id: {call_id}"}
-                    })
+                    # Try to stop task that might be in the registry but not in active_tasks (e.g. not being streamed yet)
+                    task_data = await registry.get_task_no_consume(call_id)
+                    if task_data:
+                        logger.info(f"Stopping non-streamed task {call_id} via WebSocket request", extra={"call_id": call_id})
+                        await task_data["gen"].aclose()
+                        if not task_data["consumed"]:
+                            await registry.remove_task(call_id)
+                        await safe_send_json({
+                            "type": "stop_success",
+                            "call_id": call_id,
+                            "request_id": request_id
+                        })
+                    else:
+                        await safe_send_json({
+                            "type": "error",
+                            "call_id": call_id,
+                            "request_id": request_id, 
+                            "payload": {"detail": f"No active task found with call_id: {call_id}"}
+                        })
             elif msg_type == "subscribe":
                 call_id = message.get("call_id")
                 task_data = await registry.get_task(call_id)

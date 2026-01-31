@@ -267,3 +267,27 @@ def test_websocket_subscribe_invalid():
         assert data["type"] == "error"
         assert data.get("request_id") == "sub_req_invalid"
         assert "Task not found" in data["payload"]["detail"]
+
+def test_websocket_stop_not_streamed():
+    client = TestClient(app)
+    # 1. Start a task via REST, but don''t stream it
+    resp = client.post("/start_task/long_audit", json={"args": {"duration": 5}})
+    assert resp.status_code == 200
+    call_id = resp.json()["call_id"]
+    
+    # 2. Connect via WebSocket and stop it
+    with client.websocket_connect("/ws") as websocket:
+        websocket.send_json({
+            "type": "stop",
+            "call_id": call_id,
+            "request_id": "stop_unstreamed_req"
+        })
+        
+        data = websocket.receive_json()
+        assert data["type"] == "stop_success"
+        assert data["call_id"] == call_id
+        assert data.get("request_id") == "stop_unstreamed_req"
+    
+    # 3. Verify it''s gone from registry
+    resp = client.post(f"/stop_task/{call_id}")
+    assert resp.status_code == 404

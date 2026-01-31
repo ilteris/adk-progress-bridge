@@ -38,6 +38,8 @@ Manages bi-directional input for tasks that require user interaction.
         *   Response: `{"type": "tools_list", "tools": [...], "request_id": "..."}`
     *   Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task.
         *   Response: `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}`
+    *   Message `{"type": "subscribe", "call_id": "...", "request_id": "..."}` subscribes to an existing task.
+        *   Response: `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}` followed by stream.
     *   Message `{"type": "stop", "call_id": "...", "request_id": "..."}` stops a task.
         *   Response: `{"type": "stop_success", "call_id": "...", "request_id": "..."}`
     *   Message `{"type": "input", "call_id": "...", "value": "...", "request_id": "..."}` provides interactive input.
@@ -75,13 +77,6 @@ interface AgentState {
 *   `sendInput(value)`: Sends interactive input via WS or REST fallback.
 *   `reset()`: Cleans up connections and state.
 
-### 3.2 Component: `TaskMonitor.vue`
-*   **Configuration:** UI to set tool parameters and toggle WebSocket mode.
-*   **Tool Selection:** Dynamic dropdown populated via `fetchTools`.
-*   **Interactive UI:** Dynamic input field appears when the agent requests input.
-*   **Progress:** Animated progress bar and status labels.
-*   **Console:** Real-time log output with timestamps.
-
 ## 4. Implementation Details
 
 ### 4.1 Bi-directional WebSockets
@@ -91,6 +86,7 @@ The WebSocket layer allows for:
 3.  **Explicit Cancellation:** Direct `stop` messages over the socket are handled instantly with success confirmation.
 4.  **Connection Awareness:** The server automatically closes generators if the client disconnects.
 5.  **Native Interaction:** Interactive input is sent directly back over the same socket.
+6.  **Cross-Protocol Monitoring:** The `subscribe` command allows a WebSocket client to monitor a task started via REST/SSE.
 
 ### 4.2 Security
 All endpoints (SSE, WS, REST) support API Key authentication via `X-API-Key` header or `api_key` query parameter.
