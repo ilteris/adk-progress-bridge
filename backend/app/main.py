@@ -6,6 +6,7 @@ import time
 import os
 import subprocess
 import threading
+import platform
 from typing import Dict, List, Optional, Any
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
@@ -13,13 +14,19 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_manager
 from .logger import logger
 from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
 from .metrics import (
     TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, 
-    ACTIVE_WS_CONNECTIONS, WS_MESSAGES_RECEIVED_TOTAL, WS_MESSAGES_SENT_TOTAL, BUILD_INFO
+    ACTIVE_WS_CONNECTIONS, WS_MESSAGES_RECEIVED_TOTAL, WS_MESSAGES_SENT_TOTAL, BUILD_INFO,
+    PEAK_ACTIVE_TASKS
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -28,9 +35,9 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.1.7"
+APP_VERSION = "1.1.8"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v327-apex"
+GIT_COMMIT = "v328-apex"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -53,6 +60,12 @@ async def cleanup_background_task():
         logger.info("Background cleanup task cancelled")
 
 def get_memory_usage_kb():
+    if psutil:
+        try:
+            return psutil.Process().memory_info().rss // 1024
+        except:
+            pass
+    
     try:
         if sys.platform == "darwin":
             # Mac
@@ -67,6 +80,14 @@ def get_memory_usage_kb():
     except:
         pass
     return 0
+
+def get_cpu_percent():
+    if psutil:
+        try:
+            return psutil.cpu_percent(interval=None)
+        except:
+            pass
+    return 0.0
 
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
@@ -252,8 +273,10 @@ async def health_check():
         "git_commit": GIT_COMMIT,
         "operational_apex": "SUPREME ABSOLUTE APEX", 
         "python_version": sys.version, 
+        "python_implementation": platform.python_implementation(),
         "system_platform": sys.platform, 
         "cpu_count": os.cpu_count(),
+        "cpu_usage_percent": get_cpu_percent(),
         "thread_count": threading.active_count(),
         "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
         "ws_messages_received": int(ws_received),
@@ -261,6 +284,7 @@ async def health_check():
         "load_avg": load_avg,
         "memory_rss_kb": get_memory_usage_kb(),
         "registry_size": registry.active_task_count, 
+        "peak_registry_size": registry.peak_active_tasks,
         "total_tasks_started": registry.total_tasks_started,
         "registry_summary": tools_summary,
         "uptime_seconds": uptime_seconds, 

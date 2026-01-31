@@ -20,6 +20,11 @@ ACTIVE_TASKS = Gauge(
     ["tool_name"]
 )
 
+PEAK_ACTIVE_TASKS = Gauge(
+    "adk_peak_active_tasks",
+    "Peak number of tasks in the registry since start"
+)
+
 STALE_TASKS_CLEANED_TOTAL = Counter(
     "adk_stale_tasks_cleaned_total",
     "Total number of stale tasks cleaned up from the registry"

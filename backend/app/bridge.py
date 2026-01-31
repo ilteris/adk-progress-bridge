@@ -2,7 +2,7 @@ import asyncio
 from typing import Any, Dict, List, AsyncGenerator, Callable, Literal, Union, Optional
 from pydantic import BaseModel, Field, validate_call
 from .logger import logger
-from .metrics import ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL
+from .metrics import ACTIVE_TASKS, PEAK_ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL
 
 class ProgressPayload(BaseModel):
     """
@@ -81,6 +81,7 @@ class ToolRegistry:
         # Stores call_id -> {"gen": gen, "tool_name": str, "created_at": timestamp, "consumed": bool}
         self._active_tasks: Dict[str, Dict[str, Any]] = {}
         self._total_tasks_started = 0
+        self._peak_active_tasks = 0
         self._lock = asyncio.Lock()
 
     def register(self, name: Optional[str] = None):
@@ -107,6 +108,10 @@ class ToolRegistry:
     @property
     def total_tasks_started(self) -> int:
         return self._total_tasks_started
+    
+    @property
+    def peak_active_tasks(self) -> int:
+        return self._peak_active_tasks
 
     def list_tools(self) -> List[str]:
         return list(self._tools.keys())
@@ -150,6 +155,12 @@ class ToolRegistry:
             }
             ACTIVE_TASKS.labels(tool_name=tool_name).inc()
             self._total_tasks_started += 1
+            
+            current_count = len(self._active_tasks)
+            if current_count > self._peak_active_tasks:
+                self._peak_active_tasks = current_count
+                PEAK_ACTIVE_TASKS.set(current_count)
+                
         logger.debug(f"Task stored in registry: {call_id}", extra={"call_id": call_id, "tool_name": tool_name})
 
     async def get_task(self, call_id: str) -> Optional[Dict[str, Any]]:
