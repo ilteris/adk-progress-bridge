@@ -11,8 +11,10 @@ interface AgentEvent {
   call_id: string
   type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list'
   payload: any
+  timestamp?: number
   request_id?: string
   tools?: string[]
+  protocol_version?: string
 }
 
 export type ConnectionStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'error' | 'completed' | 'cancelled' | 'waiting_for_input'
