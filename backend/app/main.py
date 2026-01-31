@@ -5,6 +5,7 @@ import uuid
 import time
 import os
 import subprocess
+import threading
 from typing import Dict, List, Optional, Any
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
@@ -23,7 +24,7 @@ WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
-APP_VERSION = "1.0.7"
+APP_VERSION = "1.0.8"
 APP_START_TIME = time.time()
 GIT_COMMIT = "0eb2578"
 
@@ -206,6 +207,7 @@ async def health_check():
         "python_version": sys.version, 
         "system_platform": sys.platform, 
         "cpu_count": os.cpu_count(),
+        "thread_count": threading.active_count(),
         "load_avg": load_avg,
         "memory_rss_kb": get_memory_usage_kb(),
         "registry_size": registry.active_task_count, 

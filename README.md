@@ -2,7 +2,7 @@
 
 A real-time progress bridge between long-running agent tools and a frontend/TUI. Built for high-fidelity agent status monitoring.
 
-**Current Version:** 1.0.7 ("SUPREME ABSOLUTE APEX")
+**Current Version:** 1.0.8 ("SUPREME ABSOLUTE APEX")
 
 ## 🚀 Key Features
 
