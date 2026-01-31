@@ -30,8 +30,8 @@ Manages bi-directional input for tasks that require user interaction.
 *   **REST Flow (SSE):**
     *   `GET /tools`: Returns a list of all registered tool names.
     *   `GET /tasks`: Returns a list of all currently active task sessions in the registry.
-    *   `GET /health`: Returns system health status, version (**1.1.4**), git commit, uptime, CPU count, thread count, active WebSocket connections, **WebSocket messages received/sent counters**, load average, active task count, total tasks started, memory usage, and configuration parameters (heartbeat timeout, cleanup interval, max concurrent tasks, etc.). and `adk_build_info` metric
-    *   `GET /version`: Returns current API version (**1.1.4**), git commit hash, and operational status (e.g., "SUPREME ABSOLUTE APEX").
+    *   `GET /health`: Returns system health status, version (**1.1.5**), git commit, uptime, CPU count, thread count, active WebSocket connections, **WebSocket messages received/sent counters**, load average, active task count, total tasks started, memory usage, and configuration parameters (heartbeat timeout, cleanup interval, max concurrent tasks, etc.). and `adk_build_info` metric
+    *   `GET /version`: Returns current API version (**1.1.5**), git commit hash, and operational status (e.g., "SUPREME ABSOLUTE APEX").
     *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id`. Returns 503 if `MAX_CONCURRENT_TASKS` (100) is reached.
     *   `GET /stream/{call_id}`: SSE endpoint for progress streaming.
     *   `POST /stop_task/{call_id}`: Manual termination.

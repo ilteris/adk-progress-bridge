@@ -28,9 +28,9 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.1.4"
+APP_VERSION = "1.1.5"
 APP_START_TIME = time.time()
-GIT_COMMIT = "7e023a1"
+GIT_COMMIT = "50a6d4a"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -490,7 +490,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
                     })
             else:
-                logger.warning(f"Unknown WebSocket message type: {msg_type}")
+                logger.warning(f"Unknown WebSocket message type: {msg_type}", extra={"ws_message": message})
                 await safe_send_json({
                     "type": "error",
                     "request_id": request_id, 
