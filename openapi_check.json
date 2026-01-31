@@ -9,7 +9,6 @@
     "/tools": {
       "get": {
         "summary": "List Tools",
-        "description": "Returns a list of all registered tools.",
         "operationId": "list_tools_tools_get",
         "responses": {
           "200": {
@@ -40,7 +39,6 @@
     "/start_task/{tool_name}": {
       "post": {
         "summary": "Start Task",
-        "description": "Starts a tool execution and returns a call_id to stream progress.",
         "operationId": "start_task_start_task__tool_name__post",
         "security": [
           {
@@ -105,7 +103,6 @@
     "/stream": {
       "get": {
         "summary": "Stream Task",
-        "description": "SSE endpoint to stream progress and results for a task.",
         "operationId": "stream_task_stream_get",
         "security": [
           {
@@ -158,7 +155,6 @@
     "/stream/{call_id}": {
       "get": {
         "summary": "Stream Task",
-        "description": "SSE endpoint to stream progress and results for a task.",
         "operationId": "stream_task_stream__call_id__get",
         "security": [
           {

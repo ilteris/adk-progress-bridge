@@ -4,6 +4,7 @@ import json
 import pytest
 import asyncio
 from fastapi.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 # Add the project root to sys.path to import backend
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -140,3 +141,13 @@ def test_websocket_input_missing_value():
         assert data["type"] == "error"
         assert data["request_id"] == "input_missing_value"
         assert "No task waiting for input" in data["payload"]["detail"]
+
+def test_websocket_binary_message():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        # Sending binary data should now be handled with a helpful error message
+        websocket.send_bytes(b"some binary data")
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert "Binary messages are not supported" in data["payload"]["detail"]
