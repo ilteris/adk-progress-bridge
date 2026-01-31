@@ -192,3 +192,15 @@ def test_websocket_non_dict_json():
         data = websocket.receive_json()
         assert data["type"] == "error"
         assert "must be a JSON object" in data["payload"]["detail"]
+
+def test_websocket_message_size_limit():
+    client = TestClient(app)
+    with client.websocket_connect("/ws") as websocket:
+        # Create a message slightly larger than 1MB
+        large_data = "a" * (1024 * 1024 + 100)
+        websocket.send_text(large_data)
+        
+        data = websocket.receive_json()
+        assert data["type"] == "error"
+        assert "Message too large" in data["payload"]["detail"]
+
