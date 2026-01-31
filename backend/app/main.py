@@ -38,7 +38,7 @@ from .metrics import (
     PROCESS_CONNECTIONS_COUNT, SYSTEM_LOAD_1M,
     SYSTEM_LOAD_5M, SYSTEM_LOAD_15M, PROCESS_MEMORY_RSS, PROCESS_MEMORY_VMS,
     SYSTEM_MEMORY_TOTAL, SYSTEM_CPU_USAGE_USER, SYSTEM_CPU_USAGE_SYSTEM,
-    SYSTEM_UPTIME
+    SYSTEM_UPTIME, SYSTEM_CPU_USAGE_IDLE, PROCESS_CPU_USAGE_USER, PROCESS_CPU_USAGE_SYSTEM, SYSTEM_MEMORY_USED, SYSTEM_MEMORY_FREE, SYSTEM_NETWORK_PACKETS_SENT, SYSTEM_NETWORK_PACKETS_RECV
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -47,9 +47,9 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.2.7"
+APP_VERSION = "1.2.8"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v337-omega"
+GIT_COMMIT = "v338-omega-plus"
 OPERATIONAL_APEX = "SUPREME ABSOLUTE APEX OMEGA"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
@@ -182,6 +182,41 @@ def get_page_faults():
             pass
     return 0, 0
 
+
+def get_system_cpu_idle_percent():
+    if psutil:
+        try:
+            return psutil.cpu_times_percent(interval=None).idle
+        except:
+            pass
+    return 0.0
+
+def get_process_cpu_times_total():
+    if psutil:
+        try:
+            times = psutil.Process().cpu_times()
+            return times.user, times.system
+        except:
+            pass
+    return 0.0, 0.0
+
+def get_system_memory_extended():
+    if psutil:
+        try:
+            mem = psutil.virtual_memory()
+            return mem.used, mem.free
+        except:
+            pass
+    return 0, 0
+
+def get_system_network_packets():
+    if psutil:
+        try:
+            io = psutil.net_io_counters()
+            return io.packets_sent, io.packets_recv
+        except:
+            pass
+    return 0, 0
 def get_swap_memory_percent():
     if psutil:
         try:
@@ -476,6 +511,18 @@ async def health_check():
     SYSTEM_CPU_USAGE_USER.set(user_cpu)
     SYSTEM_CPU_USAGE_SYSTEM.set(sys_cpu)
 
+
+    # v338 metrics
+    SYSTEM_CPU_USAGE_IDLE.set(get_system_cpu_idle_percent())
+    proc_user_cpu, proc_sys_cpu = get_process_cpu_times_total()
+    PROCESS_CPU_USAGE_USER.set(proc_user_cpu)
+    PROCESS_CPU_USAGE_SYSTEM.set(proc_sys_cpu)
+    sys_mem_used, sys_mem_free = get_system_memory_extended()
+    SYSTEM_MEMORY_USED.set(sys_mem_used)
+    SYSTEM_MEMORY_FREE.set(sys_mem_free)
+    sys_net_psent, sys_net_precv = get_system_network_packets()
+    SYSTEM_NETWORK_PACKETS_SENT.set(sys_net_psent)
+    SYSTEM_NETWORK_PACKETS_RECV.set(sys_net_precv)
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
     for t in active_tasks_list:
@@ -558,8 +605,20 @@ async def health_check():
         "task_success_rate_percent": success_rate,
         "registry_summary": tools_summary,
         "uptime_seconds": uptime_seconds,
-        "system_uptime_seconds": SYSTEM_UPTIME._value.get(),
-        "uptime_human": get_uptime_human(uptime_seconds),
+        "system_uptime_seconds": int(SYSTEM_UPTIME._value.get()),
+        "system_cpu_idle_percent": get_system_cpu_idle_percent(),
+        "process_cpu_usage": {
+            "user_seconds": proc_user_cpu,
+            "system_seconds": proc_sys_cpu
+        },
+        "system_memory_extended": {
+            "used_bytes": sys_mem_used,
+            "free_bytes": sys_mem_free
+        },
+        "system_network_packets": {
+            "sent": sys_net_psent,
+            "recv": sys_net_precv
+        },        "uptime_human": get_uptime_human(uptime_seconds),
         "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APP_START_TIME)), 
         "timestamp": now,
         "config": {

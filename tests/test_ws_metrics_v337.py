@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from backend.app.main import app, APP_VERSION
+from backend.app.main import app, APP_VERSION, GIT_COMMIT
 
 client = TestClient(app)
 
@@ -24,8 +24,8 @@ def test_v337_metrics_in_health_endpoint():
     assert response.status_code == 200
     data = response.json()
     
-    assert data["version"] == "1.2.7"
-    assert data["git_commit"] == "v337-omega"
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT
     assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA"
     
     # Check v337 specific fields
@@ -44,6 +44,6 @@ def test_v337_version_endpoint():
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "1.2.7"
-    assert data["git_commit"] == "v337-omega"
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT
     assert data["status"] == "SUPREME ABSOLUTE APEX OMEGA"

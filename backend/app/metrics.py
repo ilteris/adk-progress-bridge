@@ -237,6 +237,42 @@ SYSTEM_UPTIME = Gauge(
     "System uptime in seconds"
 )
 
+# v338 Supreme Apex Ultra Millennium Omega Plus Metrics
+SYSTEM_CPU_USAGE_IDLE = Gauge(
+    "adk_system_cpu_usage_idle_percent",
+    "System-wide CPU usage percentage in idle mode"
+)
+
+PROCESS_CPU_USAGE_USER = Gauge(
+    "adk_process_cpu_usage_user_seconds",
+    "Total user CPU time spent by the process in seconds"
+)
+
+PROCESS_CPU_USAGE_SYSTEM = Gauge(
+    "adk_process_cpu_usage_system_seconds",
+    "Total system CPU time spent by the process in seconds"
+)
+
+SYSTEM_MEMORY_USED = Gauge(
+    "adk_system_memory_used_bytes",
+    "Used system memory in bytes"
+)
+
+SYSTEM_MEMORY_FREE = Gauge(
+    "adk_system_memory_free_bytes",
+    "Free system memory in bytes"
+)
+
+SYSTEM_NETWORK_PACKETS_SENT = Gauge(
+    "adk_system_network_packets_sent_total",
+    "Total system packets sent over the network"
+)
+
+SYSTEM_NETWORK_PACKETS_RECV = Gauge(
+    "adk_system_network_packets_recv_total",
+    "Total system packets received over the network"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():
