@@ -33,8 +33,7 @@ from .auth import verify_api_key, verify_api_key_ws
 from .metrics import (
     TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, 
     ACTIVE_WS_CONNECTIONS, WS_MESSAGES_RECEIVED_TOTAL, WS_MESSAGES_SENT_TOTAL, BUILD_INFO,
-    PEAK_ACTIVE_TASKS, WS_MESSAGES_RECEIVED_TOTAL as WS_MESSAGES_RECEIVED_TOTAL_COUNTER, WS_MESSAGES_SENT_TOTAL as WS_MESSAGES_SENT_TOTAL_COUNTER,
-    WS_BYTES_RECEIVED_TOTAL, WS_BYTES_SENT_TOTAL,
+    PEAK_ACTIVE_TASKS, WS_BYTES_RECEIVED_TOTAL, WS_BYTES_SENT_TOTAL,
     WS_REQUEST_LATENCY, WS_CONNECTION_DURATION, MEMORY_PERCENT, TOTAL_TASKS_STARTED,
     CPU_USAGE_PERCENT, PEAK_ACTIVE_WS_CONNECTIONS, OPEN_FDS, THREAD_COUNT,
     WS_THROUGHPUT_RECEIVED_BPS, WS_THROUGHPUT_SENT_BPS,
@@ -94,16 +93,16 @@ from .metrics import (
     SYSTEM_CPU_SOFT_INTERRUPT_RATE_BPS, SYSTEM_CPU_SYSCALL_RATE_BPS
 )
 
-# Configuration Constants for WebSocket and Task Lifecycle Management
+# Configuration Constants
 WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.6.8"
+APP_VERSION = "1.6.9"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v373-ultimate-apex"
-OPERATIONAL_APEX = "GOD TIER FIDELITY (v373 ULTIMATE APEX)"
+GIT_COMMIT = "v374-supreme-apex"
+OPERATIONAL_APEX = "GOD TIER FIDELITY (v374 SUPREME APEX)"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -111,717 +110,22 @@ ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.peak_ws_connections = 0
-    app.state.last_throughput_time = time.time()
-    app.state.last_bytes_received = 0
-    app.state.last_bytes_sent = 0
-    
-    app.state.last_io_time = time.time()
-    app.state.last_proc_read_bytes = 0
-    app.state.last_proc_write_bytes = 0
-    
-    app.state.last_sys_io_time = time.time()
-    app.state.last_sys_read_bytes = 0
-    app.state.last_sys_write_bytes = 0
-    app.state.last_sys_net_recv_bytes = 0
-    app.state.last_sys_net_sent_bytes = 0
-    
-    app.state.last_sys_cpu_stats_time = time.time()
-    app.state.last_sys_ctx_switches = 0
-    app.state.last_sys_interrupts = 0
-    app.state.last_sys_soft_interrupts = 0
-    app.state.last_sys_syscalls = 0
-
-    app.state.last_sys_pf_time = time.time()
-    app.state.last_sys_pf_minor = 0
-    app.state.last_sys_pf_major = 0
-    
+    app.state.last_throughput_time, app.state.last_bytes_received, app.state.last_bytes_sent = time.time(), 0, 0
+    app.state.last_io_time, app.state.last_proc_read_bytes, app.state.last_proc_write_bytes = time.time(), 0, 0
+    app.state.last_sys_io_time, app.state.last_sys_read_bytes, app.state.last_sys_write_bytes = time.time(), 0, 0
+    app.state.last_sys_net_recv_bytes, app.state.last_sys_net_sent_bytes = 0, 0
+    app.state.last_sys_cpu_stats_time, app.state.last_sys_ctx_switches, app.state.last_sys_interrupts, app.state.last_sys_soft_interrupts, app.state.last_sys_syscalls = time.time(), 0, 0, 0, 0
+    app.state.last_sys_pf_time, app.state.last_sys_pf_minor, app.state.last_sys_pf_major = time.time(), 0, 0
     cleanup_task = asyncio.create_task(cleanup_background_task())
     await metrics_broadcaster.start()
-    logger.info("Background cleanup task and metrics broadcaster started")
     yield
-    await metrics_broadcaster.stop()
-    cleanup_task.cancel()
-    await registry.cleanup_tasks()
-    logger.info("Server shutdown: Cleaned up active tasks")
+    await metrics_broadcaster.stop(); cleanup_task.cancel(); await registry.cleanup_tasks()
 
 async def cleanup_background_task():
     try:
         while True:
-            await asyncio.sleep(CLEANUP_INTERVAL)
-            await registry.cleanup_stale_tasks(max_age_seconds=STALE_TASK_MAX_AGE)
-    except asyncio.CancelledError:
-        logger.info("Background cleanup task cancelled")
-
-def get_process_memory_bytes():
-    if _process:
-        try:
-            info = _process.memory_info()
-            return info.rss, info.vms
-        except:
-            pass
-    return 0, 0
-
-def get_memory_percent():
-    if _process:
-        try:
-            return _process.memory_percent()
-        except:
-            pass
-    return 0.0
-
-def get_cpu_percent():
-    if psutil:
-        try:
-            return psutil.cpu_percent(interval=None)
-        except:
-            pass
-    return 0.0
-
-def get_system_cpu_usage_breakdown():
-    if psutil:
-        try:
-            times = psutil.cpu_times_percent(interval=None)
-            return times.user, times.system
-        except:
-            pass
-    return 0.0, 0.0
-
-def get_open_fds():
-    if _process:
-        try:
-            if hasattr(_process, "num_fds"):
-                return _process.num_fds()
-            elif hasattr(_process, "num_handles"):
-                return _process.num_handles()
-        except:
-            pass
-    return 0
-
-def get_context_switches():
-    if _process:
-        try:
-            switches = _process.num_ctx_switches()
-            return switches.voluntary, switches.involuntary
-        except:
-            pass
-    return 0, 0
-
-def get_disk_usage_percent():
-    if psutil:
-        try:
-            return psutil.disk_usage('/').percent
-        except:
-            pass
-    return 0.0
-
-def get_system_memory_info():
-    if psutil:
-        try:
-            mem = psutil.virtual_memory()
-            return mem.available, mem.total
-        except:
-            pass
-    return 0, 0
-
-def get_page_faults():
-    if _process:
-        try:
-            mem = _process.memory_info()
-            minor = getattr(mem, "pfaults", 0)
-            major = getattr(mem, "pageins", 0)
-            return minor, major
-        except:
-            pass
-    return 0, 0
-
-
-def get_system_cpu_idle_percent():
-    if psutil:
-        try:
-            return psutil.cpu_times_percent(interval=None).idle
-        except:
-            pass
-    return 0.0
-
-def get_process_cpu_times_total():
-    if _process:
-        try:
-            times = _process.cpu_times()
-            return times.user, times.system
-        except:
-            pass
-    return 0.0, 0.0
-
-def get_system_memory_extended():
-    if psutil:
-        try:
-            mem = psutil.virtual_memory()
-            return mem.used, mem.free
-        except:
-            pass
-    return 0, 0
-
-def get_system_network_packets():
-    if psutil:
-        try:
-            io = psutil.net_io_counters()
-            return io.packets_sent, io.packets_recv
-        except:
-            pass
-    return 0, 0
-
-def get_system_network_io_per_nic():
-    if psutil:
-        try:
-            return psutil.net_io_counters(pernic=True)
-        except:
-            pass
-    return {}
-
-def get_system_swap_extended():
-    if psutil:
-        try:
-            swap = psutil.swap_memory()
-            return swap.used, swap.free
-        except:
-            pass
-    return 0, 0
-
-def get_process_io_counters():
-    if _process:
-        try:
-            io = _process.io_counters()
-            return io.read_bytes, io.write_bytes, io.read_count, io.write_count
-        except:
-            pass
-    return 0, 0, 0, 0
-
-def get_swap_memory_percent():
-    if psutil:
-        try:
-            return psutil.swap_memory().percent
-        except:
-            pass
-    return 0.0
-
-def get_network_io():
-    if psutil:
-        try:
-            io = psutil.net_io_counters()
-            return io.bytes_sent, io.bytes_recv
-        except:
-            pass
-    return 0, 0
-
-def get_cpu_frequency():
-    if psutil:
-        try:
-            freq = psutil.cpu_freq()
-            if freq:
-                return freq.current
-        except:
-            pass
-    return 0.0
-
-def get_disk_io():
-    if psutil:
-        try:
-            io = psutil.disk_io_counters()
-            if io:
-                return io.read_bytes, io.write_bytes
-        except:
-            pass
-    return 0, 0
-
-def get_process_connections_count():
-    if _process:
-        try:
-            return len(_process.net_connections())
-        except:
-            pass
-    return 0
-
-def get_process_cpu_percent():
-    if _process:
-        try:
-            return _process.cpu_percent(interval=None)
-        except:
-            pass
-    return 0.0
-
-def get_system_network_advanced():
-    if psutil:
-        try:
-            io = psutil.net_io_counters()
-            return io.errin, io.errout, io.dropin, io.dropout
-        except:
-            pass
-    return 0, 0, 0, 0
-
-def get_system_memory_advanced():
-    if psutil:
-        try:
-            mem = psutil.virtual_memory()
-            active = getattr(mem, "active", 0)
-            inactive = getattr(mem, "inactive", 0)
-            return active, inactive
-        except:
-            pass
-    return 0, 0
-
-def get_system_cpu_stats():
-    if psutil:
-        try:
-            stats = psutil.cpu_stats()
-            return stats.interrupts, stats.soft_interrupts, stats.syscalls
-        except:
-            pass
-    return 0, 0, 0
-
-def get_process_memory_advanced():
-    if _process:
-        try:
-            mem = _process.memory_info()
-            shared = getattr(mem, "shared", 0)
-            text = getattr(mem, "text", 0)
-            data = getattr(mem, "data", 0)
-            return shared, text, data
-        except:
-            pass
-    return 0, 0, 0
-
-def get_process_num_threads():
-    if _process:
-        try:
-            return _process.num_threads()
-        except:
-            pass
-    return 0
-
-def get_system_cpu_times_advanced():
-    if psutil:
-        try:
-            times = psutil.cpu_times_percent(interval=None)
-            steal = getattr(times, "steal", 0.0)
-            guest = getattr(times, "guest", 0.0)
-            return steal, guest
-        except:
-            pass
-    return 0.0, 0.0
-
-def get_system_memory_extended_plus():
-    if psutil:
-        try:
-            mem = psutil.virtual_memory()
-            buffers = getattr(mem, "buffers", 0)
-            cached = getattr(mem, "cached", 0)
-            return buffers, cached
-        except:
-            pass
-    return 0, 0
-
-def get_system_disk_partitions_count():
-    if psutil:
-        try:
-            return len(psutil.disk_partitions())
-        except:
-            pass
-    return 0
-
-def get_system_users_count():
-    if psutil:
-        try:
-            return len(psutil.users())
-        except:
-            pass
-    return 0
-
-def get_process_children_count():
-    if _process:
-        try:
-            return len(_process.children())
-        except:
-            pass
-    return 0
-
-def get_system_cpu_times_beyond_real():
-    if psutil:
-        try:
-            times = psutil.cpu_times_percent(interval=None)
-            return getattr(times, "iowait", 0.0), getattr(times, "irq", 0.0), getattr(times, "softirq", 0.0)
-        except:
-            pass
-    return 0.0, 0.0, 0.0
-
-def get_system_memory_beyond():
-    if psutil:
-        try:
-            mem = psutil.virtual_memory()
-            slab = getattr(mem, "slab", 0)
-            return slab
-        except:
-            pass
-    return 0
-
-def get_process_memory_beyond():
-    if _process:
-        try:
-            mem = _process.memory_info()
-            lib = getattr(mem, "lib", 0)
-            dirty = getattr(mem, "dirty", 0)
-            return lib, dirty
-        except:
-            pass
-    return 0, 0
-
-def get_process_env_var_count():
-    if _process:
-        try:
-            return len(_process.environ())
-        except:
-            pass
-    return 0
-
-def get_process_memory_uss():
-    if _process:
-        try:
-            if hasattr(_process, "memory_full_info"):
-                return _process.memory_full_info().uss
-        except:
-            pass
-    return 0
-
-def get_system_memory_wired():
-    if psutil:
-        try:
-            mem = psutil.virtual_memory()
-            return getattr(mem, "wired", 0)
-        except:
-            pass
-    return 0
-
-def get_process_nice():
-    if _process:
-        try:
-            return _process.nice()
-        except:
-            pass
-    return 0
-
-def get_system_cpu_stats_advanced():
-    if psutil:
-        try:
-            return psutil.cpu_stats().ctx_switches
-        except:
-            pass
-    return 0
-
-def get_system_network_connections_count():
-    if psutil:
-        try:
-            return len(psutil.net_connections(kind='all'))
-        except:
-            pass
-    return 0
-
-def get_process_cpu_affinity_count():
-    if _process:
-        try:
-            if hasattr(_process, "cpu_affinity"):
-                return len(_process.cpu_affinity())
-        except:
-            pass
-    return 0
-
-def get_process_memory_page_faults_total():
-    minor, major = get_page_faults()
-    return minor + major
-
-def get_system_disk_io_counts():
-    if psutil:
-        try:
-            io = psutil.disk_io_counters()
-            if io:
-                return io.read_count, io.write_count
-        except:
-            pass
-    return 0, 0
-
-def get_system_swap_io():
-    if psutil:
-        try:
-            swap = psutil.swap_memory()
-            return swap.sin, swap.sout
-        except:
-            pass
-    return 0, 0
-
-def get_process_memory_vms_percent():
-    if _process and psutil:
-        try:
-            vms = _process.memory_info().vms
-            total = psutil.virtual_memory().total
-            if total > 0:
-                return (vms / total) * 100
-        except:
-            pass
-    return 0.0
-
-def get_system_cpu_physical_count():
-    if psutil:
-        try:
-            return psutil.cpu_count(logical=False) or 0
-        except:
-            pass
-    return 0
-
-def get_system_memory_percent_total():
-    if psutil:
-        try:
-            return psutil.virtual_memory().percent
-        except:
-            pass
-    return 0.0
-
-def get_process_open_files_count():
-    if _process:
-        try:
-            return len(_process.open_files())
-        except:
-            pass
-    return 0
-
-def get_system_disk_busy_time():
-    if psutil:
-        try:
-            io = psutil.disk_io_counters()
-            return getattr(io, "busy_time", 0)
-        except:
-            pass
-    return 0
-
-def get_system_network_interfaces_count():
-    if psutil:
-        try:
-            return len(psutil.net_if_addrs())
-        except:
-            pass
-    return 0
-
-def get_process_threads_times_total():
-    if _process:
-        try:
-            user_total = 0.0
-            system_total = 0.0
-            for t in _process.threads():
-                user_total += t.user_time
-                system_total += t.system_time
-            return user_total, system_total
-        except:
-            pass
-    return 0.0, 0.0
-
-def get_system_disk_io_times():
-    if psutil:
-        try:
-            io = psutil.disk_io_counters()
-            if io:
-                return io.read_time, io.write_time
-        except:
-            pass
-    return 0, 0
-
-def get_process_memory_maps_count():
-    if _process:
-        try:
-            return len(_process.memory_maps())
-        except:
-            pass
-    return 0
-
-def get_system_network_interfaces_up_count():
-    if psutil:
-        try:
-            stats = psutil.net_if_stats()
-            return sum(1 for s in stats.values() if s.isup)
-        except:
-            pass
-    return 0
-
-def get_process_context_switches_total():
-    voluntary, involuntary = get_context_switches()
-    return voluntary + involuntary
-
-def get_process_cpu_times_children():
-    if _process:
-        try:
-            times = _process.cpu_times()
-            return getattr(times, "children_user", 0.0), getattr(times, "children_system", 0.0)
-        except:
-            pass
-    return 0.0, 0.0
-
-def get_system_network_interfaces_down_count():
-    if psutil:
-        try:
-            stats = psutil.net_if_stats()
-            return sum(1 for s in stats.values() if not s.isup)
-        except:
-            pass
-    return 0
-
-def get_system_disk_io_merged():
-    if psutil:
-        try:
-            io = psutil.disk_io_counters()
-            if io:
-                return getattr(io, "read_merged_count", 0), getattr(io, "write_merged_count", 0)
-        except:
-            pass
-    return 0, 0
-
-def get_system_memory_shared():
-    if psutil:
-        try:
-            return getattr(psutil.virtual_memory(), "shared", 0)
-        except:
-            pass
-    return 0
-
-def get_process_memory_pss():
-    if _process:
-        try:
-            if hasattr(_process, "memory_full_info"):
-                return getattr(_process.memory_full_info(), "pss", 0)
-        except:
-            pass
-    return 0
-
-def get_system_network_interfaces_mtu_total():
-    if psutil:
-        try:
-            stats = psutil.net_if_stats()
-            return sum(s.mtu for s in stats.values())
-        except:
-            pass
-    return 0
-
-def get_process_memory_swap():
-    if _process:
-        try:
-            if hasattr(_process, "memory_full_info"):
-                return getattr(_process.memory_full_info(), "swap", 0)
-        except:
-            pass
-    return 0
-
-def get_system_network_errors_total():
-    if psutil:
-        try:
-            io = psutil.net_io_counters()
-            return io.errin + io.errout + io.dropin + io.dropout
-        except:
-            pass
-    return 0
-
-def get_system_network_speed_total():
-    if psutil:
-        try:
-            stats = psutil.net_if_stats()
-            return sum(s.speed for s in stats.values() if s.speed > 0)
-        except:
-            pass
-    return 0
-
-def get_system_network_duplex_full_count():
-    if psutil:
-        try:
-            stats = psutil.net_if_stats()
-            return sum(1 for s in stats.values() if getattr(s, "duplex", 0) == 2)
-        except:
-            pass
-    return 0
-
-def get_process_memory_uss_percent():
-    if _process and psutil:
-        try:
-            uss = get_process_memory_uss()
-            total = psutil.virtual_memory().total
-            if total > 0:
-                return (uss / total) * 100
-        except:
-            pass
-    return 0.0
-
-def get_process_memory_pss_percent():
-    if _process and psutil:
-        try:
-            pss = get_process_memory_pss()
-            total = psutil.virtual_memory().total
-            if total > 0:
-                return (pss / total) * 100
-        except:
-            pass
-    return 0.0
-
-def get_system_process_count():
-    if psutil:
-        try:
-            return len(psutil.pids())
-        except:
-            pass
-    return 0
-
-def get_system_memory_available_percent():
-    if psutil:
-        try:
-            mem = psutil.virtual_memory()
-            if mem.total > 0:
-                return (mem.available / mem.total) * 100
-        except:
-            pass
-    return 0.0
-
-def get_system_cpu_cores_usage():
-    if psutil:
-        try:
-            return psutil.cpu_percent(interval=None, percpu=True)
-        except:
-            pass
-    return []
-
-def get_system_disk_partitions_usage():
-    if psutil:
-        try:
-            usage = {}
-            for part in psutil.disk_partitions(all=False):
-                if os.name == 'nt':
-                    if 'cdrom' in part.opts or part.fstype == '':
-                        continue
-                try:
-                    usage[part.mountpoint] = psutil.disk_usage(part.mountpoint).percent
-                except:
-                    continue
-            return usage
-        except:
-            pass
-    return {}
-
-def get_process_resource_limits():
-    limits = {}
-    if resource:
-        try:
-            nofile_soft, nofile_hard = resource.getrlimit(resource.RLIMIT_NOFILE)
-            limits["nofile_soft"] = nofile_soft
-            limits["nofile_hard"] = nofile_hard
-            
-            as_soft, as_hard = resource.getrlimit(resource.RLIMIT_AS)
-            limits["as_soft"] = as_soft
-            limits["as_hard"] = as_hard
-        except:
-            pass
-    return limits
-
+            await asyncio.sleep(CLEANUP_INTERVAL); await registry.cleanup_stale_tasks(max_age_seconds=STALE_TASK_MAX_AGE)
+    except asyncio.CancelledError: pass
 
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
@@ -834,826 +138,343 @@ def get_uptime_human(seconds: float) -> str:
     parts.append(f"{seconds}s")
     return " ".join(parts)
 
-async def get_health_data():
-    load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
-    SYSTEM_LOAD_1M.set(load_avg[0])
-    SYSTEM_LOAD_5M.set(load_avg[1])
-    SYSTEM_LOAD_15M.set(load_avg[2])
+def collect_raw_metrics() -> Dict[str, Any]:
+    raw = {}
+    if psutil:
+        try:
+            mem = psutil.virtual_memory()
+            raw.update({'sys_mem_available': mem.available, 'sys_mem_total': mem.total, 'sys_mem_used': mem.used, 'sys_mem_free': mem.free, 'sys_mem_percent': mem.percent, 'sys_mem_active': getattr(mem, "active", 0), 'sys_mem_inactive': getattr(mem, "inactive", 0), 'sys_mem_buffers': getattr(mem, "buffers", 0), 'sys_mem_cached': getattr(mem, "cached", 0), 'sys_mem_shared': getattr(mem, "shared", 0), 'sys_mem_slab': getattr(mem, "slab", 0), 'sys_mem_wired': getattr(mem, "wired", 0)})
+            swap = psutil.swap_memory()
+            raw.update({'sys_swap_total': swap.total, 'sys_swap_used': swap.used, 'sys_swap_free': swap.free, 'sys_swap_percent': swap.percent, 'sys_swap_sin': swap.sin, 'sys_swap_sout': swap.sout})
+            cpu_times = psutil.cpu_times_percent(interval=None)
+            raw.update({'sys_cpu_user': cpu_times.user, 'sys_cpu_system': cpu_times.system, 'sys_cpu_idle': cpu_times.idle, 'sys_cpu_iowait': getattr(cpu_times, "iowait", 0.0), 'sys_cpu_irq': getattr(cpu_times, "irq", 0.0), 'sys_cpu_softirq': getattr(cpu_times, "softirq", 0.0), 'sys_cpu_steal': getattr(cpu_times, "steal", 0.0), 'sys_cpu_guest': getattr(cpu_times, "guest", 0.0)})
+            raw.update({'sys_cpu_percent': psutil.cpu_percent(interval=None), 'sys_cpu_count': psutil.cpu_count(), 'sys_cpu_physical_count': psutil.cpu_count(logical=False) or 0})
+            cpu_freq = psutil.cpu_freq()
+            raw['sys_cpu_freq_current'] = cpu_freq.current if cpu_freq else 0.0
+            cpu_stats = psutil.cpu_stats()
+            raw.update({'sys_cpu_ctx_switches': cpu_stats.ctx_switches, 'sys_cpu_interrupts': cpu_stats.interrupts, 'sys_cpu_soft_interrupts': cpu_stats.soft_interrupts, 'sys_cpu_syscalls': cpu_stats.syscalls})
+            disk_io = psutil.disk_io_counters()
+            if disk_io: raw.update({'sys_disk_read_bytes': disk_io.read_bytes, 'sys_disk_write_bytes': disk_io.write_bytes, 'sys_disk_read_count': disk_io.read_count, 'sys_disk_write_count': disk_io.write_count, 'sys_disk_read_time': disk_io.read_time, 'sys_disk_write_time': disk_io.write_time, 'sys_disk_busy_time': getattr(disk_io, "busy_time", 0), 'sys_disk_read_merged': getattr(disk_io, "read_merged_count", 0), 'sys_disk_write_merged': getattr(disk_io, "write_merged_count", 0)})
+            raw.update({'sys_disk_usage_percent': psutil.disk_usage('/').percent, 'sys_disk_partitions_count': len(psutil.disk_partitions())})
+            net_io = psutil.net_io_counters()
+            raw.update({'sys_net_bytes_sent': net_io.bytes_sent, 'sys_net_bytes_recv': net_io.bytes_recv, 'sys_net_packets_sent': net_io.packets_sent, 'sys_net_packets_recv': net_io.packets_recv, 'sys_net_errin': net_io.errin, 'sys_net_errout': net_io.errout, 'sys_net_dropin': net_io.dropin, 'sys_net_dropout': net_io.dropout})
+            raw.update({'sys_net_interfaces_count': len(psutil.net_if_addrs()), 'sys_boot_time': psutil.boot_time(), 'sys_users_count': len(psutil.users()), 'sys_process_count': len(psutil.pids()), 'sys_network_connections': len(psutil.net_connections(kind='all'))})
+            if_stats = psutil.net_if_stats()
+            raw.update({'sys_net_interfaces_up': sum(1 for s in if_stats.values() if s.isup), 'sys_net_interfaces_down': sum(1 for s in if_stats.values() if not s.isup), 'sys_net_mtu_total': sum(s.mtu for s in if_stats.values()), 'sys_net_speed_total': sum(s.speed for s in if_stats.values() if s.speed > 0), 'sys_net_duplex_full': sum(1 for s in if_stats.values() if getattr(s, "duplex", 0) == 2)})
+            load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
+            raw.update({'sys_load_1m': load_avg[0], 'sys_load_5m': load_avg[1], 'sys_load_15m': load_avg[2], 'sys_cpu_cores_usage': psutil.cpu_percent(interval=None, percpu=True)})
+            disk_part_usage = {}
+            for part in psutil.disk_partitions(all=False):
+                try: disk_part_usage[part.mountpoint] = psutil.disk_usage(part.mountpoint).percent
+                except: continue
+            raw['sys_disk_partitions_usage'] = disk_part_usage
+            net_io_per_nic = psutil.net_io_counters(pernic=True)
+            raw['sys_net_io_per_nic'] = {nic: {"bytes_sent": io.bytes_sent, "bytes_recv": io.bytes_recv} for nic, io in net_io_per_nic.items()}
+        except Exception as e: logger.error(f"Error collecting system metrics: {e}")
 
-    ws_received_count = 0
-    for m in WS_MESSAGES_RECEIVED_TOTAL_COUNTER.collect():
-        for s in m.samples:
-            if s.name.endswith("_total"):
-                ws_received_count += s.value
-                
-    ws_sent_count = 0
-    for m in WS_MESSAGES_SENT_TOTAL_COUNTER.collect():
-        for s in m.samples:
-            if s.name.endswith("_total"):
-                ws_sent_count += s.value
+    if _process:
+        try:
+            mem = _process.memory_info()
+            raw.update({'proc_rss': mem.rss, 'proc_vms': mem.vms, 'proc_shared': getattr(mem, "shared", 0), 'proc_text': getattr(mem, "text", 0), 'proc_data': getattr(mem, "data", 0), 'proc_lib': getattr(mem, "lib", 0), 'proc_dirty': getattr(mem, "dirty", 0), 'proc_minor_pf': getattr(mem, "pfaults", 0), 'proc_major_pf': getattr(mem, "pageins", 0)})
+            if hasattr(_process, "memory_full_info"):
+                full_mem = _process.memory_full_info()
+                raw.update({'proc_uss': full_mem.uss, 'proc_pss': getattr(full_mem, "pss", 0), 'proc_swap': getattr(full_mem, "swap", 0)})
+            raw.update({'proc_mem_percent': _process.memory_percent(), 'proc_cpu_percent': _process.cpu_percent(interval=None)})
+            cpu_times = _process.cpu_times()
+            raw.update({'proc_cpu_user': cpu_times.user, 'proc_cpu_system': cpu_times.system, 'proc_cpu_children_user': getattr(cpu_times, "children_user", 0.0), 'proc_cpu_children_system': getattr(cpu_times, "children_system", 0.0)})
+            raw.update({'proc_num_threads': _process.num_threads(), 'proc_num_fds': _process.num_fds() if hasattr(_process, "num_fds") else getattr(_process, "num_handles", 0)})
+            ctx = _process.num_ctx_switches()
+            raw.update({'proc_ctx_voluntary': ctx.voluntary, 'proc_ctx_involuntary': ctx.involuntary})
+            io = _process.io_counters()
+            if io: raw.update({'proc_io_read_bytes': io.read_bytes, 'proc_io_write_bytes': io.write_bytes, 'proc_io_read_count': io.read_count, 'proc_io_write_count': io.write_count})
+            raw.update({'proc_connections_count': len(_process.net_connections()), 'proc_children_count': len(_process.children()), 'proc_open_files_count': len(_process.open_files()), 'proc_memory_maps_count': len(_process.memory_maps()), 'proc_env_var_count': len(_process.environ()), 'proc_nice': _process.nice(), 'proc_cpu_affinity_count': len(_process.cpu_affinity()) if hasattr(_process, "cpu_affinity") else 0})
+            u_total, s_total = 0.0, 0.0
+            for t in _process.threads(): u_total += t.user_time; s_total += t.system_time
+            raw.update({'proc_threads_user_time': u_total, 'proc_threads_system_time': s_total})
+        except Exception as e: logger.error(f"Error collecting process metrics: {e}")
 
-    ws_bytes_received = int(WS_BYTES_RECEIVED_TOTAL._value.get())
-    ws_bytes_sent = int(WS_BYTES_SENT_TOTAL._value.get())
+    if resource:
+        try:
+            raw['proc_limit_nofile_soft'], raw['proc_limit_nofile_hard'] = resource.getrlimit(resource.RLIMIT_NOFILE)
+            raw['proc_limit_as_soft'], raw['proc_limit_as_hard'] = resource.getrlimit(resource.RLIMIT_AS)
+        except: pass
+    return raw
 
-    now = time.time()
-    last_time = getattr(app.state, "last_throughput_time", APP_START_TIME)
-    last_received = getattr(app.state, "last_bytes_received", 0)
-    last_sent = getattr(app.state, "last_bytes_sent", 0)
+async def get_health_data() -> Dict[str, Any]:
+    raw, now = collect_raw_metrics(), time.time()
+    uptime_seconds, cpu_count = now - APP_START_TIME, raw.get('sys_cpu_count', 1)
     
-    dt = now - last_time
+    SYSTEM_LOAD_1M.set(raw.get('sys_load_1m', 0)); SYSTEM_LOAD_5M.set(raw.get('sys_load_5m', 0)); SYSTEM_LOAD_15M.set(raw.get('sys_load_15m', 0)); SYSTEM_UPTIME.set(now - raw.get('sys_boot_time', now))
+    SYSTEM_MEMORY_AVAILABLE.set(raw.get('sys_mem_available', 0)); SYSTEM_MEMORY_TOTAL.set(raw.get('sys_mem_total', 0)); SYSTEM_MEMORY_USED.set(raw.get('sys_mem_used', 0)); SYSTEM_MEMORY_FREE.set(raw.get('sys_mem_free', 0)); SYSTEM_MEMORY_PERCENT.set(raw.get('sys_mem_percent', 0))
+    SYSTEM_MEMORY_ACTIVE_BYTES.set(raw.get('sys_mem_active', 0)); SYSTEM_MEMORY_INACTIVE_BYTES.set(raw.get('sys_mem_inactive', 0)); SYSTEM_MEMORY_BUFFERS.set(raw.get('sys_mem_buffers', 0)); SYSTEM_MEMORY_CACHED.set(raw.get('sys_mem_cached', 0)); SYSTEM_MEMORY_SHARED_BYTES.set(raw.get('sys_mem_shared', 0)); SYSTEM_MEMORY_SLAB.set(raw.get('sys_mem_slab', 0)); SYSTEM_MEMORY_WIRED.set(raw.get('sys_mem_wired', 0))
+    SYSTEM_SWAP_USED_BYTES.set(raw.get('sys_swap_used', 0)); SYSTEM_SWAP_FREE_BYTES.set(raw.get('sys_swap_free', 0)); SWAP_MEMORY_USAGE_PERCENT.set(raw.get('sys_swap_percent', 0)); SYSTEM_SWAP_IN_BYTES_TOTAL.set(raw.get('sys_swap_sin', 0)); SYSTEM_SWAP_OUT_BYTES_TOTAL.set(raw.get('sys_swap_sout', 0))
+    SYSTEM_CPU_COUNT.set(cpu_count); SYSTEM_CPU_PHYSICAL_COUNT.set(raw.get('sys_cpu_physical_count', 0)); SYSTEM_CPU_USAGE_USER.set(raw.get('sys_cpu_user', 0)); SYSTEM_CPU_USAGE_SYSTEM.set(raw.get('sys_cpu_system', 0)); SYSTEM_CPU_USAGE_IDLE.set(raw.get('sys_cpu_idle', 0))
+    SYSTEM_CPU_IOWAIT.set(raw.get('sys_cpu_iowait', 0)); SYSTEM_CPU_IRQ.set(raw.get('sys_cpu_irq', 0)); SYSTEM_CPU_SOFTIRQ.set(raw.get('sys_cpu_softirq', 0)); SYSTEM_CPU_STEAL.set(raw.get('sys_cpu_steal', 0)); SYSTEM_CPU_GUEST.set(raw.get('sys_cpu_guest', 0)); SYSTEM_CPU_FREQUENCY.set(raw.get('sys_cpu_freq_current', 0))
+    CPU_USAGE_PERCENT.set(raw.get('sys_cpu_percent', 0)); SYSTEM_CPU_CTX_SWITCHES.set(raw.get('sys_cpu_ctx_switches', 0)); SYSTEM_CPU_INTERRUPTS.set(raw.get('sys_cpu_interrupts', 0)); SYSTEM_CPU_SOFT_INTERRUPTS.set(raw.get('sys_cpu_soft_interrupts', 0)); SYSTEM_CPU_SYSCALLS.set(raw.get('sys_cpu_syscalls', 0))
+    SYSTEM_DISK_READ_BYTES.set(raw.get('sys_disk_read_bytes', 0)); SYSTEM_DISK_WRITE_BYTES.set(raw.get('sys_disk_write_bytes', 0)); SYSTEM_DISK_READ_COUNT_TOTAL.set(raw.get('sys_disk_read_count', 0)); SYSTEM_DISK_WRITE_COUNT_TOTAL.set(raw.get('sys_disk_write_count', 0))
+    SYSTEM_DISK_READ_TIME_MS.set(raw.get('sys_disk_read_time', 0)); SYSTEM_DISK_WRITE_TIME_MS.set(raw.get('sys_disk_write_time', 0)); SYSTEM_DISK_BUSY_TIME_MS.set(raw.get('sys_disk_busy_time', 0)); SYSTEM_DISK_READ_MERGED_COUNT.set(raw.get('sys_disk_read_merged', 0)); SYSTEM_DISK_WRITE_MERGED_COUNT.set(raw.get('sys_disk_write_merged', 0))
+    DISK_USAGE_PERCENT.set(raw.get('sys_disk_usage_percent', 0)); SYSTEM_DISK_PARTITIONS_COUNT.set(raw.get('sys_disk_partitions_count', 0))
+    SYSTEM_NETWORK_BYTES_SENT.set(raw.get('sys_net_bytes_sent', 0)); SYSTEM_NETWORK_BYTES_RECV.set(raw.get('sys_net_bytes_recv', 0)); SYSTEM_NETWORK_PACKETS_SENT.set(raw.get('sys_net_packets_sent', 0)); SYSTEM_NETWORK_PACKETS_RECV.set(raw.get('sys_net_packets_recv', 0))
+    SYSTEM_NETWORK_ERRORS_IN.set(raw.get('sys_net_errin', 0)); SYSTEM_NETWORK_ERRORS_OUT.set(raw.get('sys_net_errout', 0)); SYSTEM_NETWORK_DROPS_IN.set(raw.get('sys_net_dropin', 0)); SYSTEM_NETWORK_DROPS_OUT.set(raw.get('sys_net_dropout', 0))
+    sn_err_total = raw.get('sys_net_errin', 0) + raw.get('sys_net_errout', 0) + raw.get('sys_net_dropin', 0) + raw.get('sys_net_dropout', 0)
+    SYSTEM_NETWORK_ERRORS_TOTAL.set(sn_err_total); SYSTEM_NETWORK_INTERFACES_COUNT.set(raw.get('sys_net_interfaces_count', 0)); SYSTEM_NETWORK_INTERFACES_UP_COUNT.set(raw.get('sys_net_interfaces_up', 0)); SYSTEM_NETWORK_INTERFACES_DOWN_COUNT.set(raw.get('sys_net_interfaces_down', 0)); SYSTEM_NETWORK_INTERFACES_MTU_TOTAL.set(raw.get('sys_net_mtu_total', 0)); SYSTEM_NETWORK_INTERFACES_SPEED_TOTAL_MBPS.set(raw.get('sys_net_speed_total', 0)); SYSTEM_NETWORK_INTERFACES_DUPLEX_FULL_COUNT.set(raw.get('sys_net_duplex_full', 0))
+    SYSTEM_BOOT_TIME.set(raw.get('sys_boot_time', 0)); SYSTEM_USERS_COUNT.set(raw.get('sys_users_count', 0)); SYSTEM_PROCESS_COUNT.set(raw.get('sys_process_count', 0)); SYSTEM_NETWORK_CONNECTIONS.set(raw.get('sys_network_connections', 0))
+    PROCESS_MEMORY_RSS.set(raw.get('proc_rss', 0)); PROCESS_MEMORY_VMS.set(raw.get('proc_vms', 0)); PROCESS_MEMORY_SHARED_BYTES.set(raw.get('proc_shared', 0)); PROCESS_MEMORY_TEXT_BYTES.set(raw.get('proc_text', 0)); PROCESS_MEMORY_DATA_BYTES.set(raw.get('proc_data', 0)); PROCESS_MEMORY_LIB.set(raw.get('proc_lib', 0)); PROCESS_MEMORY_DIRTY.set(raw.get('proc_dirty', 0))
+    PAGE_FAULTS_MINOR.set(raw.get('proc_minor_pf', 0)); PAGE_FAULTS_MAJOR.set(raw.get('proc_major_pf', 0)); PROCESS_MEMORY_PAGE_FAULTS_TOTAL.set(raw.get('proc_minor_pf', 0) + raw.get('proc_major_pf', 0)); PROCESS_MEMORY_USS.set(raw.get('proc_uss', 0)); PROCESS_MEMORY_PSS_BYTES.set(raw.get('proc_pss', 0)); PROCESS_MEMORY_SWAP_BYTES.set(raw.get('proc_swap', 0)); MEMORY_PERCENT.set(raw.get('proc_mem_percent', 0))
+    sys_mem_total = raw.get('sys_mem_total', 1) or 1
+    PROCESS_MEMORY_VMS_PERCENT.set((raw.get('proc_vms', 0) / sys_mem_total) * 100); PROCESS_MEMORY_USS_PERCENT.set((raw.get('proc_uss', 0) / sys_mem_total) * 100); PROCESS_MEMORY_PSS_PERCENT.set((raw.get('proc_pss', 0) / sys_mem_total) * 100)
+    PROCESS_CPU_USAGE_USER.set(raw.get('proc_cpu_user', 0)); PROCESS_CPU_USAGE_SYSTEM.set(raw.get('proc_cpu_system', 0)); PROCESS_CPU_TIMES_CHILDREN_USER.set(raw.get('proc_cpu_children_user', 0)); PROCESS_CPU_TIMES_CHILDREN_SYSTEM.set(raw.get('proc_cpu_children_system', 0)); PROCESS_CPU_PERCENT_TOTAL.set(raw.get('proc_cpu_percent', 0))
+    PROCESS_NUM_THREADS.set(raw.get('proc_num_threads', 0)); OPEN_FDS.set(raw.get('proc_num_fds', 0)); PROCESS_OPEN_FILES_COUNT.set(raw.get('proc_open_files_count', 0)); THREAD_COUNT.set(threading.active_count())
+    v_ctx, i_ctx = raw.get('proc_ctx_voluntary', 0), raw.get('proc_ctx_involuntary', 0)
+    CONTEXT_SWITCHES_VOLUNTARY.set(v_ctx); CONTEXT_SWITCHES_INVOLUNTARY.set(i_ctx); PROCESS_CONTEXT_SWITCHES_TOTAL.set(v_ctx + i_ctx); PROCESS_IO_READ_BYTES.set(raw.get('proc_io_read_bytes', 0)); PROCESS_IO_WRITE_BYTES.set(raw.get('proc_io_write_bytes', 0)); PROCESS_IO_READ_COUNT.set(raw.get('proc_io_read_count', 0)); PROCESS_IO_WRITE_COUNT.set(raw.get('proc_io_write_count', 0))
+    PROCESS_CONNECTIONS_COUNT.set(raw.get('proc_connections_count', 0)); PROCESS_CHILDREN_COUNT.set(raw.get('proc_children_count', 0)); PROCESS_MEMORY_MAPS_COUNT.set(raw.get('proc_memory_maps_count', 0)); PROCESS_ENV_VAR_COUNT.set(raw.get('proc_env_var_count', 0)); PROCESS_NICE.set(raw.get('proc_nice', 0)); PROCESS_CPU_AFFINITY.set(raw.get('proc_cpu_affinity_count', 0)); PROCESS_UPTIME.set(uptime_seconds); PROCESS_THREADS_TOTAL_TIME_USER.set(raw.get('proc_threads_user_time', 0)); PROCESS_THREADS_TOTAL_TIME_SYSTEM.set(raw.get('proc_threads_system_time', 0))
+
+    if 'proc_limit_nofile_soft' in raw:
+        PROCESS_LIMIT_NOFILE_SOFT.set(raw['proc_limit_nofile_soft']); PROCESS_LIMIT_NOFILE_HARD.set(raw['proc_limit_nofile_hard']); PROCESS_LIMIT_AS_SOFT.set(raw['proc_limit_as_soft']); PROCESS_LIMIT_AS_HARD.set(raw['proc_limit_as_hard'])
+        PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT.set((raw.get('proc_num_fds', 0) / raw['proc_limit_nofile_soft'] * 100) if raw['proc_limit_nofile_soft'] > 0 else 0.0)
+        PROCESS_LIMIT_AS_UTILIZATION_PERCENT.set((raw.get('proc_vms', 0) / raw['proc_limit_as_soft'] * 100) if raw['proc_limit_as_soft'] > 0 else 0.0)
+
+    ws_rb, ws_sb = int(WS_BYTES_RECEIVED_TOTAL._value.get()), int(WS_BYTES_SENT_TOTAL._value.get())
+    dt = now - getattr(app.state, "last_throughput_time", APP_START_TIME)
     if dt >= 1.0:
-        throughput_received = (ws_bytes_received - last_received) / dt
-        throughput_sent = (ws_bytes_sent - last_sent) / dt
-        WS_THROUGHPUT_RECEIVED_BPS.set(throughput_received)
-        WS_THROUGHPUT_SENT_BPS.set(throughput_sent)
-        app.state.last_throughput_time = now
-        app.state.last_bytes_received = ws_bytes_received
-        app.state.last_bytes_sent = ws_bytes_sent
-    else:
-        throughput_received = float(WS_THROUGHPUT_RECEIVED_BPS._value.get())
-        throughput_sent = float(WS_THROUGHPUT_SENT_BPS._value.get())
+        WS_THROUGHPUT_RECEIVED_BPS.set((ws_rb - getattr(app.state, "last_bytes_received", 0)) / dt); WS_THROUGHPUT_SENT_BPS.set((ws_sb - getattr(app.state, "last_bytes_sent", 0)) / dt)
+        PROCESS_IO_READ_THROUGHPUT_BPS.set((raw.get('proc_io_read_bytes', 0) - getattr(app.state, "last_proc_read_bytes", 0)) / dt); PROCESS_IO_WRITE_THROUGHPUT_BPS.set((raw.get('proc_io_write_bytes', 0) - getattr(app.state, "last_proc_write_bytes", 0)) / dt)
+        SYSTEM_DISK_READ_THROUGHPUT_BPS.set((raw.get('sys_disk_read_bytes', 0) - getattr(app.state, "last_sys_read_bytes", 0)) / dt); SYSTEM_DISK_WRITE_THROUGHPUT_BPS.set((raw.get('sys_disk_write_bytes', 0) - getattr(app.state, "last_sys_write_bytes", 0)) / dt)
+        SYSTEM_NETWORK_THROUGHPUT_RECV_BPS.set((raw.get('sys_net_bytes_recv', 0) - getattr(app.state, "last_sys_net_recv_bytes", 0)) / dt); SYSTEM_NETWORK_THROUGHPUT_SENT_BPS.set((raw.get('sys_net_bytes_sent', 0) - getattr(app.state, "last_sys_net_sent_bytes", 0)) / dt)
+        SYSTEM_CPU_CTX_SWITCH_RATE_BPS.set((raw.get('sys_cpu_ctx_switches', 0) - getattr(app.state, "last_sys_ctx_switches", 0)) / dt); SYSTEM_CPU_INTERRUPT_RATE_BPS.set((raw.get('sys_cpu_interrupts', 0) + raw.get('sys_cpu_soft_interrupts', 0) - getattr(app.state, "last_sys_interrupts", 0)) / dt)
+        SYSTEM_CPU_SOFT_INTERRUPT_RATE_BPS.set((raw.get('sys_cpu_soft_interrupts', 0) - getattr(app.state, "last_sys_soft_interrupts", 0)) / dt); SYSTEM_CPU_SYSCALL_RATE_BPS.set((raw.get('sys_cpu_syscalls', 0) - getattr(app.state, "last_sys_syscalls", 0)) / dt)
+        SYSTEM_PAGE_FAULT_MINOR_RATE_BPS.set((raw.get('proc_minor_pf', 0) - getattr(app.state, "last_sys_pf_minor", 0)) / dt); SYSTEM_PAGE_FAULT_MAJOR_RATE_BPS.set((raw.get('proc_major_pf', 0) - getattr(app.state, "last_sys_pf_major", 0)) / dt)
+        app.state.last_throughput_time, app.state.last_bytes_received, app.state.last_bytes_sent = now, ws_rb, ws_sb
+        app.state.last_proc_read_bytes, app.state.last_proc_write_bytes = raw.get('proc_io_read_bytes', 0), raw.get('proc_io_write_bytes', 0)
+        app.state.last_sys_read_bytes, app.state.last_sys_write_bytes = raw.get('sys_disk_read_bytes', 0), raw.get('sys_disk_write_bytes', 0)
+        app.state.last_sys_net_recv_bytes, app.state.last_sys_net_sent_bytes = raw.get('sys_net_bytes_recv', 0), raw.get('sys_net_bytes_sent', 0)
+        app.state.last_sys_ctx_switches, app.state.last_sys_interrupts, app.state.last_sys_soft_interrupts, app.state.last_sys_syscalls = raw.get('sys_cpu_ctx_switches', 0), raw.get('sys_cpu_interrupts', 0) + raw.get('sys_cpu_soft_interrupts', 0), raw.get('sys_cpu_soft_interrupts', 0), raw.get('sys_cpu_syscalls', 0)
+        app.state.last_sys_pf_minor, app.state.last_sys_pf_major = raw.get('proc_minor_pf', 0), raw.get('proc_major_pf', 0)
 
-    uptime_seconds = time.time() - APP_START_TIME
-    SYSTEM_UPTIME.set(time.time() - (psutil.boot_time() if psutil else APP_START_TIME))
-
-    mem_percent = get_memory_percent()
-    MEMORY_PERCENT.set(mem_percent)
-    cpu_percent = get_cpu_percent()
-    CPU_USAGE_PERCENT.set(cpu_percent)
-    open_fds = get_open_fds()
-    OPEN_FDS.set(open_fds)
-    thread_count = threading.active_count()
-    THREAD_COUNT.set(thread_count)
-    
-    voluntary_ctx, involuntary_ctx = get_context_switches()
-    CONTEXT_SWITCHES_VOLUNTARY.set(voluntary_ctx)
-    CONTEXT_SWITCHES_INVOLUNTARY.set(involuntary_ctx)
-
-    disk_usage = get_disk_usage_percent()
-    DISK_USAGE_PERCENT.set(disk_usage)
-    sys_mem_avail, sys_mem_total = get_system_memory_info()
-    SYSTEM_MEMORY_AVAILABLE.set(sys_mem_avail)
-    SYSTEM_MEMORY_TOTAL.set(sys_mem_total)
-    minor_pf, major_pf = get_page_faults()
-    PAGE_FAULTS_MINOR.set(minor_pf)
-    PAGE_FAULTS_MAJOR.set(major_pf)
-
-    cpu_count = psutil.cpu_count() if psutil else os.cpu_count()
-    SYSTEM_CPU_COUNT.set(cpu_count)
-    boot_time = psutil.boot_time() if psutil else 0
-    SYSTEM_BOOT_TIME.set(boot_time)
-    swap_percent = get_swap_memory_percent()
-    SWAP_MEMORY_USAGE_PERCENT.set(swap_percent)
-    net_sent, net_recv = get_network_io()
-    SYSTEM_NETWORK_BYTES_SENT.set(net_sent)
-    SYSTEM_NETWORK_BYTES_RECV.set(net_recv)
-    
-    cpu_freq = get_cpu_frequency()
-    SYSTEM_CPU_FREQUENCY.set(cpu_freq)
-    disk_read, disk_write = get_disk_io()
-    SYSTEM_DISK_READ_BYTES.set(disk_read)
-    SYSTEM_DISK_WRITE_BYTES.set(disk_write)
-    proc_conn_count = get_process_connections_count()
-    PROCESS_CONNECTIONS_COUNT.set(proc_conn_count)
-
-    rss, vms = get_process_memory_bytes()
-    PROCESS_MEMORY_RSS.set(rss)
-    PROCESS_MEMORY_VMS.set(vms)
-    user_cpu, sys_cpu = get_system_cpu_usage_breakdown()
-    SYSTEM_CPU_USAGE_USER.set(user_cpu)
-    SYSTEM_CPU_USAGE_SYSTEM.set(sys_cpu)
-
-    idle_p = get_system_cpu_idle_percent()
-    SYSTEM_CPU_USAGE_IDLE.set(idle_p)
-    proc_user_cpu, proc_sys_cpu = get_process_cpu_times_total()
-    PROCESS_CPU_USAGE_USER.set(proc_user_cpu)
-    PROCESS_CPU_USAGE_SYSTEM.set(proc_sys_cpu)
-    sys_mem_used, sys_mem_free = get_system_memory_extended()
-    SYSTEM_MEMORY_USED.set(sys_mem_used)
-    SYSTEM_MEMORY_FREE.set(sys_mem_free)
-    sys_net_psent, sys_net_precv = get_system_network_packets()
-    SYSTEM_NETWORK_PACKETS_SENT.set(sys_net_psent)
-    SYSTEM_NETWORK_PACKETS_RECV.set(sys_net_precv)
-
-    sys_swap_used, sys_swap_free = get_system_swap_extended()
-    SYSTEM_SWAP_USED_BYTES.set(sys_swap_used)
-    SYSTEM_SWAP_FREE_BYTES.set(sys_swap_free)
-    p_io_rb, p_io_wb, p_io_rc, p_io_wc = get_process_io_counters()
-    PROCESS_IO_READ_BYTES.set(p_io_rb)
-    PROCESS_IO_WRITE_BYTES.set(p_io_wb)
-    PROCESS_IO_READ_COUNT.set(p_io_rc)
-    PROCESS_IO_WRITE_COUNT.set(p_io_wc)
-
-    p_cpu_p = get_process_cpu_percent()
-    PROCESS_CPU_PERCENT_TOTAL.set(p_cpu_p)
-    n_errin, n_errout, n_dropin, n_dropout = get_system_network_advanced()
-    SYSTEM_NETWORK_ERRORS_IN.set(n_errin)
-    SYSTEM_NETWORK_ERRORS_OUT.set(n_errout)
-    SYSTEM_NETWORK_DROPS_IN.set(n_dropin)
-    SYSTEM_NETWORK_DROPS_OUT.set(n_dropout)
-    m_active, m_inactive = get_system_memory_advanced()
-    SYSTEM_MEMORY_ACTIVE_BYTES.set(m_active)
-    SYSTEM_MEMORY_INACTIVE_BYTES.set(m_inactive)
-
-    ints, sints, sysc = get_system_cpu_stats()
-    SYSTEM_CPU_INTERRUPTS.set(ints)
-    SYSTEM_CPU_SOFT_INTERRUPTS.set(sints)
-    SYSTEM_CPU_SYSCALLS.set(sysc)
-    p_shared, p_text, p_data = get_process_memory_advanced()
-    PROCESS_MEMORY_SHARED_BYTES.set(p_shared)
-    PROCESS_MEMORY_TEXT_BYTES.set(p_text)
-    PROCESS_MEMORY_DATA_BYTES.set(p_data)
-    p_num_threads = get_process_num_threads()
-    PROCESS_NUM_THREADS.set(p_num_threads)
-
-    s_steal, s_guest = get_system_cpu_times_advanced()
-    SYSTEM_CPU_STEAL.set(s_steal)
-    SYSTEM_CPU_GUEST.set(s_guest)
-    m_buffers, m_cached = get_system_memory_extended_plus()
-    SYSTEM_MEMORY_BUFFERS.set(m_buffers)
-    SYSTEM_MEMORY_CACHED.set(m_cached)
-    d_part_count = get_system_disk_partitions_count()
-    SYSTEM_DISK_PARTITIONS_COUNT.set(d_part_count)
-    u_count = get_system_users_count()
-    SYSTEM_USERS_COUNT.set(u_count)
-    p_children_count = get_process_children_count()
-    PROCESS_CHILDREN_COUNT.set(p_children_count)
-
-    s_iowait, s_irq, s_softirq = get_system_cpu_times_beyond_real()
-    SYSTEM_CPU_IOWAIT.set(s_iowait)
-    SYSTEM_CPU_IRQ.set(s_irq)
-    SYSTEM_CPU_SOFTIRQ.set(s_softirq)
-    m_slab = get_system_memory_beyond()
-    SYSTEM_MEMORY_SLAB.set(m_slab)
-    p_lib, p_dirty = get_process_memory_beyond()
-    PROCESS_MEMORY_LIB.set(p_lib)
-    PROCESS_MEMORY_DIRTY.set(p_dirty)
-    p_env_count = get_process_env_var_count()
-    PROCESS_ENV_VAR_COUNT.set(p_env_count)
-
-    p_uss = get_process_memory_uss()
-    PROCESS_MEMORY_USS.set(p_uss)
-    m_wired = get_system_memory_wired()
-    SYSTEM_MEMORY_WIRED.set(m_wired)
-    p_nice = get_process_nice()
-    PROCESS_NICE.set(p_nice)
-    PROCESS_UPTIME.set(uptime_seconds)
-
-    s_ctx = get_system_cpu_stats_advanced()
-    SYSTEM_CPU_CTX_SWITCHES.set(s_ctx)
-    s_conn_count = get_system_network_connections_count()
-    SYSTEM_NETWORK_CONNECTIONS.set(s_conn_count)
-    p_affinity = get_process_cpu_affinity_count()
-    PROCESS_CPU_AFFINITY.set(p_affinity)
-    p_pf_total = get_process_memory_page_faults_total()
-    PROCESS_MEMORY_PAGE_FAULTS_TOTAL.set(p_pf_total)
-
-    sd_rc, sd_wc = get_system_disk_io_counts()
-    SYSTEM_DISK_READ_COUNT_TOTAL.set(sd_rc)
-    SYSTEM_DISK_WRITE_COUNT_TOTAL.set(sd_wc)
-    ss_sin, ss_sout = get_system_swap_io()
-    SYSTEM_SWAP_IN_BYTES_TOTAL.set(ss_sin)
-    SYSTEM_SWAP_OUT_BYTES_TOTAL.set(ss_sout)
-    p_vms_p = get_process_memory_vms_percent()
-    PROCESS_MEMORY_VMS_PERCENT.set(p_vms_p)
-    s_cpu_phys = get_system_cpu_physical_count()
-    SYSTEM_CPU_PHYSICAL_COUNT.set(s_cpu_phys)
-
-    sm_percent = get_system_memory_percent_total()
-    SYSTEM_MEMORY_PERCENT.set(sm_percent)
-    p_open_files = get_process_open_files_count()
-    PROCESS_OPEN_FILES_COUNT.set(p_open_files)
-    sd_busy = get_system_disk_busy_time()
-    SYSTEM_DISK_BUSY_TIME_MS.set(sd_busy)
-    sn_if_count = get_system_network_interfaces_count()
-    SYSTEM_NETWORK_INTERFACES_COUNT.set(sn_if_count)
-    pt_user, pt_sys = get_process_threads_times_total()
-    PROCESS_THREADS_TOTAL_TIME_USER.set(pt_user)
-    PROCESS_THREADS_TOTAL_TIME_SYSTEM.set(pt_sys)
-
-    sd_rt, sd_wt = get_system_disk_io_times()
-    SYSTEM_DISK_READ_TIME_MS.set(sd_rt)
-    SYSTEM_DISK_WRITE_TIME_MS.set(sd_wt)
-    p_mem_maps = get_process_memory_maps_count()
-    PROCESS_MEMORY_MAPS_COUNT.set(p_mem_maps)
-    sn_if_up = get_system_network_interfaces_up_count()
-    SYSTEM_NETWORK_INTERFACES_UP_COUNT.set(sn_if_up)
-    p_ctx_total = get_process_context_switches_total()
-    PROCESS_CONTEXT_SWITCHES_TOTAL.set(p_ctx_total)
-
-    p_child_u, p_child_s = get_process_cpu_times_children()
-    PROCESS_CPU_TIMES_CHILDREN_USER.set(p_child_u)
-    PROCESS_CPU_TIMES_CHILDREN_SYSTEM.set(p_child_s)
-    sn_if_down = get_system_network_interfaces_down_count()
-    SYSTEM_NETWORK_INTERFACES_DOWN_COUNT.set(sn_if_down)
-    sd_rm, sd_wm = get_system_disk_io_merged()
-    SYSTEM_DISK_READ_MERGED_COUNT.set(sd_rm)
-    SYSTEM_DISK_WRITE_MERGED_COUNT.set(sd_wm)
-
-    m_shared = get_system_memory_shared()
-    SYSTEM_MEMORY_SHARED_BYTES.set(m_shared)
-    p_pss = get_process_memory_pss()
-    PROCESS_MEMORY_PSS_BYTES.set(p_pss)
-    sn_mtu_total = get_system_network_interfaces_mtu_total()
-    SYSTEM_NETWORK_INTERFACES_MTU_TOTAL.set(sn_mtu_total)
-    p_swap = get_process_memory_swap()
-    PROCESS_MEMORY_SWAP_BYTES.set(p_swap)
-    sn_err_total = get_system_network_errors_total()
-    SYSTEM_NETWORK_ERRORS_TOTAL.set(sn_err_total)
-
-    sn_speed_total = get_system_network_speed_total()
-    SYSTEM_NETWORK_INTERFACES_SPEED_TOTAL_MBPS.set(sn_speed_total)
-    sn_duplex_full = get_system_network_duplex_full_count()
-    SYSTEM_NETWORK_INTERFACES_DUPLEX_FULL_COUNT.set(sn_duplex_full)
-    p_uss_p = get_process_memory_uss_percent()
-    PROCESS_MEMORY_USS_PERCENT.set(p_uss_p)
-
-    p_pss_p = get_process_memory_pss_percent()
-    PROCESS_MEMORY_PSS_PERCENT.set(p_pss_p)
-    s_proc_count = get_system_process_count()
-    SYSTEM_PROCESS_COUNT.set(s_proc_count)
-    s_load_1m_p = (load_avg[0] / cpu_count * 100) if cpu_count > 0 else 0.0
-    SYSTEM_CPU_LOAD_1M_PERCENT.set(s_load_1m_p)
-    sm_avail_p = get_system_memory_available_percent()
-    SYSTEM_MEMORY_AVAILABLE_PERCENT.set(sm_avail_p)
-
-    cpu_cores_p = get_system_cpu_cores_usage()
-    for i, p in enumerate(cpu_cores_p):
-        SYSTEM_CPU_CORES_USAGE_PERCENT.labels(core=str(i)).set(p)
-    
-    disk_p_u = get_system_disk_partitions_usage()
-    for part, p in disk_p_u.items():
-        SYSTEM_DISK_PARTITIONS_USAGE_PERCENT.labels(partition=part).set(p)
-        
-    net_io_per_nic = get_system_network_io_per_nic()
-    for nic, io in net_io_per_nic.items():
-        SYSTEM_NETWORK_INTERFACES_BYTES_SENT.labels(interface=nic).set(io.bytes_sent)
-        SYSTEM_NETWORK_INTERFACES_BYTES_RECV.labels(interface=nic).set(io.bytes_recv)
-
-    s_load_5m_p = (load_avg[1] / cpu_count * 100) if cpu_count > 0 else 0.0
-    s_load_15m_p = (load_avg[2] / cpu_count * 100) if cpu_count > 0 else 0.0
-    SYSTEM_LOAD_5M_PERCENT.set(s_load_5m_p)
-    SYSTEM_LOAD_15M_PERCENT.set(s_load_15m_p)
-    
-    p_limits = get_process_resource_limits()
-    if "nofile_soft" in p_limits:
-        PROCESS_LIMIT_NOFILE_SOFT.set(p_limits["nofile_soft"])
-        PROCESS_LIMIT_NOFILE_HARD.set(p_limits["nofile_hard"])
-        PROCESS_LIMIT_AS_SOFT.set(p_limits["as_soft"])
-        PROCESS_LIMIT_AS_HARD.set(p_limits["as_hard"])
-
-    nofile_util = (open_fds / p_limits["nofile_soft"] * 100) if "nofile_soft" in p_limits and p_limits["nofile_soft"] > 0 else 0.0
-    PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT.set(nofile_util)
-    
-    as_util = (vms / p_limits["as_soft"] * 100) if "as_soft" in p_limits and p_limits["as_soft"] > 0 else 0.0
-    PROCESS_LIMIT_AS_UTILIZATION_PERCENT.set(as_util)
-
-    last_io_time = getattr(app.state, "last_io_time", APP_START_TIME)
-    last_p_rb = getattr(app.state, "last_proc_read_bytes", 0)
-    last_p_wb = getattr(app.state, "last_proc_write_bytes", 0)
-    io_dt = now - last_io_time
-    if io_dt >= 1.0:
-        PROCESS_IO_READ_THROUGHPUT_BPS.set((p_io_rb - last_p_rb) / io_dt)
-        PROCESS_IO_WRITE_THROUGHPUT_BPS.set((p_io_wb - last_p_wb) / io_dt)
-        app.state.last_io_time = now
-        app.state.last_proc_read_bytes = p_io_rb
-        app.state.last_proc_write_bytes = p_io_wb
-    
-    last_sys_io_time = getattr(app.state, "last_sys_io_time", APP_START_TIME)
-    s_rb, s_wb = get_disk_io()
-    s_ns, s_nr = get_network_io()
-    last_s_rb = getattr(app.state, "last_sys_read_bytes", 0)
-    last_s_wb = getattr(app.state, "last_sys_write_bytes", 0)
-    last_s_nr = getattr(app.state, "last_sys_net_recv_bytes", 0)
-    last_s_ns = getattr(app.state, "last_sys_net_sent_bytes", 0)
-    sys_io_dt = now - last_sys_io_time
-    if sys_io_dt >= 1.0:
-        SYSTEM_DISK_READ_THROUGHPUT_BPS.set((s_rb - last_s_rb) / sys_io_dt)
-        SYSTEM_DISK_WRITE_THROUGHPUT_BPS.set((s_wb - last_s_wb) / sys_io_dt)
-        SYSTEM_NETWORK_THROUGHPUT_RECV_BPS.set((s_nr - last_s_nr) / sys_io_dt)
-        SYSTEM_NETWORK_THROUGHPUT_SENT_BPS.set((s_ns - last_s_ns) / sys_io_dt)
-    
-    last_sys_cpu_stats_time = getattr(app.state, "last_sys_cpu_stats_time", APP_START_TIME)
-    s_ctx_total_m = get_system_cpu_stats_advanced()
-    last_s_ctx_m = getattr(app.state, "last_sys_ctx_switches", 0)
-    last_s_ints_m = getattr(app.state, "last_sys_interrupts", 0)
-    last_s_sints_m = getattr(app.state, "last_sys_soft_interrupts", 0)
-    last_s_sysc_m = getattr(app.state, "last_sys_syscalls", 0)
-    cpu_stats_dt_m = now - last_sys_cpu_stats_time
-    if cpu_stats_dt_m >= 1.0:
-        SYSTEM_CPU_CTX_SWITCH_RATE_BPS.set((s_ctx_total_m - last_s_ctx_m) / cpu_stats_dt_m)
-        SYSTEM_CPU_INTERRUPT_RATE_BPS.set((ints + sints - last_s_ints_m) / cpu_stats_dt_m)
-        SYSTEM_CPU_SOFT_INTERRUPT_RATE_BPS.set((sints - last_s_sints_m) / cpu_stats_dt_m)
-        SYSTEM_CPU_SYSCALL_RATE_BPS.set((sysc - last_s_sysc_m) / cpu_stats_dt_m)
-        app.state.last_sys_cpu_stats_time = now
-        app.state.last_sys_ctx_switches = s_ctx_total_m
-        app.state.last_sys_interrupts = ints + sints
-        app.state.last_sys_soft_interrupts = sints
-        app.state.last_sys_syscalls = sysc
-
-    last_sys_pf_time = getattr(app.state, "last_sys_pf_time", APP_START_TIME)
-    last_s_pf_minor = getattr(app.state, "last_sys_pf_minor", 0)
-    last_s_pf_major = getattr(app.state, "last_sys_pf_major", 0)
-    pf_dt = now - last_sys_pf_time
-    if pf_dt >= 1.0:
-        SYSTEM_PAGE_FAULT_MINOR_RATE_BPS.set((minor_pf - last_s_pf_minor) / pf_dt)
-        SYSTEM_PAGE_FAULT_MAJOR_RATE_BPS.set((major_pf - last_s_pf_major) / pf_dt)
-        app.state.last_sys_pf_time = now
-        app.state.last_sys_pf_minor = minor_pf
-        app.state.last_sys_pf_major = major_pf
-
-    active_tasks_list = await registry.list_active_tasks()
-    tools_summary = {}
-    for t in active_tasks_list:
-        tools_summary[t["tool_name"]] = tools_summary.get(t["tool_name"], 0) + 1
-
-    total_finished = 0
-    total_success = 0
+    def sum_counter(counter):
+        t = 0
+        for m in counter.collect():
+            for s in m.samples:
+                if s.name.endswith("_total"): t += s.value
+        return t
+    ws_rc, ws_sc = sum_counter(WS_MESSAGES_RECEIVED_TOTAL), sum_counter(WS_MESSAGES_SENT_TOTAL)
+    total_finished, total_success = 0, 0
     for m in TASKS_TOTAL.collect():
         for s in m.samples:
             total_finished += s.value
-            if s.labels.get("status") == "success":
-                total_success += s.value
-    
+            if s.labels.get("status") == "success": total_success += s.value
     success_rate = (total_success / total_finished * 100) if total_finished > 0 else 100.0
-
-    ws_errors_breakdown = {"auth_failure": 0, "protocol_error": 0, "other_error": 0}
-    total_ws_errors = 0
+    ws_errs = {"auth_failure": 0, "protocol_error": 0, "other_error": 0}
     for m in WS_CONNECTION_ERRORS_TOTAL.collect():
-        for s in m.samples:
-            if s.name.endswith("_total"):
-                etype = s.labels.get("error_type", "other_error")
-                val = int(s.value)
-                ws_errors_breakdown[etype] = val
-                total_ws_errors += val
+        for s in m.samples: ws_errs[s.labels.get("error_type", "other_error")] = int(s.value)
+    
+    for i, p in enumerate(raw.get('sys_cpu_cores_usage', [])): SYSTEM_CPU_CORES_USAGE_PERCENT.labels(core=str(i)).set(p)
+    for pt, p in raw.get('sys_disk_partitions_usage', {}).items(): SYSTEM_DISK_PARTITIONS_USAGE_PERCENT.labels(partition=pt).set(p)
+    for nic, io in raw.get('sys_net_io_per_nic', {}).items():
+        SYSTEM_NETWORK_INTERFACES_BYTES_SENT.labels(interface=nic).set(io['bytes_sent']); SYSTEM_NETWORK_INTERFACES_BYTES_RECV.labels(interface=nic).set(io['bytes_recv'])
+
+    active_tasks_list = await registry.list_active_tasks()
+    tools_summary = {}
+    for t in active_tasks_list: tools_summary[t["tool_name"]] = tools_summary.get(t["tool_name"], 0) + 1
 
     return { 
-        "status": "healthy", 
-        "version": APP_VERSION, 
-        "git_commit": GIT_COMMIT,
-        "operational_apex": OPERATIONAL_APEX, 
-        "python_version": sys.version, 
-        "python_implementation": platform.python_implementation(),
-        "system_platform": sys.platform, 
-        "cpu_count": cpu_count,
-        "cpu_physical_count": s_cpu_phys,
-        "cpu_frequency_current_mhz": cpu_freq,
-        "cpu_usage_percent": cpu_percent,
-        "system_cpu_idle_percent": idle_p,
+        "status": "healthy", "version": APP_VERSION, "git_commit": GIT_COMMIT, "operational_apex": OPERATIONAL_APEX, 
+        "python_version": sys.version, "python_implementation": platform.python_implementation(), "system_platform": sys.platform, 
+        "cpu_count": raw.get('sys_cpu_count', 0), "cpu_physical_count": raw.get('sys_cpu_physical_count', 0), "cpu_frequency_current_mhz": raw.get('sys_cpu_freq_current', 0.0), "cpu_usage_percent": raw.get('sys_cpu_percent', 0.0),
+        "system_cpu_idle_percent": raw.get('sys_cpu_idle', 0.0),
         "system_cpu_usage": {
-            "user_percent": user_cpu,
-            "system_percent": sys_cpu,
-            "idle_percent": idle_p,
-            "steal_percent": s_steal,
-            "guest_percent": s_guest,
-            "iowait_percent": s_iowait,
-            "irq_percent": s_irq,
-            "softirq_percent": s_softirq,
-            "load_1m_percent": s_load_1m_p,
-            "load_5m_percent": s_load_5m_p,
-            "load_15m_percent": s_load_15m_p,
-            "cores": cpu_cores_p
+            "user_percent": raw.get('sys_cpu_user', 0.0), "system_percent": raw.get('sys_cpu_system', 0.0), "idle_percent": raw.get('sys_cpu_idle', 0.0), "steal_percent": raw.get('sys_cpu_steal', 0.0),
+            "guest_percent": raw.get('sys_cpu_guest', 0.0), "iowait_percent": raw.get('sys_cpu_iowait', 0.0), "irq_percent": raw.get('sys_cpu_irq', 0.0), "softirq_percent": raw.get('sys_cpu_softirq', 0.0),
+            "load_1m_percent": (raw.get('sys_load_1m', 0) / cpu_count * 100) if cpu_count > 0 else 0.0, "load_5m_percent": (raw.get('sys_load_5m', 0) / cpu_count * 100) if cpu_count > 0 else 0.0,
+            "load_15m_percent": (raw.get('sys_load_15m', 0) / cpu_count * 100) if cpu_count > 0 else 0.0, "cores": raw.get('sys_cpu_cores_usage', [])
         },
         "system_cpu_stats": {
-            "interrupts": ints,
-            "soft_interrupts": sints,
-            "syscalls": sysc,
-            "soft_interrupt_rate_per_sec": float(SYSTEM_CPU_SOFT_INTERRUPT_RATE_BPS._value.get()),
-            "syscall_rate_per_sec": float(SYSTEM_CPU_SYSCALL_RATE_BPS._value.get()),
-            "context_switches": s_ctx, 
-            "context_switch_rate_per_sec": float(SYSTEM_CPU_CTX_SWITCH_RATE_BPS._value.get()), 
-            "interrupt_rate_per_sec": float(SYSTEM_CPU_INTERRUPT_RATE_BPS._value.get())
+            "interrupts": raw.get('sys_cpu_interrupts', 0), "soft_interrupts": raw.get('sys_cpu_soft_interrupts', 0), "syscalls": raw.get('sys_cpu_syscalls', 0),
+            "soft_interrupt_rate_per_sec": float(SYSTEM_CPU_SOFT_INTERRUPT_RATE_BPS._value.get()), "syscall_rate_per_sec": float(SYSTEM_CPU_SYSCALL_RATE_BPS._value.get()),
+            "context_switches": raw.get('sys_cpu_ctx_switches', 0), "context_switch_rate_per_sec": float(SYSTEM_CPU_CTX_SWITCH_RATE_BPS._value.get()), "interrupt_rate_per_sec": float(SYSTEM_CPU_INTERRUPT_RATE_BPS._value.get())
         },
-        "thread_count": thread_count,
-        "open_fds": open_fds,
-        "process_open_files_count": p_open_files,
-        "process_resource_limits": p_limits,
-        "process_resource_utilization_percent": {
-            "nofile": nofile_util,
-            "as": as_util
-        },
-        "context_switches": {
-            "voluntary": voluntary_ctx,
-            "involuntary": involuntary_ctx
-        },
+        "thread_count": threading.active_count(), "open_fds": raw.get('proc_num_fds', 0), "process_open_files_count": raw.get('proc_open_files_count', 0),
+        "process_resource_limits": {"nofile_soft": raw.get('proc_limit_nofile_soft', 0), "nofile_hard": raw.get('proc_limit_nofile_hard', 0), "as_soft": raw.get('proc_limit_as_soft', 0), "as_hard": raw.get('proc_limit_as_hard', 0)},
+        "process_resource_utilization_percent": {"nofile": float(PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT._value.get()), "as": float(PROCESS_LIMIT_AS_UTILIZATION_PERCENT._value.get())},
+        "context_switches": {"voluntary": v_ctx, "involuntary": i_ctx},
         "page_faults": {
-            "minor": minor_pf,
-            "major": major_pf,
-            "total": p_pf_total,
-            "minor_rate_per_sec": float(SYSTEM_PAGE_FAULT_MINOR_RATE_BPS._value.get()),
-            "major_rate_per_sec": float(SYSTEM_PAGE_FAULT_MAJOR_RATE_BPS._value.get())
+            "minor": raw.get('proc_minor_pf', 0), "major": raw.get('proc_major_pf', 0), "total": raw.get('proc_minor_pf', 0) + raw.get('proc_major_pf', 0),
+            "minor_rate_per_sec": float(SYSTEM_PAGE_FAULT_MINOR_RATE_BPS._value.get()), "major_rate_per_sec": float(SYSTEM_PAGE_FAULT_MAJOR_RATE_BPS._value.get())
         },
-        "swap_memory_usage_percent": swap_percent,
-        "system_swap_memory": {
-            "used_bytes": sys_swap_used,
-            "free_bytes": sys_swap_free,
-            "sin_bytes": ss_sin,
-            "sout_bytes": ss_sout
-        },
-        "boot_time_seconds": boot_time,
+        "swap_memory_usage_percent": raw.get('sys_swap_percent', 0.0),
+        "system_swap_memory": {"used_bytes": raw.get('sys_swap_used', 0), "free_bytes": raw.get('sys_swap_free', 0), "sin_bytes": raw.get('sys_swap_sin', 0), "sout_bytes": raw.get('sys_swap_sout', 0)},
+        "boot_time_seconds": raw.get('sys_boot_time', 0),
         "network_io_total": {
-            "bytes_sent": net_sent,
-            "bytes_recv": net_recv,
-            "errin": n_errin,
-            "errout": n_errout,
-            "dropin": n_dropin,
-            "dropout": n_dropout,
-            "errors_total": sn_err_total,
-            "interfaces_count": sn_if_count,
-            "interfaces_up_count": sn_if_up,
-            "interfaces_down_count": sn_if_down,
-            "mtu_total": sn_mtu_total,
-            "speed_total_mbps": sn_speed_total,
-            "duplex_full_count": sn_duplex_full,
-            "read_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_RECV_BPS._value.get()),
-            "write_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_SENT_BPS._value.get()),
-            "recv_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_RECV_BPS._value.get()),
-            "sent_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_SENT_BPS._value.get()),
-            "per_interface": {nic: {"bytes_sent": io.bytes_sent, "bytes_recv": io.bytes_recv} for nic, io in net_io_per_nic.items()}
+            "bytes_sent": raw.get('sys_net_bytes_sent', 0), "bytes_recv": raw.get('sys_net_bytes_recv', 0), "errin": raw.get('sys_net_errin', 0), "errout": raw.get('sys_net_errout', 0), "dropin": raw.get('sys_net_dropin', 0), "dropout": raw.get('sys_net_dropout', 0),
+            "errors_total": sn_err_total, "interfaces_count": raw.get('sys_net_interfaces_count', 0), "interfaces_up_count": raw.get('sys_net_interfaces_up', 0), "interfaces_down_count": raw.get('sys_net_interfaces_down', 0), "mtu_total": raw.get('sys_net_mtu_total', 0),
+            "speed_total_mbps": raw.get('sys_net_speed_total', 0), "duplex_full_count": raw.get('sys_net_duplex_full', 0), "read_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_RECV_BPS._value.get()), "write_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_SENT_BPS._value.get()),
+            "recv_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_RECV_BPS._value.get()), "sent_throughput_bps": float(SYSTEM_NETWORK_THROUGHPUT_SENT_BPS._value.get()), "per_interface": raw.get('sys_net_io_per_nic', {})
         },
         "disk_io_total": {
-            "read_bytes": disk_read,
-            "write_bytes": disk_write,
-            "read_throughput_bps": float(SYSTEM_DISK_READ_THROUGHPUT_BPS._value.get()),
-            "write_throughput_bps": float(SYSTEM_DISK_WRITE_THROUGHPUT_BPS._value.get()),
-            "read_count": sd_rc,
-            "write_count": sd_wc,
-            "read_merged_count": sd_rm,
-            "write_merged_count": sd_wm,
-            "busy_time_ms": sd_busy,
-            "partitions_usage_percent": disk_p_u
+            "read_bytes": raw.get('sys_disk_read_bytes', 0), "write_bytes": raw.get('sys_disk_write_bytes', 0), "read_throughput_bps": float(SYSTEM_DISK_READ_THROUGHPUT_BPS._value.get()), "write_throughput_bps": float(SYSTEM_DISK_WRITE_THROUGHPUT_BPS._value.get()),
+            "read_count": raw.get('sys_disk_read_count', 0), "write_count": raw.get('sys_disk_write_count', 0), "read_merged_count": raw.get('sys_disk_read_merged', 0), "write_merged_count": raw.get('sys_disk_write_merged', 0), "busy_time_ms": raw.get('sys_disk_busy_time', 0), "partitions_usage_percent": raw.get('sys_disk_partitions_usage', {})
         },
-        "system_network_connections_count": s_conn_count,
-        "process_connections_count": proc_conn_count,
-        "system_load_1m": load_avg[0],
-        "system_load_5m": load_avg[1],
-        "system_load_15m": load_avg[2],
-        "system_process_count": s_proc_count,
-        "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
-        "peak_ws_connections": getattr(app.state, "peak_ws_connections", 0),
-        "ws_messages_received": int(ws_received_count),
-        "ws_messages_sent": int(ws_sent_count),
-        "ws_bytes_received": ws_bytes_received,
-        "ws_bytes_sent": ws_bytes_sent,
-        "ws_throughput_bps": {
-            "received": float(WS_THROUGHPUT_RECEIVED_BPS._value.get()),
-            "sent": float(WS_THROUGHPUT_SENT_BPS._value.get())
-        },
-        "ws_binary_frames_rejected": int(WS_BINARY_FRAMES_REJECTED_TOTAL._value.get()),
-        "ws_connection_errors": total_ws_errors,
-        "ws_connection_errors_breakdown": ws_errors_breakdown,
-        "load_avg": load_avg,
-        "disk_usage_percent": disk_usage,
-        "memory_rss_bytes": rss,
-        "memory_vms_bytes": vms,
-        "memory_percent": mem_percent,
-        "system_memory_available_bytes": sys_mem_avail,
+        "system_network_connections_count": raw.get('sys_network_connections', 0), "process_connections_count": raw.get('proc_connections_count', 0),
+        "system_load_1m": raw.get('sys_load_1m', 0.0), "system_load_5m": raw.get('sys_load_5m', 0.0), "system_load_15m": raw.get('sys_load_15m', 0.0), "system_process_count": raw.get('sys_process_count', 0),
+        "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()), "peak_ws_connections": getattr(app.state, "peak_ws_connections", 0),
+        "ws_messages_received": int(ws_rc), "ws_messages_sent": int(ws_sc), "ws_bytes_received": ws_rb, "ws_bytes_sent": ws_sb,
+        "ws_throughput_bps": {"received": float(WS_THROUGHPUT_RECEIVED_BPS._value.get()), "sent": float(WS_THROUGHPUT_SENT_BPS._value.get())},
+        "ws_binary_frames_rejected": int(WS_BINARY_FRAMES_REJECTED_TOTAL._value.get()), "ws_connection_errors": sum(ws_errs.values()), "ws_connection_errors_breakdown": ws_errs,
+        "load_avg": [raw.get('sys_load_1m', 0.0), raw.get('sys_load_5m', 0.0), raw.get('sys_load_15m', 0.0)], "disk_usage_percent": raw.get('sys_disk_usage_percent', 0.0),
+        "memory_rss_bytes": raw.get('proc_rss', 0), "memory_vms_bytes": raw.get('proc_vms', 0), "memory_percent": raw.get('proc_mem_percent', 0.0), "system_memory_available_bytes": raw.get('sys_mem_available', 0),
         "system_memory": {
-            "available_bytes": sys_mem_avail,
-            "total_bytes": sys_mem_total,
-            "used_bytes": sys_mem_used,
-            "free_bytes": sys_mem_free,
-            "active_bytes": m_active,
-            "inactive_bytes": m_inactive,
-            "buffers_bytes": m_buffers,
-            "cached_bytes": m_cached,
-            "slab_bytes": m_slab,
-            "wired_bytes": m_wired,
-            "shared_bytes": m_shared,
-            "percent": sm_percent,
-            "available_percent": sm_avail_p
+            "available_bytes": raw.get('sys_mem_available', 0), "total_bytes": raw.get('sys_mem_total', 0), "used_bytes": raw.get('sys_mem_used', 0), "free_bytes": raw.get('sys_mem_free', 0), "active_bytes": raw.get('sys_mem_active', 0), "inactive_bytes": raw.get('sys_mem_inactive', 0),
+            "buffers_bytes": raw.get('sys_mem_buffers', 0), "cached_bytes": raw.get('sys_mem_cached', 0), "slab_bytes": raw.get('sys_mem_slab', 0), "wired_bytes": raw.get('sys_mem_wired', 0), "shared_bytes": raw.get('sys_mem_shared', 0), "percent": raw.get('sys_mem_percent', 0.0), "available_percent": (raw.get('sys_mem_available', 0) / sys_mem_total * 100)
         },
-        "system_memory_extended": {
-            "used_bytes": sys_mem_used,
-            "free_bytes": sys_mem_free
-        },
-        "process_io_counters": {
-            "read_bytes": p_io_rb,
-            "write_bytes": p_io_wb,
-            "read_count": p_io_rc,
-            "write_count": p_io_wc,
-            "read_throughput_bps": float(PROCESS_IO_READ_THROUGHPUT_BPS._value.get()),
-            "write_throughput_bps": float(PROCESS_IO_WRITE_THROUGHPUT_BPS._value.get())
-        },
-        "process_cpu_usage": {
-            "user_seconds": proc_user_cpu,
-            "system_seconds": proc_sys_cpu,
-            "percent": p_cpu_p,
-            "affinity_count": p_affinity,
-            "children_user_seconds": p_child_u,
-            "children_system_seconds": p_child_s
-        },
-        "process_threads_cpu_usage": {
-            "total_user_seconds": pt_user,
-            "total_system_seconds": pt_sys
-        },
-        "system_disk_io_times_ms": {
-            "read_time": sd_rt,
-            "write_time": sd_wt
-        },
-        "process_memory_maps_count": p_mem_maps,
-        "system_network_interfaces_up_count": sn_if_up,
-        "process_context_switches_total": p_ctx_total,
-
+        "system_memory_extended": {"used_bytes": raw.get('sys_mem_used', 0), "free_bytes": raw.get('sys_mem_free', 0)},
+        "process_io_counters": {"read_bytes": raw.get('proc_io_read_bytes', 0), "write_bytes": raw.get('proc_io_write_bytes', 0), "read_count": raw.get('proc_io_read_count', 0), "write_count": raw.get('proc_io_write_count', 0), "read_throughput_bps": float(PROCESS_IO_READ_THROUGHPUT_BPS._value.get()), "write_throughput_bps": float(PROCESS_IO_WRITE_THROUGHPUT_BPS._value.get())},
+        "process_cpu_usage": {"user_seconds": raw.get('proc_cpu_user', 0.0), "system_seconds": raw.get('proc_cpu_system', 0.0), "percent": raw.get('proc_cpu_percent', 0.0), "affinity_count": raw.get('proc_cpu_affinity_count', 0), "children_user_seconds": raw.get('proc_cpu_children_user', 0.0), "children_system_seconds": raw.get('proc_cpu_children_system', 0.0)},
+        "process_threads_cpu_usage": {"total_user_seconds": raw.get('proc_threads_user_time', 0.0), "total_system_seconds": raw.get('proc_threads_system_time', 0.0)},
+        "system_disk_io_times_ms": {"read_time": raw.get('sys_disk_read_time', 0), "write_time": raw.get('sys_disk_write_time', 0)},
+        "process_memory_maps_count": raw.get('proc_memory_maps_count', 0), "system_network_interfaces_up_count": raw.get('sys_net_interfaces_up', 0), "process_context_switches_total": v_ctx + i_ctx,
         "process_memory_advanced": {
-            "shared_bytes": p_shared,
-            "text_bytes": p_text,
-            "data_bytes": p_data,
-            "lib_bytes": p_lib,
-            "dirty_bytes": p_dirty,
-            "uss_bytes": p_uss,
-            "pss_bytes": p_pss,
-            "swap_bytes": p_swap,
-            "vms_percent": p_vms_p,
-            "uss_percent": p_uss_p,
-            "pss_percent": p_pss_p
+            "shared_bytes": raw.get('proc_shared', 0), "text_bytes": raw.get('proc_text', 0), "data_bytes": raw.get('proc_data', 0), "lib_bytes": raw.get('proc_lib', 0), "dirty_bytes": raw.get('proc_dirty', 0), "uss_bytes": raw.get('proc_uss', 0), "pss_bytes": raw.get('proc_pss', 0), "swap_bytes": raw.get('proc_swap', 0),
+            "vms_percent": (raw.get('proc_vms', 0) / sys_mem_total * 100), "uss_percent": (raw.get('proc_uss', 0) / sys_mem_total * 100), "pss_percent": (raw.get('proc_pss', 0) / sys_mem_total * 100)
         },
-        "process_env_var_count": p_env_count,
-        "process_nice_value": p_nice,
-        "process_uptime_seconds": uptime_seconds,
-        "process_num_threads": p_num_threads,
-        "process_children_count": p_children_count,
-        "system_network_packets": {
-            "sent": sys_net_psent,
-            "recv": sys_net_precv
-        },
-        "system_disk_partitions_count": d_part_count,
-        "system_users_count": u_count,
-        "registry_size": registry.active_task_count, 
-        "peak_registry_size": registry.peak_active_tasks,
-        "total_tasks_started": registry.total_tasks_started,
-        "task_success_rate_percent": success_rate,
-        "registry_summary": tools_summary,
-        "uptime_seconds": uptime_seconds,
-        "system_uptime_seconds": int(SYSTEM_UPTIME._value.get()),
-        "uptime_human": get_uptime_human(uptime_seconds),
-        "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APP_START_TIME)), 
-        "timestamp": now,
-        "config": {
-            "ws_heartbeat_timeout": WS_HEARTBEAT_TIMEOUT,
-            "cleanup_interval": CLEANUP_INTERVAL,
-            "stale_task_max_age": STALE_TASK_MAX_AGE,
-            "ws_message_size_limit": WS_MESSAGE_SIZE_LIMIT,
-            "max_concurrent_tasks": MAX_CONCURRENT_TASKS,
-            "allowed_origins": ALLOWED_ORIGINS
-        }
+        "process_env_var_count": raw.get('proc_env_var_count', 0), "process_nice_value": raw.get('proc_nice', 0), "process_uptime_seconds": uptime_seconds, "process_num_threads": raw.get('proc_num_threads', 0), "process_children_count": raw.get('proc_children_count', 0),
+        "system_network_packets": {"sent": raw.get('sys_net_packets_sent', 0), "recv": raw.get('sys_net_packets_recv', 0)},
+        "system_disk_partitions_count": raw.get('sys_disk_partitions_count', 0), "system_users_count": raw.get('sys_users_count', 0),
+        "registry_size": registry.active_task_count, "peak_registry_size": registry.peak_active_tasks, "total_tasks_started": registry.total_tasks_started, "task_success_rate_percent": success_rate, "registry_summary": tools_summary,
+        "uptime_seconds": uptime_seconds, "system_uptime_seconds": int(now - raw.get('sys_boot_time', now)), "uptime_human": get_uptime_human(uptime_seconds), "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APP_START_TIME)), "timestamp": now,
+        "config": {"ws_heartbeat_timeout": WS_HEARTBEAT_TIMEOUT, "cleanup_interval": CLEANUP_INTERVAL, "stale_task_max_age": STALE_TASK_MAX_AGE, "ws_message_size_limit": WS_MESSAGE_SIZE_LIMIT, "max_concurrent_tasks": MAX_CONCURRENT_TASKS, "allowed_origins": ALLOWED_ORIGINS}
     }
 
 
 class BroadcastMetricsManager:
     def __init__(self):
-        self.listeners: Dict[str, asyncio.Queue] = {}
-        self.task: Optional[asyncio.Task] = None
-
+        self.listeners: Dict[str, asyncio.Queue] = {}; self.task: Optional[asyncio.Task] = None
     async def start(self):
-        if self.task:
-            return
-        self.task = asyncio.create_task(self._run())
-        logger.info("BroadcastMetricsManager started")
-
+        if self.task: return
+        self.task = asyncio.create_task(self._run()); logger.info("BroadcastMetricsManager started")
     async def stop(self):
         if self.task:
             self.task.cancel()
-            try:
-                await self.task
-            except asyncio.CancelledError:
-                pass
+            try: await self.task
+            except asyncio.CancelledError: pass
             self.task = None
-            logger.info("BroadcastMetricsManager stopped")
-
     def subscribe(self, call_id: str) -> asyncio.Queue:
-        queue = asyncio.Queue()
-        self.listeners[call_id] = queue
-        return queue
-
+        queue = asyncio.Queue(); self.listeners[call_id] = queue; return queue
     def unsubscribe(self, call_id: str):
-        if call_id in self.listeners:
-            del self.listeners[call_id]
-
+        if call_id in self.listeners: del self.listeners[call_id]
     async def _run(self):
         try:
             while True:
                 await asyncio.sleep(3.0)
-                if not self.listeners:
-                    continue
-                
+                if not self.listeners: continue
                 metrics = await get_health_data()
-                for call_id in list(self.listeners.keys()):
-                    if call_id not in self.listeners:
-                        continue
-                    queue = self.listeners[call_id]
+                for cid in list(self.listeners.keys()):
+                    if cid not in self.listeners: continue
+                    q = self.listeners[cid]
                     try:
-                        while not queue.empty():
-                            queue.get_nowait()
-                        await queue.put(metrics)
-                    except Exception as e:
-                        logger.error(f"Error pushing metrics to listener {call_id}: {e}")
-        except asyncio.CancelledError:
-            pass
+                        while not q.empty(): q.get_nowait()
+                        await q.put(metrics)
+                    except Exception as e: logger.error(f"Error pushing metrics: {e}")
+        except asyncio.CancelledError: pass
 
 metrics_broadcaster = BroadcastMetricsManager()
-app = FastAPI(
-    title="ADK Progress Bridge",
-    description="A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
-    version=APP_VERSION,
-    lifespan=lifespan
-)
+app = FastAPI(title="ADK Progress Bridge", description="Bridge between tools and TUI.", version=APP_VERSION, lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=ALLOWED_ORIGINS, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-class TaskStartRequest(BaseModel):
-    args: Dict[str, Any] = {}
-
-class TaskStartResponse(BaseModel):
-    call_id: str
-    stream_url: str
-
-class InputProvideRequest(BaseModel):
-    call_id: str
-    value: Any
-
+class TaskStartRequest(BaseModel): args: Dict[str, Any] = {}
+class TaskStartResponse(BaseModel): call_id: str; stream_url: str
+class InputProvideRequest(BaseModel): call_id: str; value: Any
 AUTH_RESPONSES = {401: {"description": "Unauthorized"}}
 
 @app.get("/tools", response_model=List[str], responses=AUTH_RESPONSES)
-async def list_tools(authenticated: bool = Depends(verify_api_key)):
-    return registry.list_tools()
+async def list_tools(authenticated: bool = Depends(verify_api_key)): return registry.list_tools()
 
 @app.get("/tasks", responses=AUTH_RESPONSES)
-async def list_active_tasks(authenticated: bool = Depends(verify_api_key)):
-    return await registry.list_active_tasks()
+async def list_active_tasks(authenticated: bool = Depends(verify_api_key)): return await registry.list_active_tasks()
 
 @app.post("/start_task/{tool_name}", response_model=TaskStartResponse, responses=AUTH_RESPONSES)
-async def start_task(
-    tool_name: str, 
-    request: Optional[TaskStartRequest] = None, 
-    authenticated: bool = Depends(verify_api_key)
-):
-    if registry.active_task_count >= MAX_CONCURRENT_TASKS:
-        raise HTTPException(
-            status_code=503, 
-            detail=f"Server busy: Maximum concurrent tasks ({MAX_CONCURRENT_TASKS}) reached."
-        )
-
+async def start_task(tool_name: str, request: Optional[TaskStartRequest] = None, authenticated: bool = Depends(verify_api_key)):
+    if registry.active_task_count >= MAX_CONCURRENT_TASKS: raise HTTPException(status_code=503, detail="Server busy")
     tool = registry.get_tool(tool_name)
-    if not tool:
-        raise HTTPException(status_code=404, detail=f"Tool not found: {tool_name}")
-    
+    if not tool: raise HTTPException(status_code=404, detail="Tool not found")
     call_id = str(uuid.uuid4())
-    args = request.args if request else {}
-    
     try:
-        gen = tool(**args)
+        gen = tool(**(request.args if request else {}))
         await registry.store_task(call_id, gen, tool_name)
-    except Exception as e:
-        logger.error(f"Error starting tool {tool_name}: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
-    
-    return TaskStartResponse(
-        call_id=call_id,
-        stream_url=f"/stream/{call_id}"
-    )
+    except Exception as e: raise HTTPException(status_code=400, detail=str(e))
+    return TaskStartResponse(call_id=call_id, stream_url=f"/stream/{call_id}")
 
 @app.get("/stream/{call_id}", responses=AUTH_RESPONSES)
 @app.get("/stream", responses=AUTH_RESPONSES)
-async def stream_task(
-    call_id: Optional[str] = None,
-    cid: Optional[str] = Query(None, alias="call_id"),
-    authenticated: bool = Depends(verify_api_key)
-):
+async def stream_task(call_id: Optional[str] = None, cid: Optional[str] = Query(None, alias="call_id"), authenticated: bool = Depends(verify_api_key)):
     actual_call_id = call_id or cid
-    if not actual_call_id:
-        raise HTTPException(status_code=400, detail="call_id is required")
-
+    if not actual_call_id: raise HTTPException(status_code=400, detail="call_id is required")
     task_data = await registry.get_task(actual_call_id)
-    if not task_data:
-        raise HTTPException(status_code=404, detail="Task not found or already being streamed")
-    
-    gen = task_data["gen"]
-    tool_name = task_data["tool_name"]
+    if not task_data: raise HTTPException(status_code=404, detail="Task not found")
+    gen, tool_name = task_data["gen"], task_data["tool_name"]
 
     async def event_generator():
-        call_id_var.set(actual_call_id)
-        tool_name_var.set(tool_name)
-        start_time = time.perf_counter()
-        status = "success"
-        
-        metrics_queue = metrics_broadcaster.subscribe(actual_call_id)
-        combined_queue = asyncio.Queue()
-        
+        call_id_var.set(actual_call_id); tool_name_var.set(tool_name)
+        start_time, status, metrics_queue, combined_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(actual_call_id), asyncio.Queue()
         async def pull_gen():
             try:
-                async for item in gen:
-                    await combined_queue.put(("item", item))
+                async for item in gen: await combined_queue.put(("item", item))
                 await combined_queue.put(("done", None))
-            except Exception as e:
-                await combined_queue.put(("error", e))
-
+            except Exception as e: await combined_queue.put(("error", e))
         async def pull_metrics():
             try:
-                while True:
-                    m = await metrics_queue.get()
-                    await combined_queue.put(("metrics", m))
-            except asyncio.CancelledError:
-                pass
-
-        gen_task = asyncio.create_task(pull_gen())
-        metrics_task = asyncio.create_task(pull_metrics())
-        
+                while True: await combined_queue.put(("metrics", await metrics_queue.get()))
+            except asyncio.CancelledError: pass
+        gen_task, metrics_task = asyncio.create_task(pull_gen()), asyncio.create_task(pull_metrics())
         try:
             while True:
                 msg_type, payload = await combined_queue.get()
-                if msg_type == "done":
-                    break
-                elif msg_type == "error":
-                    raise payload
-                elif msg_type == "metrics":
-                    event = ProgressEvent(call_id=actual_call_id, type="system_metrics", payload=payload)
-                    yield await format_sse(event)
+                if msg_type == "done": break
+                elif msg_type == "error": raise payload
+                elif msg_type == "metrics": yield await format_sse(ProgressEvent(call_id=actual_call_id, type="system_metrics", payload=payload))
                 elif msg_type == "item":
-                    item = payload
-                    if isinstance(item, ProgressPayload):
+                    if isinstance(payload, ProgressPayload):
                         TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                        event = ProgressEvent(call_id=actual_call_id, type="progress", payload=item)
-                    elif isinstance(item, dict) and item.get("type") == "input_request":
-                        event = ProgressEvent(call_id=actual_call_id, type="input_request", payload=item["payload"])
-                    else:
-                        event = ProgressEvent(call_id=actual_call_id, type="result", payload=item)
-                    yield await format_sse(event)
-            
-            gen_task.cancel()
-            metrics_task.cancel()
-            
-        except asyncio.CancelledError:
-            status = "cancelled"
-            logger.info(f"Task {actual_call_id} was cancelled by client")
-            await gen.aclose()
-        except Exception as e:
-            status = "error"
-            logger.error(f"Error during task {actual_call_id} execution: {e}")
-            error_event = ProgressEvent(call_id=actual_call_id, type="error", payload={"detail": str(e)})
-            yield await format_sse(error_event)
+                        yield await format_sse(ProgressEvent(call_id=actual_call_id, type="progress", payload=payload))
+                    elif isinstance(payload, dict) and payload.get("type") == "input_request": yield await format_sse(ProgressEvent(call_id=actual_call_id, type="input_request", payload=payload["payload"]))
+                    else: yield await format_sse(ProgressEvent(call_id=actual_call_id, type="result", payload=payload))
+            gen_task.cancel(); metrics_task.cancel()
+        except asyncio.CancelledError: status = "cancelled"; await gen.aclose()
+        except Exception as e: status = "error"; yield await format_sse(ProgressEvent(call_id=actual_call_id, type="error", payload={"detail": str(e)}))
         finally:
             metrics_broadcaster.unsubscribe(actual_call_id)
             if not gen_task.done(): gen_task.cancel()
             if not metrics_task.done(): metrics_task.cancel()
-            
             duration = time.perf_counter() - start_time
-            TASK_DURATION.labels(tool_name=tool_name).observe(duration)
-            TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
+            TASK_DURATION.labels(tool_name=tool_name).observe(duration); TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
             await registry.remove_task(actual_call_id)
-            logger.info(f"Stream finished for task: {actual_call_id} (duration: {duration:.2f}s, status: {status})")
-
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/provide_input", responses=AUTH_RESPONSES)
 async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
-    if await input_manager.provide_input(request.call_id, request.value):
-        return {"status": "input accepted"}
-    else:
-        raise HTTPException(status_code=404, detail=f"No task waiting for input with call_id: {request.call_id}")
+    if await input_manager.provide_input(request.call_id, request.value): return {"status": "input accepted"}
+    raise HTTPException(status_code=404, detail="No task waiting for input")
 
 @app.post("/stop_task/{call_id}", responses=AUTH_RESPONSES)
 @app.post("/stop_task", responses=AUTH_RESPONSES)
-async def stop_task(
-    call_id: Optional[str] = None, 
-    cid: Optional[str] = Query(None, alias="call_id"),
-    authenticated: bool = Depends(verify_api_key)
-):
+async def stop_task(call_id: Optional[str] = None, cid: Optional[str] = Query(None, alias="call_id"), authenticated: bool = Depends(verify_api_key)):
     actual_call_id = call_id or cid
-    if not actual_call_id:
-        raise HTTPException(status_code=400, detail="call_id is required")
+    if not actual_call_id: raise HTTPException(status_code=400, detail="call_id is required")
     task_data = await registry.get_task_no_consume(actual_call_id)
-    if not task_data:
-        raise HTTPException(status_code=404, detail="Task not found or already finished")
+    if not task_data: raise HTTPException(status_code=404, detail="Task not found")
     await task_data["gen"].aclose()
-    if not task_data["consumed"]:
-        await registry.remove_task(actual_call_id)
+    if not task_data["consumed"]: await registry.remove_task(actual_call_id)
     return {"status": "stop signal sent"}
 
 @app.get("/health") 
-async def health_check(): 
-    return await get_health_data()
+async def health_check(): return await get_health_data()
 
 @app.get("/version") 
-async def get_version(): 
-    return {
-        "version": APP_VERSION, 
-        "git_commit": GIT_COMMIT,
-        "status": OPERATIONAL_APEX, 
-        "timestamp": time.time()
-    } 
+async def get_version(): return {"version": APP_VERSION, "git_commit": GIT_COMMIT, "status": OPERATIONAL_APEX, "timestamp": time.time()} 
 
 @app.get("/metrics")
 async def metrics():
     from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
     from fastapi.responses import Response
-    
     await get_health_data()
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
@@ -1662,317 +483,128 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     conn_start_time = time.perf_counter()
     ACTIVE_WS_CONNECTIONS.inc()
-    
     current_ws = int(ACTIVE_WS_CONNECTIONS._value.get())
     if current_ws > getattr(app.state, "peak_ws_connections", 0):
         app.state.peak_ws_connections = current_ws
         PEAK_ACTIVE_WS_CONNECTIONS.set(current_ws)
-        
     active_tasks: Dict[str, asyncio.Task] = {}
     try:
-        try:
-            await verify_api_key_ws(websocket)
-        except HTTPException:
-            WS_CONNECTION_ERRORS_TOTAL.labels(error_type="auth_failure").inc()
-            return
-
-        logger.info("WebSocket connection established")
+        try: await verify_api_key_ws(websocket)
+        except HTTPException: WS_CONNECTION_ERRORS_TOTAL.labels(error_type="auth_failure").inc(); return
         send_lock = asyncio.Lock()
-
         async def safe_send_json(data: dict):
             async with send_lock:
                 try:
-                    msg_type = data.get("type", "unknown")
-                    WS_MESSAGES_SENT_TOTAL_COUNTER.labels(message_type=msg_type).inc()
+                    WS_MESSAGES_SENT_TOTAL.labels(message_type=data.get("type", "unknown")).inc()
                     json_str = json.dumps(data)
-                    WS_BYTES_SENT_TOTAL.inc(len(json_str))
-                    WS_MESSAGE_SIZE_BYTES.observe(len(json_str))
+                    WS_BYTES_SENT_TOTAL.inc(len(json_str)); WS_MESSAGE_SIZE_BYTES.observe(len(json_str))
                     await websocket.send_text(json_str)
-                except Exception as e:
-                    logger.error(f"Error sending WS message: {e}")
-                    raise
-
+                except Exception as e: logger.error(f"Error sending WS message: {e}"); raise
         while True:
             try:
                 msg = await asyncio.wait_for(websocket.receive(), timeout=WS_HEARTBEAT_TIMEOUT)
-                
-                if msg["type"] == "websocket.disconnect":
-                    logger.info("WebSocket disconnected by client")
-                    break
-                
-                if msg["type"] != "websocket.receive":
-                    continue
-
+                if msg["type"] == "websocket.disconnect": break
+                if msg["type"] != "websocket.receive": continue
                 if "bytes" in msg:
-                    WS_BYTES_RECEIVED_TOTAL.inc(len(msg["bytes"]))
-                    WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type="binary").inc()
-                    WS_BINARY_FRAMES_REJECTED_TOTAL.inc()
-                    logger.warning("Received binary frame over WebSocket")
-                    await safe_send_json({
-                        "type": "error",
-                        "payload": {"detail": "Binary messages are not supported. Please send JSON text."}
-                    })
+                    WS_BYTES_RECEIVED_TOTAL.inc(len(msg["bytes"])); WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="binary").inc(); WS_BINARY_FRAMES_REJECTED_TOTAL.inc()
+                    await safe_send_json({"type": "error", "payload": {"detail": "Binary messages are not supported."}})
                     continue
-                
                 data = msg.get("text", "")
-                WS_BYTES_RECEIVED_TOTAL.inc(len(data))
-                WS_MESSAGE_SIZE_BYTES.observe(len(data))
-                
+                WS_BYTES_RECEIVED_TOTAL.inc(len(data)); WS_MESSAGE_SIZE_BYTES.observe(len(data))
                 if len(data) > WS_MESSAGE_SIZE_LIMIT:
-                    WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type="oversized").inc()
-                    logger.warning(f"WebSocket message exceeded size limit: {len(data)} bytes")
-                    await safe_send_json({
-                        "type": "error",
-                        "payload": {"detail": f"Message too large (max {WS_MESSAGE_SIZE_LIMIT} bytes)"}
-                    })
+                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="oversized").inc()
+                    await safe_send_json({"type": "error", "payload": {"detail": f"Message too large (max {WS_MESSAGE_SIZE_LIMIT})"}})
                     continue
-
-                req_start_time = time.perf_counter()
-                message = json.loads(data)
+                req_start_time, message = time.perf_counter(), json.loads(data)
                 if not isinstance(message, dict):
-                    WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type="invalid_format").inc()
-                    logger.warning(f"Received non-dictionary message over WebSocket: {type(message)}")
-                    await safe_send_json({
-                        "type": "error",
-                        "payload": {"detail": "Message must be a JSON object (dictionary)"}
-                    })
+                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="invalid_format").inc()
+                    await safe_send_json({"type": "error", "payload": {"detail": "Message must be a JSON object"}})
                     continue
-                
-                msg_type = message.get("type", "unknown")
-                WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type=msg_type).inc()
-            except asyncio.TimeoutError:
-                logger.warning("WebSocket heartbeat timeout exceeded")
-                break
+                msg_type, request_id = message.get("type", "unknown"), message.get("request_id")
+                WS_MESSAGES_RECEIVED_TOTAL.labels(message_type=msg_type).inc()
+            except asyncio.TimeoutError: break
             except json.JSONDecodeError:
-                WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type="invalid_json").inc()
-                WS_CONNECTION_ERRORS_TOTAL.labels(error_type="protocol_error").inc()
-                logger.warning("Received invalid JSON over WebSocket")
-                await safe_send_json({
-                    "type": "error",
-                    "payload": {"detail": "Invalid JSON received"}
-                })
+                WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="invalid_json").inc(); WS_CONNECTION_ERRORS_TOTAL.labels(error_type="protocol_error").inc()
+                await safe_send_json({"type": "error", "payload": {"detail": "Invalid JSON received"}})
                 continue
-            except Exception as e:
-                WS_CONNECTION_ERRORS_TOTAL.labels(error_type="protocol_error").inc()
-                logger.error(f"Error receiving WS message: {e}")
-                break
-            
-            request_id = message.get("request_id")
+            except Exception: WS_CONNECTION_ERRORS_TOTAL.labels(error_type="protocol_error").inc(); break
             
             try:
-                if msg_type == "ping":
-                    await safe_send_json({"type": "pong"})
-                elif msg_type == "list_tools":
-                    tools = registry.list_tools()
-                    await safe_send_json({
-                        "type": "tools_list",
-                        "tools": tools,
-                        "request_id": request_id
-                    })
-                elif msg_type == "list_active_tasks":
-                    tasks = await registry.list_active_tasks()
-                    await safe_send_json({
-                        "type": "active_tasks_list",
-                        "tasks": tasks,
-                        "request_id": request_id
-                    })
-                elif msg_type == "get_health":
-                    health_data = await get_health_data()
-                    await safe_send_json({
-                        "type": "health_data",
-                        "data": health_data,
-                        "request_id": request_id
-                    })
+                if msg_type == "ping": await safe_send_json({"type": "pong"})
+                elif msg_type == "list_tools": await safe_send_json({"type": "tools_list", "tools": registry.list_tools(), "request_id": request_id})
+                elif msg_type == "list_active_tasks": await safe_send_json({"type": "active_tasks_list", "tasks": await registry.list_active_tasks(), "request_id": request_id})
+                elif msg_type == "get_health": await safe_send_json({"type": "health_data", "data": await get_health_data(), "request_id": request_id})
                 elif msg_type == "start":
-                    if registry.active_task_count >= MAX_CONCURRENT_TASKS:
-                        await safe_send_json({
-                            "type": "error",
-                            "request_id": request_id,
-                            "payload": {"detail": f"Server busy: Maximum concurrent tasks ({MAX_CONCURRENT_TASKS}) reached."}
-                        })
+                    if registry.active_task_count >= MAX_CONCURRENT_TASKS: await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": "Server busy"}})
                     else:
                         tool_name = message.get("tool_name")
-                        args = message.get("args", {})
                         tool = registry.get_tool(tool_name)
-                        if not tool:
-                            await safe_send_json({
-                                "type": "error",
-                                "request_id": request_id,
-                                "payload": {"detail": f"Tool not found: {tool_name}"}
-                            })
+                        if not tool: await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": f"Tool not found: {tool_name}"}})
                         else:
                             call_id = str(uuid.uuid4())
                             try:
-                                gen = tool(**args)
-                                await registry.store_task(call_id, gen, tool_name)
-                                await registry.mark_consumed(call_id)
-                                await safe_send_json({
-                                    "type": "task_started", 
-                                    "call_id": call_id, 
-                                    "tool_name": tool_name, 
-                                    "request_id": request_id
-                                })
-                                task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
-                                active_tasks[call_id] = task
-                            except Exception as e:
-                                logger.error(f"Failed to start tool {tool_name} via WS: {e}", extra={"tool_name": tool_name})
-                                await safe_send_json({
-                                    "type": "error",
-                                    "call_id": call_id,
-                                    "request_id": request_id,
-                                    "payload": {"detail": str(e)}
-                                })
+                                gen = tool(**message.get("args", {}))
+                                await registry.store_task(call_id, gen, tool_name); await registry.mark_consumed(call_id)
+                                await safe_send_json({"type": "task_started", "call_id": call_id, "tool_name": tool_name, "request_id": request_id})
+                                active_tasks[call_id] = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
+                            except Exception as e: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": str(e)}})
                 elif msg_type == "stop":
                     call_id = message.get("call_id")
                     if call_id in active_tasks:
-                        logger.info(f"Stopping task {call_id} via WebSocket request", extra={"call_id": call_id})
                         active_tasks[call_id].cancel()
-                        await safe_send_json({
-                            "call_id": call_id,
-                            "type": "progress",
-                            "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}
-                        })
-                        await safe_send_json({
-                            "type": "stop_success",
-                            "call_id": call_id,
-                            "request_id": request_id
-                        })
+                        await safe_send_json({"call_id": call_id, "type": "progress", "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}})
+                        await safe_send_json({"type": "stop_success", "call_id": call_id, "request_id": request_id})
                     else:
                         task_data = await registry.get_task_no_consume(call_id)
                         if task_data:
-                            logger.info(f"Stopping non-streamed task {call_id} via WebSocket request", extra={"call_id": call_id})
                             await task_data["gen"].aclose()
-                            if not task_data["consumed"]:
-                                await registry.remove_task(call_id)
-                            await safe_send_json({
-                                "type": "stop_success",
-                                "call_id": call_id,
-                                "request_id": request_id
-                            })
-                        else:
-                            await safe_send_json({
-                                "type": "error",
-                                "call_id": call_id,
-                                "request_id": request_id, 
-                                "payload": {"detail": f"No active task found with call_id: {call_id}"}
-                            })
+                            if not task_data["consumed"]: await registry.remove_task(call_id)
+                            await safe_send_json({"type": "stop_success", "call_id": call_id, "request_id": request_id})
+                        else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No active task found"}})
                 elif msg_type == "subscribe":
                     call_id = message.get("call_id")
                     task_data = await registry.get_task(call_id)
                     if task_data:
-                        tool_name = task_data["tool_name"]
-                        gen = task_data["gen"]
-                        await safe_send_json({
-                            "type": "task_started", 
-                            "call_id": call_id, 
-                            "tool_name": tool_name, 
-                            "request_id": request_id
-                        })
-                        task = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
-                        active_tasks[call_id] = task
-                    else:
-                        await safe_send_json({
-                            "type": "error",
-                            "call_id": call_id,
-                            "request_id": request_id, 
-                            "payload": {"detail": f"Task not found or already being streamed: {call_id}"}
-                        })
+                        active_tasks[call_id] = asyncio.create_task(run_ws_generator(safe_send_json, call_id, task_data["tool_name"], task_data["gen"], active_tasks))
+                        await safe_send_json({"type": "task_started", "call_id": call_id, "tool_name": task_data["tool_name"], "request_id": request_id})
+                    else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No active task found"}})
                 elif msg_type == "input":
                     call_id = message.get("call_id")
-                    value = message.get("value")
-                    if await input_manager.provide_input(call_id, value):
-                        logger.info(f"Input received for task {call_id}", extra={"call_id": call_id})
-                        await safe_send_json({
-                            "type": "input_success",
-                            "call_id": call_id,
-                            "request_id": request_id
-                        })
-                    else:
-                        await safe_send_json({
-                            "type": "error",
-                            "call_id": call_id,
-                            "request_id": request_id, 
-                            "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
-                        })
-                else:
-                    WS_MESSAGES_RECEIVED_TOTAL_COUNTER.labels(message_type="unknown").inc()
-                    logger.warning(f"Received unknown message type over WebSocket: {msg_type}")
-                    await safe_send_json({
-                        "type": "error",
-                        "request_id": request_id,
-                        "payload": {"detail": f"Unknown message type: {msg_type}"}
-                    })
-                
-                latency = time.perf_counter() - req_start_time
-                WS_REQUEST_LATENCY.labels(message_type=msg_type).observe(latency)
+                    if await input_manager.provide_input(call_id, message.get("value")): await safe_send_json({"type": "input_success", "call_id": call_id, "request_id": request_id})
+                    else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No task waiting for input"}})
+                else: await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": "Unknown message type"}})
+                WS_REQUEST_LATENCY.labels(message_type=msg_type).observe(time.perf_counter() - req_start_time)
             except Exception as e:
                 WS_CONNECTION_ERRORS_TOTAL.labels(error_type="other_error").inc()
-                logger.error(f"Error processing WS message {msg_type}: {e}")
-                await safe_send_json({
-                    "type": "error",
-                    "request_id": request_id,
-                    "payload": {"detail": "Internal error processing message"}
-                })
+                await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": "Internal error"}})
     finally:
-        ACTIVE_WS_CONNECTIONS.dec()
-        duration = time.perf_counter() - conn_start_time
-        WS_CONNECTION_DURATION.observe(duration)
-        for call_id, task in active_tasks.items():
-            if not task.done():
-                task.cancel()
-        logger.info(f"WebSocket connection closed (duration: {duration:.2f}s)")
+        ACTIVE_WS_CONNECTIONS.dec(); WS_CONNECTION_DURATION.observe(time.perf_counter() - conn_start_time)
+        for t in active_tasks.values():
+            if not t.done(): t.cancel()
 
 async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
-    call_id_var.set(call_id)
-    tool_name_var.set(tool_name)
-    start_time = time.perf_counter()
-    status = "success"
-    
-    metrics_queue = metrics_broadcaster.subscribe(call_id)
-    
+    call_id_var.set(call_id); tool_name_var.set(tool_name)
+    start_time, status, metrics_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(call_id)
     async def metrics_pusher():
         try:
-            while True:
-                metrics = await metrics_queue.get()
-                await send_func({"call_id": call_id, "type": "system_metrics", "payload": metrics})
-        except asyncio.CancelledError:
-            pass
-        except Exception as e:
-            logger.error(f"Metrics pusher error for task {call_id}: {e}")
-
+            while True: await send_func({"call_id": call_id, "type": "system_metrics", "payload": await metrics_queue.get()})
+        except asyncio.CancelledError: pass
     metrics_task = asyncio.create_task(metrics_pusher())
-    
     try:
         async for item in gen:
             if isinstance(item, ProgressPayload):
                 TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                payload = item.model_dump() if hasattr(item, "model_dump") else item
-                await send_func({"call_id": call_id, "type": "progress", "payload": payload})
-            elif isinstance(item, dict) and item.get("type") == "input_request":
-                await send_func({"call_id": call_id, "type": "input_request", "payload": item["payload"]})
-            else:
-                await send_func({"call_id": call_id, "type": "result", "payload": item})
-    except asyncio.CancelledError:
-        status = "cancelled"
-        logger.info(f"Task {call_id} was cancelled")
-        await gen.aclose()
-    except Exception as e:
-        status = "error"
-        logger.error(f"Error during task {call_id} execution: {e}")
-        await send_func({"call_id": call_id, "type": "error", "payload": {"detail": str(e)}})
+                await send_func({"call_id": call_id, "type": "progress", "payload": item.model_dump()})
+            elif isinstance(item, dict) and item.get("type") == "input_request": await send_func({"call_id": call_id, "type": "input_request", "payload": item["payload"]})
+            else: await send_func({"call_id": call_id, "type": "result", "payload": item})
+    except asyncio.CancelledError: status = "cancelled"; await gen.aclose()
+    except Exception as e: status = "error"; await send_func({"call_id": call_id, "type": "error", "payload": {"detail": str(e)}})
     finally:
-        metrics_broadcaster.unsubscribe(call_id)
-        metrics_task.cancel()
-        duration = time.perf_counter() - start_time
-        TASK_DURATION.labels(tool_name=tool_name).observe(duration)
-        TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
-        await registry.remove_task(call_id)
-        if call_id in active_tasks:
-            del active_tasks[call_id]
-        logger.info(f"Task {call_id} finished (duration: {duration:.2f}s, status: {status})")
+        metrics_broadcaster.unsubscribe(call_id); metrics_task.cancel()
+        TASK_DURATION.labels(tool_name=tool_name).observe(time.perf_counter() - start_time); TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
+        await registry.remove_task(call_id); active_tasks.pop(call_id, None)
 
 from . import dummy_tool
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
