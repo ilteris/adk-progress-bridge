@@ -746,6 +746,27 @@ PROCESS_IO_WRITE_THROUGHPUT_BPS = Gauge(
     "Current process disk write throughput in bytes per second"
 )
 
+# v357 THE OVERLORD Metrics
+SYSTEM_DISK_READ_THROUGHPUT_BPS = Gauge(
+    "adk_system_disk_read_throughput_bps",
+    "Current system-wide disk read throughput in bytes per second"
+)
+
+SYSTEM_DISK_WRITE_THROUGHPUT_BPS = Gauge(
+    "adk_system_disk_write_throughput_bps",
+    "Current system-wide disk write throughput in bytes per second"
+)
+
+SYSTEM_NETWORK_THROUGHPUT_RECV_BPS = Gauge(
+    "adk_system_network_throughput_recv_bps",
+    "Current system-wide network receive throughput in bytes per second"
+)
+
+SYSTEM_NETWORK_THROUGHPUT_SENT_BPS = Gauge(
+    "adk_system_network_throughput_sent_bps",
+    "Current system-wide network transmit throughput in bytes per second"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

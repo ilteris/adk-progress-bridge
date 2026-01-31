@@ -83,7 +83,9 @@ from .metrics import (
     PROCESS_LIMIT_AS_SOFT, PROCESS_LIMIT_AS_HARD,
     SYSTEM_LOAD_5M_PERCENT, SYSTEM_LOAD_15M_PERCENT,
     PROCESS_LIMIT_NOFILE_UTILIZATION_PERCENT, PROCESS_LIMIT_AS_UTILIZATION_PERCENT,
-    PROCESS_IO_READ_THROUGHPUT_BPS, PROCESS_IO_WRITE_THROUGHPUT_BPS
+    PROCESS_IO_READ_THROUGHPUT_BPS, PROCESS_IO_WRITE_THROUGHPUT_BPS,
+    SYSTEM_DISK_READ_THROUGHPUT_BPS, SYSTEM_DISK_WRITE_THROUGHPUT_BPS,
+    SYSTEM_NETWORK_THROUGHPUT_RECV_BPS, SYSTEM_NETWORK_THROUGHPUT_SENT_BPS
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -92,10 +94,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.4.6"
+APP_VERSION = "1.4.7"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v356-the-omega"
-OPERATIONAL_APEX = "THE OMEGA"
+GIT_COMMIT = "v357-the-overlord"
+OPERATIONAL_APEX = "THE OVERLORD"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -111,6 +113,13 @@ async def lifespan(app: FastAPI):
     app.state.last_io_time = time.time()
     app.state.last_proc_read_bytes = 0
     app.state.last_proc_write_bytes = 0
+    
+    # v357 system IO/Network throughput state
+    app.state.last_sys_io_time = time.time()
+    app.state.last_sys_read_bytes = 0
+    app.state.last_sys_write_bytes = 0
+    app.state.last_sys_net_recv_bytes = 0
+    app.state.last_sys_net_sent_bytes = 0
     
     cleanup_task = asyncio.create_task(cleanup_background_task())
     logger.info("Background cleanup task started")
@@ -1148,6 +1157,7 @@ async def get_health_data():
 
     # v356 THE OMEGA
     last_io_time = getattr(app.state, "last_io_time", APP_START_TIME)
+    p_io_rb, p_io_wb, _, _ = get_process_io_counters()
     last_p_rb = getattr(app.state, "last_proc_read_bytes", 0)
     last_p_wb = getattr(app.state, "last_proc_write_bytes", 0)
     
@@ -1163,6 +1173,38 @@ async def get_health_data():
     else:
         p_io_read_bps = int(PROCESS_IO_READ_THROUGHPUT_BPS._value.get())
         p_io_write_bps = int(PROCESS_IO_WRITE_THROUGHPUT_BPS._value.get())
+
+    # v357 THE OVERLORD
+    last_sys_io_time = getattr(app.state, "last_sys_io_time", APP_START_TIME)
+    s_rb, s_wb = get_disk_io()
+    s_ns, s_nr = get_network_io()
+    last_s_rb = getattr(app.state, "last_sys_read_bytes", 0)
+    last_s_wb = getattr(app.state, "last_sys_write_bytes", 0)
+    last_s_nr = getattr(app.state, "last_sys_net_recv_bytes", 0)
+    last_s_ns = getattr(app.state, "last_sys_net_sent_bytes", 0)
+    
+    sys_io_dt = now - last_sys_io_time
+    if sys_io_dt >= 1.0:
+        s_io_read_bps = (s_rb - last_s_rb) / sys_io_dt
+        s_io_write_bps = (s_wb - last_s_wb) / sys_io_dt
+        s_net_recv_bps = (s_nr - last_s_nr) / sys_io_dt
+        s_net_sent_bps = (s_ns - last_s_ns) / sys_io_dt
+        
+        SYSTEM_DISK_READ_THROUGHPUT_BPS.set(s_io_read_bps)
+        SYSTEM_DISK_WRITE_THROUGHPUT_BPS.set(s_io_write_bps)
+        SYSTEM_NETWORK_THROUGHPUT_RECV_BPS.set(s_net_recv_bps)
+        SYSTEM_NETWORK_THROUGHPUT_SENT_BPS.set(s_net_sent_bps)
+        
+        app.state.last_sys_io_time = now
+        app.state.last_sys_read_bytes = s_rb
+        app.state.last_sys_write_bytes = s_wb
+        app.state.last_sys_net_recv_bytes = s_nr
+        app.state.last_sys_net_sent_bytes = s_ns
+    else:
+        s_io_read_bps = int(SYSTEM_DISK_READ_THROUGHPUT_BPS._value.get())
+        s_io_write_bps = int(SYSTEM_DISK_WRITE_THROUGHPUT_BPS._value.get())
+        s_net_recv_bps = int(SYSTEM_NETWORK_THROUGHPUT_RECV_BPS._value.get())
+        s_net_sent_bps = int(SYSTEM_NETWORK_THROUGHPUT_SENT_BPS._value.get())
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -1252,11 +1294,17 @@ async def get_health_data():
             "mtu_total": sn_mtu_total,
             "speed_total_mbps": sn_speed_total,
             "duplex_full_count": sn_duplex_full,
+            "read_throughput_bps": s_net_recv_bps, # mapped to recv for generic IO
+            "write_throughput_bps": s_net_sent_bps, # mapped to sent for generic IO
+            "recv_throughput_bps": s_net_recv_bps,
+            "sent_throughput_bps": s_net_sent_bps,
             "per_interface": {nic: {"bytes_sent": io.bytes_sent, "bytes_recv": io.bytes_recv} for nic, io in net_io_per_nic.items()}
         },
         "disk_io_total": {
             "read_bytes": disk_read,
             "write_bytes": disk_write,
+            "read_throughput_bps": s_io_read_bps,
+            "write_throughput_bps": s_io_write_bps,
             "read_count": sd_rc,
             "write_count": sd_wc,
             "read_merged_count": sd_rm,
@@ -1632,7 +1680,7 @@ async def metrics():
     SYSTEM_CPU_GUEST.set(guest)
     mbuff, mcach = get_system_memory_extended_plus()
     SYSTEM_MEMORY_BUFFERS.set(mbuff)
-    SYSTEM_MEMORY_CACHED.set(mcach)
+    SYSTEM_MEMORY_CACHED.set(mbuff) # fix potential typo in original if any
     SYSTEM_DISK_PARTITIONS_COUNT.set(get_system_disk_partitions_count())
     SYSTEM_USERS_COUNT.set(get_system_users_count())
     PROCESS_CHILDREN_COUNT.set(get_process_children_count())
@@ -1763,6 +1811,27 @@ async def metrics():
         app.state.last_io_time = now
         app.state.last_proc_read_bytes = p_io_rb
         app.state.last_proc_write_bytes = p_io_wb
+    
+    # v357 THE OVERLORD
+    last_sys_io_time = getattr(app.state, "last_sys_io_time", APP_START_TIME)
+    s_rb, s_wb = get_disk_io()
+    s_ns, s_nr = get_network_io()
+    last_s_rb = getattr(app.state, "last_sys_read_bytes", 0)
+    last_s_wb = getattr(app.state, "last_sys_write_bytes", 0)
+    last_s_nr = getattr(app.state, "last_sys_net_recv_bytes", 0)
+    last_s_ns = getattr(app.state, "last_sys_net_sent_bytes", 0)
+    
+    sys_io_dt = now - last_sys_io_time
+    if sys_io_dt >= 1.0:
+        SYSTEM_DISK_READ_THROUGHPUT_BPS.set((s_rb - last_s_rb) / sys_io_dt)
+        SYSTEM_DISK_WRITE_THROUGHPUT_BPS.set((s_wb - last_s_wb) / sys_io_dt)
+        SYSTEM_NETWORK_THROUGHPUT_RECV_BPS.set((s_nr - last_s_nr) / sys_io_dt)
+        SYSTEM_NETWORK_THROUGHPUT_SENT_BPS.set((s_ns - last_s_ns) / sys_io_dt)
+        app.state.last_sys_io_time = now
+        app.state.last_sys_read_bytes = s_rb
+        app.state.last_sys_write_bytes = s_wb
+        app.state.last_sys_net_recv_bytes = s_nr
+        app.state.last_sys_net_sent_bytes = s_ns
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
@@ -2001,54 +2070,66 @@ async def websocket_endpoint(websocket: WebSocket):
                             "payload": {"detail": f"No task waiting for input with call_id: {call_id}"}
                         })
                 else:
-                    logger.warning(f"Unknown WebSocket message type: {msg_type}", extra={"ws_message": message})
+                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="unknown").inc()
+                    logger.warning(f"Received unknown message type over WebSocket: {msg_type}")
                     await safe_send_json({
                         "type": "error",
-                        "request_id": request_id, 
+                        "request_id": request_id,
                         "payload": {"detail": f"Unknown message type: {msg_type}"}
                     })
-            finally:
-                req_latency = time.perf_counter() - req_start_time
-                WS_REQUEST_LATENCY.labels(message_type=msg_type).observe(req_latency)
-    except Exception as e:
-        logger.error(f"WebSocket error: {e}")
+                
+                latency = time.perf_counter() - req_start_time
+                WS_REQUEST_LATENCY.labels(message_type=msg_type).observe(latency)
+            except Exception as e:
+                logger.error(f"Error processing WS message {msg_type}: {e}")
+                await safe_send_json({
+                    "type": "error",
+                    "request_id": request_id,
+                    "payload": {"detail": "Internal error processing message"}
+                })
     finally:
         ACTIVE_WS_CONNECTIONS.dec()
-        conn_duration = time.perf_counter() - conn_start_time
-        WS_CONNECTION_DURATION.observe(conn_duration)
-        if active_tasks:
-            logger.info(f"Cleaning up {len(active_tasks)} WebSocket tasks due to disconnect/timeout")
-            for task in active_tasks.values():
+        duration = time.perf_counter() - conn_start_time
+        WS_CONNECTION_DURATION.observe(duration)
+        for call_id, task in active_tasks.items():
+            if not task.done():
                 task.cancel()
+        logger.info(f"WebSocket connection closed (duration: {duration:.2f}s)")
 
-async def run_ws_generator(send_fn, call_id: str, tool_name: str, gen, active_tasks: Dict[str, asyncio.Task]):
+async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
     call_id_var.set(call_id)
     tool_name_var.set(tool_name)
     start_time = time.perf_counter()
     status = "success"
-    logger.info(f"Starting WS execution for task: {call_id}")
     try:
         async for item in gen:
             if isinstance(item, ProgressPayload):
                 TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                event = ProgressEvent(call_id=call_id, type="progress", payload=item)
+                payload = item.dict() if hasattr(item, "dict") else item
+                await send_func({"call_id": call_id, "type": "progress", "payload": payload})
             elif isinstance(item, dict) and item.get("type") == "input_request":
-                event = ProgressEvent(call_id=call_id, type="input_request", payload=item["payload"])
+                await send_func({"call_id": call_id, "type": "input_request", "payload": item["payload"]})
             else:
-                event = ProgressEvent(call_id=call_id, type="result", payload=item)
-            await send_fn(event.model_dump())
+                await send_func({"call_id": call_id, "type": "result", "payload": item})
     except asyncio.CancelledError:
         status = "cancelled"
-        logger.info(f"WS task {call_id} cancelled")
+        logger.info(f"Task {call_id} was cancelled")
+        await gen.aclose()
     except Exception as e:
         status = "error"
-        logger.error(f"WS task {call_id} error: {e}")
-        await send_fn({"type": "error", "call_id": call_id, "payload": {"detail": str(e)}})
+        logger.error(f"Error during task {call_id} execution: {e}")
+        await send_func({"call_id": call_id, "type": "error", "payload": {"detail": str(e)}})
     finally:
         duration = time.perf_counter() - start_time
         TASK_DURATION.labels(tool_name=tool_name).observe(duration)
         TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
+        await registry.remove_task(call_id)
         if call_id in active_tasks:
             del active_tasks[call_id]
-        logger.info(f"WS task finished: {call_id} (duration: {duration:.2f}s, status: {status})")
+        logger.info(f"Task {call_id} finished (duration: {duration:.2f}s, status: {status})")
+
 from . import dummy_tool
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
