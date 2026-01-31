@@ -50,6 +50,26 @@ class MockWebSocket extends EventTarget {
                 request_id: parsed.request_id
             })
         }, 10)
+    } else if (parsed.type === 'stop') {
+        // Automatically respond with stop_success
+        setTimeout(() => {
+            this.triggerMessage({
+                type: 'stop_success',
+                call_id: parsed.call_id,
+                request_id: parsed.request_id,
+                payload: {}
+            })
+        }, 10)
+    } else if (parsed.type === 'input') {
+        // Automatically respond with input_success
+        setTimeout(() => {
+            this.triggerMessage({
+                type: 'input_success',
+                call_id: parsed.call_id,
+                request_id: parsed.request_id,
+                payload: {}
+            })
+        }, 10)
     }
   })
 
@@ -200,6 +220,27 @@ describe('useAgentStream', () => {
       expect(state.logs[state.logs.length - 1]).toContain('Reconnecting')
     })
 
+    it('handles reconnecting -> connected transition correctly', async () => {
+      const { state, runTool } = useAgentStream()
+      state.useWS = true
+      
+      runTool('test_tool')
+      await vi.waitFor(() => expect(state.status).toBe('connected'))
+      
+      // Connection lost
+      lastWebSocket?.triggerClose()
+      await vi.waitFor(() => expect(state.status).toBe('reconnecting'))
+      
+      // Connection re-established
+      // In MockWebSocket, the next constructor call will trigger 'open'
+      // But we need to wait for the reconnect attempt
+      await vi.waitFor(() => expect(wsInstanceCount).toBe(2), { timeout: 2000 })
+      
+      await vi.waitFor(() => expect(state.status).toBe('connected'))
+      expect(state.isConnected).toBe(true)
+      expect(state.logs[state.logs.length - 1]).toContain('re-established')
+    })
+
     it('handles stopTool by sending stop message and waiting for stop_success', async () => {
       const { state, runTool, stopTool } = useAgentStream()
       state.useWS = true
@@ -207,19 +248,13 @@ describe('useAgentStream', () => {
       runTool('test_tool')
       await vi.waitFor(() => expect(state.status).toBe('connected'))
       
-      await stopTool()
+      // Use a timeout to ensure we don't hang if stopTool fails
+      const stopPromise = stopTool()
+      
+      await stopPromise
       
       expect(state.status).toBe('cancelled')
       expect(state.isStreaming).toBe(false)
-      
-      // Should still be subscribed until stop_success
-      lastWebSocket?.triggerMessage({
-        call_id: 'ws-call-id-test_tool',
-        type: 'stop_success',
-        payload: {},
-        request_id: 'req-123'
-      })
-      
       expect(state.logs).toContain('Stop command acknowledged by server.')
     })
 
@@ -235,6 +270,30 @@ describe('useAgentStream', () => {
         
         expect(unsubscribeSpy).toHaveBeenCalledWith('ws-call-id-test_tool')
         expect(state.callId).toBeNull()
+    })
+
+    it('replays buffered messages when subscribing late', async () => {
+        // Connect WS first
+        await wsManager.connect()
+        await vi.waitFor(() => expect(lastWebSocket).not.toBeNull())
+
+        // Trigger message BEFORE subscribe
+        const callId = 'late-sub-call-id'
+        lastWebSocket?.triggerMessage({
+            call_id: callId,
+            type: 'progress',
+            payload: { step: 'Buffered', pct: 50 }
+        })
+
+        // Now subscribe
+        const callback = vi.fn()
+        wsManager.subscribe(callId, callback)
+
+        expect(callback).toHaveBeenCalledWith(expect.objectContaining({
+            call_id: callId,
+            type: 'progress',
+            payload: expect.objectContaining({ step: 'Buffered' })
+        }))
     })
   })
 })

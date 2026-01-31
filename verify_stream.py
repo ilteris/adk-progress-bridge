@@ -12,7 +12,7 @@ def test_stream():
 
     # 1. Start Task
     print("Starting task...")
-    resp = requests.post("http://localhost:8000/start_task/long_audit", json={"duration": 2}, headers=headers)
+    resp = requests.post("http://localhost:8000/start_task/long_audit", json={"args": {"duration": 2}}, headers=headers)
     if resp.status_code != 200:
         print(f"Failed to start task: {resp.status_code} {resp.text}")
         return
