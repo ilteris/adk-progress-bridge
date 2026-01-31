@@ -6,7 +6,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 
 const monitors = ref([1])
 const nextId = ref(2)
-const version = "1.8.1"
+const version = "1.9.0"
 
 const addMonitor = () => {
   monitors.value.push(nextId.value++)

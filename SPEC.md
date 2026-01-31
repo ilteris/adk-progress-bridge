@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v1.8.1
+# Specification: ADK Progress Bridge v1.9.0
 
 ## 1. System Overview
 The system consists of a Python backend (FastAPI) acting as the ADK Agent host and a Vue.js frontend client. They communicate via **Server-Sent Events (SSE)** or **WebSockets** for real-time progress updates.
@@ -48,6 +48,8 @@ Centralized singleton for broadcasting real-time health metrics to all active st
     *   `WS /ws`: Bi-directional connection for task control and streaming.
     *   Message `{"type": "list_tools", "request_id": "..."}` requests all tool names.
         *   Response: `{"type": "tools_list", "tools": [...], "request_id": "..."}`
+    *   Message `{"type": "list_active_tasks", "request_id": "..."}` requests all active tasks.
+        *   Response: `{"type": "active_tasks_list", "tasks": [...], "request_id": "..."}`
     *   Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task.
         *   Response: `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}`
     *   Message `{"type": "stop", "call_id": "...", "request_id": "..."}` stops a task.
@@ -97,6 +99,6 @@ The bridge provides deep visibility into the host system performance:
 *   **Thread Safety:** `asyncio.Lock` ensures frame integrity during concurrent streaming.
 
 ## 6. Versioning & Identity
-- **APP_VERSION**: 1.8.1
-- **GIT_COMMIT**: v398-aetherial-omega-hyper-apex-final-signoff
-- **OPERATIONAL_APEX**: AETHERIAL OMEGA HYPER APEX FINAL SIGNOFF (v398)
+- **APP_VERSION**: 1.9.0
+- **GIT_COMMIT**: v400-ultimate-aetherial-transcendence-signoff
+- **OPERATIONAL_APEX**: ULTIMATE AETHERIAL TRANSCENDENCE SIGNOFF (v400)

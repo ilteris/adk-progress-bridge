@@ -184,7 +184,7 @@ const formatBps = (bps: number) => {
 
         <!-- Log Console -->
         <div class="mb-4">
-          <h6>Log Console</h6>
+          <div class="d-flex justify-content-between align-items-center mb-2"><h6>Log Console</h6><button class="btn btn-sm btn-link text-decoration-none" @click="state.logs = []" :disabled="state.isStreaming">Clear</button></div>
           <div class="bg-dark text-light p-3 rounded" style="height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.9rem;">
             <div v-for="(log, index) in state.logs" :key="index" class="mb-1">
               <span class="text-secondary">[{{ new Date().toLocaleTimeString() }}]</span> {{ log }}
