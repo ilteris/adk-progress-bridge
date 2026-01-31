@@ -14,7 +14,7 @@ from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_
 from .logger import logger
 from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
-from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
+from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, WS_ACTIVE_CONNECTIONS
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
 # WS_HEARTBEAT_TIMEOUT: Max time to wait for a client message (ping/pong) before closing connection.
@@ -76,14 +76,16 @@ class InputProvideRequest(BaseModel):
     call_id: str
     value: Any
 
-@app.get("/tools", response_model=List[str])
+AUTH_RESPONSES = {401: {"description": "Unauthorized"}}
+
+@app.get("/tools", response_model=List[str], responses=AUTH_RESPONSES)
 async def list_tools(authenticated: bool = Depends(verify_api_key)):
     """
     Returns a list of all registered tools.
     """
     return registry.list_tools()
 
-@app.post("/start_task/{tool_name}", response_model=TaskStartResponse)
+@app.post("/start_task/{tool_name}", response_model=TaskStartResponse, responses=AUTH_RESPONSES)
 async def start_task(
     tool_name: str, 
     request: Optional[TaskStartRequest] = None, 
@@ -113,8 +115,8 @@ async def start_task(
         stream_url=f"/stream/{call_id}"
     )
 
-@app.get("/stream/{call_id}")
-@app.get("/stream")
+@app.get("/stream/{call_id}", responses=AUTH_RESPONSES)
+@app.get("/stream", responses=AUTH_RESPONSES)
 async def stream_task(
     call_id: Optional[str] = None,
     cid: Optional[str] = Query(None, alias="call_id"),
@@ -179,15 +181,15 @@ async def stream_task(
         media_type="text/event-stream"
     )
 
-@app.post("/provide_input")
+@app.post("/provide_input", responses=AUTH_RESPONSES)
 async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
     if await input_manager.provide_input(request.call_id, request.value):
         return {"status": "input accepted"}
     else:
         raise HTTPException(status_code=404, detail=f"No task waiting for input with call_id: {request.call_id}")
 
-@app.post("/stop_task/{call_id}")
-@app.post("/stop_task")
+@app.post("/stop_task/{call_id}", responses=AUTH_RESPONSES)
+@app.post("/stop_task", responses=AUTH_RESPONSES)
 async def stop_task(
     call_id: Optional[str] = None, 
     cid: Optional[str] = Query(None, alias="call_id"),
@@ -221,28 +223,31 @@ async def websocket_endpoint(websocket: WebSocket):
     Bi-directional WebSocket endpoint for executing tools and receiving progress.
     """
     await websocket.accept()
-    
-    try:
-        await verify_api_key_ws(websocket)
-    except HTTPException:
-        return
-
-    logger.info("WebSocket connection established")
+    WS_ACTIVE_CONNECTIONS.inc()
     
     active_tasks: Dict[str, asyncio.Task] = {}
-    # Use a lock to ensure only one task can send over the websocket at a time
-    send_lock = asyncio.Lock()
-
-    async def safe_send_json(data: dict):
-        async with send_lock:
-            try:
-                await websocket.send_json(data)
-            except Exception as e:
-                # If the websocket is closed, we might get an error here
-                logger.error(f"Error sending WS message: {e}")
-                raise
-
+    
     try:
+        try:
+            await verify_api_key_ws(websocket)
+        except HTTPException:
+            # Metric decrement is handled by outer finally
+            return
+
+        logger.info("WebSocket connection established")
+        
+        # Use a lock to ensure only one task can send over the websocket at a time
+        send_lock = asyncio.Lock()
+
+        async def safe_send_json(data: dict):
+            async with send_lock:
+                try:
+                    await websocket.send_json(data)
+                except Exception as e:
+                    # If the websocket is closed, we might get an error here
+                    logger.error(f"Error sending WS message: {e}")
+                    raise
+
         while True:
             try:
                 # Add a heartbeat timeout (client pings periodically)
@@ -333,12 +338,12 @@ async def websocket_endpoint(websocket: WebSocket):
                         "request_id": request_id,
                         "payload": {"detail": str(e)}
                     })
-                    # If store_task failed but gen was created, it's handled in store_task
             
             elif msg_type == "stop":
                 call_id = message.get("call_id")
+                # 1. Try to stop locally if started via this WS
                 if call_id in active_tasks:
-                    logger.info(f"Stopping task {call_id} via WebSocket request", extra={"call_id": call_id})
+                    logger.info(f"Stopping task {call_id} locally via WebSocket request", extra={"call_id": call_id})
                     active_tasks[call_id].cancel()
                     # Final progress update
                     await safe_send_json({
@@ -353,12 +358,28 @@ async def websocket_endpoint(websocket: WebSocket):
                         "request_id": request_id
                     })
                 else:
-                    await safe_send_json({
-                        "type": "error",
-                        "call_id": call_id,
-                        "request_id": request_id, 
-                        "payload": {"detail": f"No active task found with call_id: {call_id}"}
-                    })
+                    # 2. Try to stop globally if started via SSE or another WS
+                    task_data = await registry.get_task_no_consume(call_id)
+                    if task_data:
+                        logger.info(f"Stopping task {call_id} globally via WebSocket request", extra={"call_id": call_id})
+                        await task_data["gen"].aclose()
+                        # If it wasn't consumed yet, we should remove it manually
+                        if not task_data["consumed"]:
+                            await registry.remove_task(call_id)
+                        
+                        # Command acknowledgment
+                        await safe_send_json({
+                            "type": "stop_success",
+                            "call_id": call_id,
+                            "request_id": request_id
+                        })
+                    else:
+                        await safe_send_json({
+                            "type": "error",
+                            "call_id": call_id,
+                            "request_id": request_id, 
+                            "payload": {"detail": f"No active task found with call_id: {call_id}"}
+                        })
             
             elif msg_type == "input":
                 call_id = message.get("call_id")
@@ -392,6 +413,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
+        WS_ACTIVE_CONNECTIONS.dec()
         if active_tasks:
             logger.info(f"Cleaning up {len(active_tasks)} WebSocket tasks due to disconnect/timeout")
             for task in active_tasks.values():
