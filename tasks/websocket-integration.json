@@ -4,13 +4,13 @@
   "role": "Architect",
   "description": "THE OMEGA (v356): Real-time process-level disk I/O throughput monitoring. Reached 192 tests (100% pass rate).",
   "id": "websocket-integration",
-  "result": "Commit: v356-the-omega | Verified 192 tests passing. v356 THE OMEGA attained. Final Audit Report: tasks/websocket_audit_report_jan31_final_v356.md",
+  "result": "PR: https://github.com/ilteris/adk-progress-bridge/pull/266 | Commit: v356-the-omega | Verified 192 tests passing. v356 THE OMEGA attained. Final Audit Report: tasks/websocket_audit_report_jan31_final_v356.md",
   "history": [
     {
       "timestamp": "2026-01-31T22:45:00Z",
       "event": "task_completed",
       "actor": "Worker-Adele-v356-The-Omega",
-      "message": "v356 THE OMEGA attained. 192 tests passed. Process-level disk I/O throughput tracking implemented."
+      "message": "v356 THE OMEGA attained. 192 tests passed. Process-level disk I/O throughput tracking implemented. PR: https://github.com/ilteris/adk-progress-bridge/pull/266"
     },
     {
       "timestamp": "2026-01-31T21:45:00Z",

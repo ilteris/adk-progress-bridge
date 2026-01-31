@@ -2,7 +2,7 @@
 
 A real-time progress bridge between long-running agent tools and a frontend/TUI. Built for high-fidelity agent status monitoring.
 
-**Current Version:** 1.3.6 ("DEIFICATION")
+**Current Version:** 1.4.6 ("THE OMEGA")
 
 ## 🚀 Key Features
 
@@ -20,7 +20,7 @@ A real-time progress bridge between long-running agent tools and a frontend/TUI.
 - **Observability:** 
   - Integrated Prometheus metrics for task duration, status, and **WebSocket throughput**.
   - Enhanced `/health` endpoint with real-time operational metrics.
-  - **DEIFICATION Observability:** v346 tier reaching into system-wide disk I/O counts, swap activity (sin/sout), physical CPU cores, and virtual memory percentages.
+  - **THE OMEGA Observability:** v356 tier reaching into real-time process-level disk I/O throughput, resource limits utilization, system-wide load percentages, and granular per-core/per-NIC tracking.
 
 ## 🛠️ Tech Stack
 
