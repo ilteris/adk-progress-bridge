@@ -578,6 +578,32 @@ PROCESS_CONTEXT_SWITCHES_TOTAL = Gauge(
     "Total number of context switches (voluntary + involuntary) for the process"
 )
 
+# v349 Enlightenment Metrics
+PROCESS_CPU_TIMES_CHILDREN_USER = Gauge(
+    "adk_process_cpu_times_children_user_seconds",
+    "User CPU time spent by child processes in seconds"
+)
+
+PROCESS_CPU_TIMES_CHILDREN_SYSTEM = Gauge(
+    "adk_process_cpu_times_children_system_seconds",
+    "System CPU time spent by child processes in seconds"
+)
+
+SYSTEM_NETWORK_INTERFACES_DOWN_COUNT = Gauge(
+    "adk_system_network_interfaces_down_count",
+    "Number of network interfaces that are currently down"
+)
+
+SYSTEM_DISK_READ_MERGED_COUNT = Gauge(
+    "adk_system_disk_read_merged_count_total",
+    "Total number of system-wide disk read merged operations"
+)
+
+SYSTEM_DISK_WRITE_MERGED_COUNT = Gauge(
+    "adk_system_disk_write_merged_count_total",
+    "Total number of system-wide disk write merged operations"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

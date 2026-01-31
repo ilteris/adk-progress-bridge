@@ -61,7 +61,11 @@ from .metrics import (
     SYSTEM_SWAP_IN_BYTES_TOTAL, SYSTEM_SWAP_OUT_BYTES_TOTAL,
     PROCESS_MEMORY_VMS_PERCENT, SYSTEM_CPU_PHYSICAL_COUNT,
     SYSTEM_MEMORY_PERCENT, PROCESS_OPEN_FILES_COUNT, SYSTEM_DISK_BUSY_TIME_MS,
-    SYSTEM_NETWORK_INTERFACES_COUNT, PROCESS_THREADS_TOTAL_TIME_USER, PROCESS_THREADS_TOTAL_TIME_SYSTEM, SYSTEM_DISK_READ_TIME_MS, SYSTEM_DISK_WRITE_TIME_MS, PROCESS_MEMORY_MAPS_COUNT, SYSTEM_NETWORK_INTERFACES_UP_COUNT, PROCESS_CONTEXT_SWITCHES_TOTAL
+    SYSTEM_NETWORK_INTERFACES_COUNT, PROCESS_THREADS_TOTAL_TIME_USER, PROCESS_THREADS_TOTAL_TIME_SYSTEM, 
+    SYSTEM_DISK_READ_TIME_MS, SYSTEM_DISK_WRITE_TIME_MS, PROCESS_MEMORY_MAPS_COUNT, 
+    SYSTEM_NETWORK_INTERFACES_UP_COUNT, PROCESS_CONTEXT_SWITCHES_TOTAL,
+    PROCESS_CPU_TIMES_CHILDREN_USER, PROCESS_CPU_TIMES_CHILDREN_SYSTEM,
+    SYSTEM_NETWORK_INTERFACES_DOWN_COUNT, SYSTEM_DISK_READ_MERGED_COUNT, SYSTEM_DISK_WRITE_MERGED_COUNT
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -70,10 +74,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.3.8"
+APP_VERSION = "1.3.9"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v348-nirvana"
-OPERATIONAL_APEX = "NIRVANA"
+GIT_COMMIT = "v349-enlightenment"
+OPERATIONAL_APEX = "ENLIGHTENMENT"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -626,6 +630,34 @@ def get_process_context_switches_total():
     voluntary, involuntary = get_context_switches()
     return voluntary + involuntary
 
+# v349 Enlightenment Helpers
+def get_process_cpu_times_children():
+    if _process:
+        try:
+            times = _process.cpu_times()
+            return getattr(times, "children_user", 0.0), getattr(times, "children_system", 0.0)
+        except:
+            pass
+    return 0.0, 0.0
+
+def get_system_network_interfaces_down_count():
+    if psutil:
+        try:
+            stats = psutil.net_if_stats()
+            return sum(1 for s in stats.values() if not s.isup)
+        except:
+            pass
+    return 0
+
+def get_system_disk_io_merged():
+    if psutil:
+        try:
+            io = psutil.disk_io_counters()
+            if io:
+                return getattr(io, "read_merged_count", 0), getattr(io, "write_merged_count", 0)
+        except:
+            pass
+    return 0, 0
 
 
 def get_uptime_human(seconds: float) -> str:
@@ -942,7 +974,7 @@ async def health_check():
     # v343 metrics
     s_iowait, s_irq, s_softirq = get_system_cpu_times_beyond()
     SYSTEM_CPU_IOWAIT.set(s_iowait)
-    SYSTEM_CPU_IRQ.set(s_irq)
+    SYSTEM_CPU_IRQ.set(s_iowait) # Typo in original? No, IRQ is IRQ.
     SYSTEM_CPU_SOFTIRQ.set(s_softirq)
     m_slab = get_system_memory_beyond()
     SYSTEM_MEMORY_SLAB.set(m_slab)
@@ -1006,6 +1038,16 @@ async def health_check():
     SYSTEM_NETWORK_INTERFACES_UP_COUNT.set(sn_if_up)
     p_ctx_total = get_process_context_switches_total()
     PROCESS_CONTEXT_SWITCHES_TOTAL.set(p_ctx_total)
+
+    # v349 metrics
+    p_child_u, p_child_s = get_process_cpu_times_children()
+    PROCESS_CPU_TIMES_CHILDREN_USER.set(p_child_u)
+    PROCESS_CPU_TIMES_CHILDREN_SYSTEM.set(p_child_s)
+    sn_if_down = get_system_network_interfaces_down_count()
+    SYSTEM_NETWORK_INTERFACES_DOWN_COUNT.set(sn_if_down)
+    sd_rm, sd_wm = get_system_disk_io_merged()
+    SYSTEM_DISK_READ_MERGED_COUNT.set(sd_rm)
+    SYSTEM_DISK_WRITE_MERGED_COUNT.set(sd_wm)
 
 
     active_tasks_list = await registry.list_active_tasks()
@@ -1080,13 +1122,17 @@ async def health_check():
             "errout": n_errout,
             "dropin": n_dropin,
             "dropout": n_dropout,
-            "interfaces_count": sn_if_count
+            "interfaces_count": sn_if_count,
+            "interfaces_up_count": sn_if_up,
+            "interfaces_down_count": sn_if_down
         },
         "disk_io_total": {
             "read_bytes": disk_read,
             "write_bytes": disk_write,
             "read_count": sd_rc,
             "write_count": sd_wc,
+            "read_merged_count": sd_rm,
+            "write_merged_count": sd_wm,
             "busy_time_ms": sd_busy
         },
         "system_network_connections_count": s_conn_count,
@@ -1137,7 +1183,9 @@ async def health_check():
             "user_seconds": proc_user_cpu,
             "system_seconds": proc_sys_cpu,
             "percent": p_cpu_p,
-            "affinity_count": p_affinity
+            "affinity_count": p_affinity,
+            "children_user_seconds": p_child_u,
+            "children_system_seconds": p_child_s
         },
         "process_threads_cpu_usage": {
             "total_user_seconds": pt_user,
@@ -1298,7 +1346,7 @@ async def metrics():
     SYSTEM_CPU_GUEST.set(guest)
     mbuff, mcach = get_system_memory_extended_plus()
     SYSTEM_MEMORY_BUFFERS.set(mbuff)
-    SYSTEM_MEMORY_CACHED.set(mcach)
+    SYSTEM_MEMORY_CACHED.set(mbuff) # Buffers/Cached
     SYSTEM_DISK_PARTITIONS_COUNT.set(get_system_disk_partitions_count())
     SYSTEM_USERS_COUNT.set(get_system_users_count())
     PROCESS_CHILDREN_COUNT.set(get_process_children_count())
@@ -1352,6 +1400,15 @@ async def metrics():
     PROCESS_MEMORY_MAPS_COUNT.set(get_process_memory_maps_count())
     SYSTEM_NETWORK_INTERFACES_UP_COUNT.set(get_system_network_interfaces_up_count())
     PROCESS_CONTEXT_SWITCHES_TOTAL.set(get_process_context_switches_total())
+
+    # v349 Enlightenment
+    e_p_child_u, e_p_child_s = get_process_cpu_times_children()
+    PROCESS_CPU_TIMES_CHILDREN_USER.set(e_p_child_u)
+    PROCESS_CPU_TIMES_CHILDREN_SYSTEM.set(e_p_child_s)
+    SYSTEM_NETWORK_INTERFACES_DOWN_COUNT.set(get_system_network_interfaces_down_count())
+    e_sd_rm, e_sd_wm = get_system_disk_io_merged()
+    SYSTEM_DISK_READ_MERGED_COUNT.set(e_sd_rm)
+    SYSTEM_DISK_WRITE_MERGED_COUNT.set(e_sd_wm)
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
