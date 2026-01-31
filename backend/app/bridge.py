@@ -2,7 +2,7 @@ import asyncio
 from typing import Any, Dict, List, AsyncGenerator, Callable, Literal, Union, Optional
 from pydantic import BaseModel, Field, validate_call
 from .logger import logger
-from .metrics import ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL
+from .metrics import ACTIVE_TASKS, PEAK_ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL
 
 class ProgressPayload(BaseModel):
     """
@@ -80,6 +80,8 @@ class ToolRegistry:
         self._tools: Dict[str, Callable] = {}
         # Stores call_id -> {"gen": gen, "tool_name": str, "created_at": timestamp, "consumed": bool}
         self._active_tasks: Dict[str, Dict[str, Any]] = {}
+        self._total_tasks_started = 0
+        self._peak_active_tasks = 0
         self._lock = asyncio.Lock()
 
     def register(self, name: Optional[str] = None):
@@ -99,8 +101,33 @@ class ToolRegistry:
             return func
         return decorator
 
+    @property
+    def active_task_count(self) -> int:
+        return len(self._active_tasks)
+
+    @property
+    def total_tasks_started(self) -> int:
+        return self._total_tasks_started
+    
+    @property
+    def peak_active_tasks(self) -> int:
+        return self._peak_active_tasks
+
     def list_tools(self) -> List[str]:
         return list(self._tools.keys())
+
+    async def list_active_tasks(self) -> List[Dict[str, Any]]:
+        """Returns a list of all active tasks in the registry."""
+        async with self._lock:
+            return [
+                {
+                    "call_id": call_id,
+                    "tool_name": data["tool_name"],
+                    "created_at": data["created_at"],
+                    "consumed": data["consumed"]
+                }
+                for call_id, data in self._active_tasks.items()
+            ]
 
     def get_tool(self, name: str):
         return self._tools.get(name)
@@ -127,6 +154,13 @@ class ToolRegistry:
                 "consumed": False
             }
             ACTIVE_TASKS.labels(tool_name=tool_name).inc()
+            self._total_tasks_started += 1
+            
+            current_count = len(self._active_tasks)
+            if current_count > self._peak_active_tasks:
+                self._peak_active_tasks = current_count
+                PEAK_ACTIVE_TASKS.set(current_count)
+                
         logger.debug(f"Task stored in registry: {call_id}", extra={"call_id": call_id, "tool_name": tool_name})
 
     async def get_task(self, call_id: str) -> Optional[Dict[str, Any]]:
@@ -179,7 +213,6 @@ class ToolRegistry:
                 await self.remove_task(call_id)
 
     async def cleanup_stale_tasks(self, max_age_seconds: int):
-        """Closes tasks that were created more than max_age_seconds ago and never consumed."""
         import time
         now = time.time()
         stale_tasks = []
