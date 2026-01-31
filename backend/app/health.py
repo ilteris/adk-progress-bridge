@@ -413,7 +413,7 @@ class HealthEngine:
             "ws_messages_received": int(ws_rc), "ws_messages_sent": int(ws_sc), "ws_bytes_received": ws_rb, "ws_bytes_sent": ws_sb,
             "ws_throughput_bps": {"received": float(WS_THROUGHPUT_RECEIVED_BPS._value.get()), "sent": float(WS_THROUGHPUT_SENT_BPS._value.get())},
             "ws_binary_frames_rejected": int(WS_BINARY_FRAMES_REJECTED_TOTAL._value.get()), "ws_connection_errors": sum(ws_errs.values()), "ws_connection_errors_breakdown": ws_errs,
-            "load_avg": [raw.get('sys_load_1m', 0.0), raw.get('sys_load_1m', 0.0), raw.get('sys_load_1m', 0.0)], "disk_usage_percent": raw.get('sys_disk_usage_percent', 0.0),
+            "load_avg": [raw.get('sys_load_1m', 0.0), raw.get('sys_load_5m', 0.0), raw.get('sys_load_15m', 0.0)], "disk_usage_percent": raw.get('sys_disk_usage_percent', 0.0),
             "memory_rss_bytes": raw.get('proc_rss', 0), "memory_vms_bytes": raw.get('proc_vms', 0), "memory_percent": raw.get('proc_mem_percent', 0.0), "system_memory_available_bytes": raw.get('sys_mem_available', 0),
             "system_memory": {
                 "available_bytes": raw.get('sys_mem_available', 0), "total_bytes": raw.get('sys_mem_total', 0), "used_bytes": raw.get('sys_mem_used', 0), "free_bytes": raw.get('sys_mem_free', 0), "active_bytes": raw.get('sys_mem_active', 0), "inactive_bytes": raw.get('sys_mem_inactive', 0),
