@@ -273,6 +273,37 @@ SYSTEM_NETWORK_PACKETS_RECV = Gauge(
     "Total system packets received over the network"
 )
 
+# v339 Supreme Apex Ultra Millennium Omega Plus Ultra Metrics
+SYSTEM_SWAP_USED_BYTES = Gauge(
+    "adk_system_swap_used_bytes",
+    "Total used system swap memory in bytes"
+)
+
+SYSTEM_SWAP_FREE_BYTES = Gauge(
+    "adk_system_swap_free_bytes",
+    "Total free system swap memory in bytes"
+)
+
+PROCESS_IO_READ_BYTES = Gauge(
+    "adk_process_io_read_bytes_total",
+    "Total bytes read by the process"
+)
+
+PROCESS_IO_WRITE_BYTES = Gauge(
+    "adk_process_io_write_bytes_total",
+    "Total bytes written by the process"
+)
+
+PROCESS_IO_READ_COUNT = Gauge(
+    "adk_process_io_read_count_total",
+    "Total number of read operations by the process"
+)
+
+PROCESS_IO_WRITE_COUNT = Gauge(
+    "adk_process_io_write_count_total",
+    "Total number of write operations by the process"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

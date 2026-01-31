@@ -26,7 +26,7 @@ def test_v337_metrics_in_health_endpoint():
     
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA"
+    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
     
     # Check v337 specific fields
     assert "system_load_5m" in data
@@ -46,4 +46,4 @@ def test_v337_version_endpoint():
     data = response.json()
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["status"] == "SUPREME ABSOLUTE APEX OMEGA"
+    assert data["status"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"

@@ -14,7 +14,7 @@ def test_health_v335_metrics():
     # Version checks - Use imported constants for resilience
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA"
+    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
     
     # New metrics in v335
     assert "cpu_count" in data
@@ -53,4 +53,4 @@ def test_version_v335():
     data = response.json()
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["status"] == "SUPREME ABSOLUTE APEX OMEGA"
+    assert data["status"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"

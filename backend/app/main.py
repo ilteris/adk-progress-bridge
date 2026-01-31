@@ -38,7 +38,10 @@ from .metrics import (
     PROCESS_CONNECTIONS_COUNT, SYSTEM_LOAD_1M,
     SYSTEM_LOAD_5M, SYSTEM_LOAD_15M, PROCESS_MEMORY_RSS, PROCESS_MEMORY_VMS,
     SYSTEM_MEMORY_TOTAL, SYSTEM_CPU_USAGE_USER, SYSTEM_CPU_USAGE_SYSTEM,
-    SYSTEM_UPTIME, SYSTEM_CPU_USAGE_IDLE, PROCESS_CPU_USAGE_USER, PROCESS_CPU_USAGE_SYSTEM, SYSTEM_MEMORY_USED, SYSTEM_MEMORY_FREE, SYSTEM_NETWORK_PACKETS_SENT, SYSTEM_NETWORK_PACKETS_RECV
+    SYSTEM_UPTIME, SYSTEM_CPU_USAGE_IDLE, PROCESS_CPU_USAGE_USER, PROCESS_CPU_USAGE_SYSTEM, 
+    SYSTEM_MEMORY_USED, SYSTEM_MEMORY_FREE, SYSTEM_NETWORK_PACKETS_SENT, SYSTEM_NETWORK_PACKETS_RECV,
+    SYSTEM_SWAP_USED_BYTES, SYSTEM_SWAP_FREE_BYTES, PROCESS_IO_READ_BYTES, PROCESS_IO_WRITE_BYTES,
+    PROCESS_IO_READ_COUNT, PROCESS_IO_WRITE_COUNT
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -47,10 +50,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.2.8"
+APP_VERSION = "1.2.9"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v338-omega-plus"
-OPERATIONAL_APEX = "SUPREME ABSOLUTE APEX OMEGA"
+GIT_COMMIT = "v339-omega-plus-ultra"
+OPERATIONAL_APEX = "SUPREME ABSOLUTE APEX OMEGA ULTRA"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -217,6 +220,24 @@ def get_system_network_packets():
         except:
             pass
     return 0, 0
+
+def get_system_swap_extended():
+    if psutil:
+        try:
+            swap = psutil.swap_memory()
+            return swap.used, swap.free
+        except:
+            pass
+    return 0, 0
+
+def get_process_io_counters():
+    if psutil:
+        try:
+            io = psutil.Process().io_counters()
+            return io.read_bytes, io.write_bytes, io.read_count, io.write_count
+        except:
+            pass
+    return 0, 0, 0, 0
 def get_swap_memory_percent():
     if psutil:
         try:
@@ -513,7 +534,8 @@ async def health_check():
 
 
     # v338 metrics
-    SYSTEM_CPU_USAGE_IDLE.set(get_system_cpu_idle_percent())
+    idle_p = get_system_cpu_idle_percent()
+    SYSTEM_CPU_USAGE_IDLE.set(idle_p)
     proc_user_cpu, proc_sys_cpu = get_process_cpu_times_total()
     PROCESS_CPU_USAGE_USER.set(proc_user_cpu)
     PROCESS_CPU_USAGE_SYSTEM.set(proc_sys_cpu)
@@ -523,6 +545,17 @@ async def health_check():
     sys_net_psent, sys_net_precv = get_system_network_packets()
     SYSTEM_NETWORK_PACKETS_SENT.set(sys_net_psent)
     SYSTEM_NETWORK_PACKETS_RECV.set(sys_net_precv)
+
+    # v339 metrics
+    sys_swap_used, sys_swap_free = get_system_swap_extended()
+    SYSTEM_SWAP_USED_BYTES.set(sys_swap_used)
+    SYSTEM_SWAP_FREE_BYTES.set(sys_swap_free)
+    p_io_rb, p_io_wb, p_io_rc, p_io_wc = get_process_io_counters()
+    PROCESS_IO_READ_BYTES.set(p_io_rb)
+    PROCESS_IO_WRITE_BYTES.set(p_io_wb)
+    PROCESS_IO_READ_COUNT.set(p_io_rc)
+    PROCESS_IO_WRITE_COUNT.set(p_io_wc)
+
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
     for t in active_tasks_list:
@@ -550,9 +583,11 @@ async def health_check():
         "cpu_count": cpu_count,
         "cpu_frequency_current_mhz": cpu_freq,
         "cpu_usage_percent": cpu_percent,
+        "system_cpu_idle_percent": idle_p, # backward compatibility
         "system_cpu_usage": {
             "user_percent": user_cpu,
-            "system_percent": sys_cpu
+            "system_percent": sys_cpu,
+            "idle_percent": idle_p
         },
         "thread_count": thread_count,
         "open_fds": open_fds,
@@ -565,6 +600,10 @@ async def health_check():
             "major": major_pf
         },
         "swap_memory_usage_percent": swap_percent,
+        "system_swap_memory": {
+            "used_bytes": sys_swap_used,
+            "free_bytes": sys_swap_free
+        },
         "boot_time_seconds": boot_time,
         "network_io_total": {
             "bytes_sent": net_sent,
@@ -592,12 +631,31 @@ async def health_check():
         "disk_usage_percent": disk_usage,
         "memory_rss_bytes": rss,
         "memory_vms_bytes": vms,
-        "memory_rss_kb": rss // 1024, # backward compatibility
         "memory_percent": mem_percent,
         "system_memory_available_bytes": sys_mem_avail, # backward compatibility
         "system_memory": {
             "available_bytes": sys_mem_avail,
-            "total_bytes": sys_mem_total
+            "total_bytes": sys_mem_total,
+            "used_bytes": sys_mem_used,
+            "free_bytes": sys_mem_free
+        },
+        "system_memory_extended": { # backward compatibility
+            "used_bytes": sys_mem_used,
+            "free_bytes": sys_mem_free
+        },
+        "process_io_counters": {
+            "read_bytes": p_io_rb,
+            "write_bytes": p_io_wb,
+            "read_count": p_io_rc,
+            "write_count": p_io_wc
+        },
+        "process_cpu_usage": {
+            "user_seconds": proc_user_cpu,
+            "system_seconds": proc_sys_cpu
+        },
+        "system_network_packets": {
+            "sent": sys_net_psent,
+            "recv": sys_net_precv
         },
         "registry_size": registry.active_task_count, 
         "peak_registry_size": registry.peak_active_tasks,
@@ -606,19 +664,7 @@ async def health_check():
         "registry_summary": tools_summary,
         "uptime_seconds": uptime_seconds,
         "system_uptime_seconds": int(SYSTEM_UPTIME._value.get()),
-        "system_cpu_idle_percent": get_system_cpu_idle_percent(),
-        "process_cpu_usage": {
-            "user_seconds": proc_user_cpu,
-            "system_seconds": proc_sys_cpu
-        },
-        "system_memory_extended": {
-            "used_bytes": sys_mem_used,
-            "free_bytes": sys_mem_free
-        },
-        "system_network_packets": {
-            "sent": sys_net_psent,
-            "recv": sys_net_precv
-        },        "uptime_human": get_uptime_human(uptime_seconds),
+        "uptime_human": get_uptime_human(uptime_seconds),
         "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APP_START_TIME)), 
         "timestamp": now,
         "config": {
@@ -687,6 +733,28 @@ async def metrics():
     SYSTEM_CPU_USAGE_USER.set(user_cpu)
     SYSTEM_CPU_USAGE_SYSTEM.set(sys_cpu)
     SYSTEM_UPTIME.set(time.time() - (psutil.boot_time() if psutil else APP_START_TIME))
+
+    # v338
+    SYSTEM_CPU_USAGE_IDLE.set(get_system_cpu_idle_percent())
+    p_user_cpu, p_sys_cpu = get_process_cpu_times_total()
+    PROCESS_CPU_USAGE_USER.set(p_user_cpu)
+    PROCESS_CPU_USAGE_SYSTEM.set(p_sys_cpu)
+    s_used, s_free = get_system_memory_extended()
+    SYSTEM_MEMORY_USED.set(s_used)
+    SYSTEM_MEMORY_FREE.set(s_free)
+    s_net_psent, s_net_precv = get_system_network_packets()
+    SYSTEM_NETWORK_PACKETS_SENT.set(s_net_psent)
+    SYSTEM_NETWORK_PACKETS_RECV.set(s_net_precv)
+
+    # v339
+    ss_used, ss_free = get_system_swap_extended()
+    SYSTEM_SWAP_USED_BYTES.set(ss_used)
+    SYSTEM_SWAP_FREE_BYTES.set(ss_free)
+    pi_rb, pi_wb, pi_rc, pi_wc = get_process_io_counters()
+    PROCESS_IO_READ_BYTES.set(pi_rb)
+    PROCESS_IO_WRITE_BYTES.set(pi_wb)
+    PROCESS_IO_READ_COUNT.set(pi_rc)
+    PROCESS_IO_WRITE_COUNT.set(pi_wc)
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

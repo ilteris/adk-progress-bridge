@@ -25,7 +25,7 @@ def test_v338_metrics_in_health_endpoint():
     
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA"
+    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
     
     # Check v338 specific fields
     assert "system_cpu_idle_percent" in data

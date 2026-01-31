@@ -11,7 +11,7 @@ def test_health_v325_metadata():
     data = response.json()
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA"
+    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
     assert data["config"]["max_concurrent_tasks"] == MAX_CONCURRENT_TASKS
 
 def test_version_v325():

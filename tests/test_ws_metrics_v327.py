@@ -19,7 +19,7 @@ async def test_health_metrics_v327():
     assert "uptime_human" in data
     assert "registry_summary" in data
     assert "operational_apex" in data
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA"
+    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA ULTRA"
     
     # Verify uptime_human format (e.g., "0s", "1m 5s")
     assert isinstance(data["uptime_human"], str)
