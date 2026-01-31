@@ -469,6 +469,27 @@ PROCESS_UPTIME = Gauge(
     "Uptime of the process in seconds"
 )
 
+# v345 Omnipotence Metrics
+SYSTEM_CPU_CTX_SWITCHES = Gauge(
+    "adk_system_cpu_context_switches_total",
+    "Total number of system-wide context switches since boot"
+)
+
+SYSTEM_NETWORK_CONNECTIONS = Gauge(
+    "adk_system_network_connections_count",
+    "Total number of active network connections in the system"
+)
+
+PROCESS_CPU_AFFINITY = Gauge(
+    "adk_process_cpu_affinity_count",
+    "Number of CPUs the process is allowed to run on"
+)
+
+PROCESS_MEMORY_PAGE_FAULTS_TOTAL = Gauge(
+    "adk_process_memory_page_faults_total",
+    "Total number of page faults (minor + major) for the process"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

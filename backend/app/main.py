@@ -46,8 +46,6 @@ from .metrics import (
     PROCESS_IO_READ_COUNT, PROCESS_IO_WRITE_COUNT,
     PROCESS_CPU_PERCENT_TOTAL, SYSTEM_NETWORK_ERRORS_IN, SYSTEM_NETWORK_ERRORS_OUT,
     SYSTEM_NETWORK_DROPS_IN, SYSTEM_NETWORK_DROPS_OUT,
-    SYSTEM_NETWORK_ERRORS_IN, SYSTEM_NETWORK_ERRORS_OUT,
-    SYSTEM_NETWORK_DROPS_IN, SYSTEM_NETWORK_DROPS_OUT,
     SYSTEM_MEMORY_ACTIVE_BYTES, SYSTEM_MEMORY_INACTIVE_BYTES,
     SYSTEM_CPU_INTERRUPTS, SYSTEM_CPU_SOFT_INTERRUPTS, SYSTEM_CPU_SYSCALLS,
     PROCESS_MEMORY_SHARED_BYTES, PROCESS_MEMORY_TEXT_BYTES, PROCESS_MEMORY_DATA_BYTES,
@@ -56,7 +54,9 @@ from .metrics import (
     SYSTEM_DISK_PARTITIONS_COUNT, SYSTEM_USERS_COUNT, PROCESS_CHILDREN_COUNT, 
     SYSTEM_CPU_IOWAIT, SYSTEM_CPU_IRQ, SYSTEM_CPU_SOFTIRQ, SYSTEM_MEMORY_SLAB, 
     PROCESS_MEMORY_LIB, PROCESS_MEMORY_DIRTY, PROCESS_ENV_VAR_COUNT,
-    PROCESS_MEMORY_USS, SYSTEM_MEMORY_WIRED, PROCESS_NICE, PROCESS_UPTIME
+    PROCESS_MEMORY_USS, SYSTEM_MEMORY_WIRED, PROCESS_NICE, PROCESS_UPTIME,
+    SYSTEM_CPU_CTX_SWITCHES, SYSTEM_NETWORK_CONNECTIONS, PROCESS_CPU_AFFINITY,
+    PROCESS_MEMORY_PAGE_FAULTS_TOTAL
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -65,10 +65,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.3.4"
+APP_VERSION = "1.3.5"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v344-transcendence"
-OPERATIONAL_APEX = "TRANSCENDENCE"
+GIT_COMMIT = "v345-omnipotence"
+OPERATIONAL_APEX = "OMNIPOTENCE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -472,6 +472,37 @@ def get_process_nice():
             pass
     return 0
 
+# v345 Omnipotence Helpers
+def get_system_cpu_stats_advanced():
+    if psutil:
+        try:
+            return psutil.cpu_stats().ctx_switches
+        except:
+            pass
+    return 0
+
+def get_system_network_connections_count():
+    if psutil:
+        try:
+            # On some platforms/versions this might require root or fail for certain types
+            return len(psutil.net_connections(kind='all'))
+        except:
+            pass
+    return 0
+
+def get_process_cpu_affinity_count():
+    if _process:
+        try:
+            if hasattr(_process, "cpu_affinity"):
+                return len(_process.cpu_affinity())
+        except:
+            pass
+    return 0
+
+def get_process_memory_page_faults_total():
+    minor, major = get_page_faults()
+    return minor + major
+
 def get_uptime_human(seconds: float) -> str:
     days, rem = divmod(int(seconds), 86400)
     hours, rem = divmod(rem, 3600)
@@ -805,6 +836,16 @@ async def health_check():
     PROCESS_NICE.set(p_nice)
     PROCESS_UPTIME.set(uptime_seconds)
 
+    # v345 metrics
+    s_ctx = get_system_cpu_stats_advanced()
+    SYSTEM_CPU_CTX_SWITCHES.set(s_ctx)
+    s_conn_count = get_system_network_connections_count()
+    SYSTEM_NETWORK_CONNECTIONS.set(s_conn_count)
+    p_affinity = get_process_cpu_affinity_count()
+    PROCESS_CPU_AFFINITY.set(p_affinity)
+    p_pf_total = get_process_memory_page_faults_total()
+    PROCESS_MEMORY_PAGE_FAULTS_TOTAL.set(p_pf_total)
+
 
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
@@ -847,7 +888,8 @@ async def health_check():
         "system_cpu_stats": {
             "interrupts": s_ints,
             "soft_interrupts": s_sints,
-            "syscalls": s_sysc
+            "syscalls": s_sysc,
+            "context_switches": s_ctx
         },
         "thread_count": thread_count,
         "open_fds": open_fds,
@@ -857,7 +899,8 @@ async def health_check():
         },
         "page_faults": {
             "minor": minor_pf,
-            "major": major_pf
+            "major": major_pf,
+            "total": p_pf_total
         },
         "swap_memory_usage_percent": swap_percent,
         "system_swap_memory": {
@@ -877,6 +920,7 @@ async def health_check():
             "read_bytes": disk_read,
             "write_bytes": disk_write
         },
+        "system_network_connections_count": s_conn_count,
         "process_connections_count": proc_conn_count,
         "system_load_1m": load_avg[0],
         "system_load_5m": load_avg[1],
@@ -922,7 +966,8 @@ async def health_check():
         "process_cpu_usage": {
             "user_seconds": proc_user_cpu,
             "system_seconds": proc_sys_cpu,
-            "percent": p_cpu_p
+            "percent": p_cpu_p,
+            "affinity_count": p_affinity
         },
         "process_memory_advanced": {
             "shared_bytes": p_shared,
@@ -1092,6 +1137,11 @@ async def metrics():
     PROCESS_NICE.set(get_process_nice())
     PROCESS_UPTIME.set(time.time() - APP_START_TIME)
 
+    # v345 Omnipotence
+    SYSTEM_CPU_CTX_SWITCHES.set(get_system_cpu_stats_advanced())
+    SYSTEM_NETWORK_CONNECTIONS.set(get_system_network_connections_count())
+    PROCESS_CPU_AFFINITY.set(get_process_cpu_affinity_count())
+    PROCESS_MEMORY_PAGE_FAULTS_TOTAL.set(get_process_memory_page_faults_total())
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
