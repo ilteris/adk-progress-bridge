@@ -17,7 +17,7 @@ const fetchTools = async () => {
       name: id.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
     }))
     if (availableTools.value.length > 0 && !availableTools.value.find(t => t.id === selectedTool.value)) {
-      selectedTool.value = availableTools.value[0].id
+      selectedTool.value = availableTools.value[0]?.id || ""
     }
   } catch (err) {
     console.error('Failed to fetch tools:', err)
