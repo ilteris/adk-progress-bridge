@@ -3,7 +3,7 @@
   "info": {
     "title": "ADK Progress Bridge",
     "description": "A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
-    "version": "1.1.2"
+    "version": "1.1.7"
   },
   "paths": {
     "/tools": {
@@ -22,6 +22,30 @@
                   "type": "array",
                   "title": "Response List Tools Tools Get"
                 }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/tasks": {
+      "get": {
+        "summary": "List Active Tasks",
+        "operationId": "list_active_tasks_tasks_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },

@@ -28,9 +28,9 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.1.5"
+APP_VERSION = "1.1.7"
 APP_START_TIME = time.time()
-GIT_COMMIT = "50a6d4a"
+GIT_COMMIT = "v327-apex"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -67,6 +67,17 @@ def get_memory_usage_kb():
     except:
         pass
     return 0
+
+def get_uptime_human(seconds: float) -> str:
+    days, rem = divmod(int(seconds), 86400)
+    hours, rem = divmod(rem, 3600)
+    minutes, seconds = divmod(rem, 60)
+    parts = []
+    if days > 0: parts.append(f"{days}d")
+    if hours > 0: parts.append(f"{hours}h")
+    if minutes > 0: parts.append(f"{minutes}m")
+    parts.append(f"{seconds}s")
+    return " ".join(parts)
 
 app = FastAPI(
     title="ADK Progress Bridge",
@@ -228,6 +239,13 @@ async def health_check():
             if s.name.endswith("_total"):
                 ws_sent += s.value
 
+    uptime_seconds = time.time() - APP_START_TIME
+    
+    active_tasks_list = await registry.list_active_tasks()
+    tools_summary = {}
+    for t in active_tasks_list:
+        tools_summary[t["tool_name"]] = tools_summary.get(t["tool_name"], 0) + 1
+
     return { 
         "status": "healthy", 
         "version": APP_VERSION, 
@@ -244,7 +262,9 @@ async def health_check():
         "memory_rss_kb": get_memory_usage_kb(),
         "registry_size": registry.active_task_count, 
         "total_tasks_started": registry.total_tasks_started,
-        "uptime_seconds": time.time() - APP_START_TIME, 
+        "registry_summary": tools_summary,
+        "uptime_seconds": uptime_seconds, 
+        "uptime_human": get_uptime_human(uptime_seconds),
         "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APP_START_TIME)), 
         "timestamp": time.time(),
         "config": {
