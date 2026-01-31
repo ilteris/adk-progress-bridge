@@ -28,8 +28,8 @@ Manages bi-directional input for tasks that require user interaction.
 
 *   **REST Flow (SSE):**
     *   `GET /tools`: Returns a list of all registered tool names.
-    *   `GET /health`: Returns system health status, version, uptime, and active task count. 
-    *   `GET /version`: Returns current API version and operational status (e.g., "SUPREME ABSOLUTE APEX").
+    *   `GET /health`: Returns system health status, version, git commit, uptime, CPU count, load average, and active task count. 
+    *   `GET /version`: Returns current API version, git commit hash, and operational status (e.g., "SUPREME ABSOLUTE APEX").
     *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id`.
     *   `GET /stream/{call_id}`: SSE endpoint for progress streaming.
     *   `POST /stop_task/{call_id}`: Manual termination.

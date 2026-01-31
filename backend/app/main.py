@@ -22,8 +22,9 @@ WS_HEARTBEAT_TIMEOUT = 60.0
 CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
-APP_VERSION = "1.0.4"
+APP_VERSION = "1.0.5"
 APP_START_TIME = time.time()
+GIT_COMMIT = "4d07ce6"
 
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
 
@@ -179,11 +180,16 @@ async def stop_task(
 
 @app.get("/health") 
 async def health_check(): 
+    load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
     return { 
         "status": "healthy", 
         "version": APP_VERSION, 
+        "git_commit": GIT_COMMIT,
         "operational_apex": "SUPREME ABSOLUTE APEX", 
-        "python_version": sys.version, "system_platform": sys.platform, 
+        "python_version": sys.version, 
+        "system_platform": sys.platform, 
+        "cpu_count": os.cpu_count(),
+        "load_avg": load_avg,
         "registry_size": registry.active_task_count, 
         "uptime_seconds": time.time() - APP_START_TIME, 
         "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APP_START_TIME)), 
@@ -194,6 +200,7 @@ async def health_check():
 async def get_version(): 
     return {
         "version": APP_VERSION, 
+        "git_commit": GIT_COMMIT,
         "status": "SUPREME ABSOLUTE APEX", 
         "timestamp": time.time()
     } 
