@@ -36,7 +36,7 @@ The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 
 #### Event Schema
 - All progress events MUST follow the `ProgressEvent` schema defined in `backend/app/bridge.py`.
-- Event types are strictly: `"progress"`, `"result"`, `"error"`, `"input_request"`, `"task_started"`.
+- Event types are strictly: `"progress"`, `"result"`, `"error"`, `"input_request"`, `"task_started"`, `"system_metrics"`.
 - Always include `call_id` for event correlation.
 
 ### Tool Registration
