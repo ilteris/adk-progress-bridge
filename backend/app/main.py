@@ -14,7 +14,7 @@ from .bridge import registry, ProgressEvent, ProgressPayload, format_sse, input_
 from .logger import logger
 from .context import call_id_var, tool_name_var
 from .auth import verify_api_key, verify_api_key_ws
-from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
+from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL, WS_ACTIVE_CONNECTIONS
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
 # WS_HEARTBEAT_TIMEOUT: Max time to wait for a client message (ping/pong) before closing connection.
@@ -223,10 +223,12 @@ async def websocket_endpoint(websocket: WebSocket):
     Bi-directional WebSocket endpoint for executing tools and receiving progress.
     """
     await websocket.accept()
+    WS_ACTIVE_CONNECTIONS.inc()
     
     try:
         await verify_api_key_ws(websocket)
     except HTTPException:
+        WS_ACTIVE_CONNECTIONS.dec()
         return
 
     logger.info("WebSocket connection established")
@@ -394,6 +396,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
     finally:
+        WS_ACTIVE_CONNECTIONS.dec()
         if active_tasks:
             logger.info(f"Cleaning up {len(active_tasks)} WebSocket tasks due to disconnect/timeout")
             for task in active_tasks.values():
