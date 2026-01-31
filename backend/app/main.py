@@ -35,7 +35,10 @@ from .metrics import (
     SYSTEM_CPU_COUNT, SYSTEM_BOOT_TIME, SWAP_MEMORY_USAGE_PERCENT,
     SYSTEM_NETWORK_BYTES_SENT, SYSTEM_NETWORK_BYTES_RECV,
     SYSTEM_CPU_FREQUENCY, SYSTEM_DISK_READ_BYTES, SYSTEM_DISK_WRITE_BYTES,
-    PROCESS_CONNECTIONS_COUNT, SYSTEM_LOAD_1M
+    PROCESS_CONNECTIONS_COUNT, SYSTEM_LOAD_1M,
+    SYSTEM_LOAD_5M, SYSTEM_LOAD_15M, PROCESS_MEMORY_RSS, PROCESS_MEMORY_VMS,
+    SYSTEM_MEMORY_TOTAL, SYSTEM_CPU_USAGE_USER, SYSTEM_CPU_USAGE_SYSTEM,
+    SYSTEM_UPTIME
 )
 
 # Configuration Constants for WebSocket and Task Lifecycle Management
@@ -44,9 +47,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.2.6"
+APP_VERSION = "1.2.7"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v336-supreme"
+GIT_COMMIT = "v337-omega"
+OPERATIONAL_APEX = "SUPREME ABSOLUTE APEX OMEGA"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -95,6 +99,15 @@ def get_memory_usage_kb():
         pass
     return 0
 
+def get_process_memory_bytes():
+    if psutil:
+        try:
+            info = psutil.Process().memory_info()
+            return info.rss, info.vms
+        except:
+            pass
+    return 0, 0
+
 def get_memory_percent():
     if psutil:
         try:
@@ -110,6 +123,15 @@ def get_cpu_percent():
         except:
             pass
     return 0.0
+
+def get_system_cpu_usage_breakdown():
+    if psutil:
+        try:
+            times = psutil.cpu_times_percent(interval=None)
+            return times.user, times.system
+        except:
+            pass
+    return 0.0, 0.0
 
 def get_open_fds():
     if psutil:
@@ -140,13 +162,14 @@ def get_disk_usage_percent():
             pass
     return 0.0
 
-def get_system_memory_available():
+def get_system_memory_info():
     if psutil:
         try:
-            return psutil.virtual_memory().available
+            mem = psutil.virtual_memory()
+            return mem.available, mem.total
         except:
             pass
-    return 0
+    return 0, 0
 
 def get_page_faults():
     if psutil:
@@ -199,7 +222,6 @@ def get_disk_io():
 def get_process_connections_count():
     if psutil:
         try:
-            # Use net_connections() instead of deprecated connections()
             return len(psutil.Process().net_connections())
         except:
             pass
@@ -363,6 +385,8 @@ async def stop_task(
 async def health_check(): 
     load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
     SYSTEM_LOAD_1M.set(load_avg[0])
+    SYSTEM_LOAD_5M.set(load_avg[1])
+    SYSTEM_LOAD_15M.set(load_avg[2])
 
     # Calculate totals from metrics
     ws_received_count = 0
@@ -400,6 +424,8 @@ async def health_check():
         throughput_sent = int(WS_THROUGHPUT_SENT_BPS._value.get())
 
     uptime_seconds = time.time() - APP_START_TIME
+    SYSTEM_UPTIME.set(time.time() - (psutil.boot_time() if psutil else APP_START_TIME))
+
     mem_percent = get_memory_percent()
     MEMORY_PERCENT.set(mem_percent)
     cpu_percent = get_cpu_percent()
@@ -415,8 +441,9 @@ async def health_check():
 
     disk_usage = get_disk_usage_percent()
     DISK_USAGE_PERCENT.set(disk_usage)
-    sys_mem_avail = get_system_memory_available()
+    sys_mem_avail, sys_mem_total = get_system_memory_info()
     SYSTEM_MEMORY_AVAILABLE.set(sys_mem_avail)
+    SYSTEM_MEMORY_TOTAL.set(sys_mem_total)
     minor_pf, major_pf = get_page_faults()
     PAGE_FAULTS_MINOR.set(minor_pf)
     PAGE_FAULTS_MAJOR.set(major_pf)
@@ -441,6 +468,14 @@ async def health_check():
     proc_conn_count = get_process_connections_count()
     PROCESS_CONNECTIONS_COUNT.set(proc_conn_count)
 
+    # v337 metrics
+    rss, vms = get_process_memory_bytes()
+    PROCESS_MEMORY_RSS.set(rss)
+    PROCESS_MEMORY_VMS.set(vms)
+    user_cpu, sys_cpu = get_system_cpu_usage_breakdown()
+    SYSTEM_CPU_USAGE_USER.set(user_cpu)
+    SYSTEM_CPU_USAGE_SYSTEM.set(sys_cpu)
+
     active_tasks_list = await registry.list_active_tasks()
     tools_summary = {}
     for t in active_tasks_list:
@@ -461,13 +496,17 @@ async def health_check():
         "status": "healthy", 
         "version": APP_VERSION, 
         "git_commit": GIT_COMMIT,
-        "operational_apex": "SUPREME ABSOLUTE APEX", 
+        "operational_apex": OPERATIONAL_APEX, 
         "python_version": sys.version, 
         "python_implementation": platform.python_implementation(),
         "system_platform": sys.platform, 
         "cpu_count": cpu_count,
         "cpu_frequency_current_mhz": cpu_freq,
         "cpu_usage_percent": cpu_percent,
+        "system_cpu_usage": {
+            "user_percent": user_cpu,
+            "system_percent": sys_cpu
+        },
         "thread_count": thread_count,
         "open_fds": open_fds,
         "context_switches": {
@@ -490,6 +529,8 @@ async def health_check():
         },
         "process_connections_count": proc_conn_count,
         "system_load_1m": load_avg[0],
+        "system_load_5m": load_avg[1],
+        "system_load_15m": load_avg[2],
         "active_ws_connections": int(ACTIVE_WS_CONNECTIONS._value.get()),
         "peak_ws_connections": getattr(app.state, "peak_ws_connections", 0),
         "ws_messages_received": int(ws_received_count),
@@ -502,15 +543,22 @@ async def health_check():
         },
         "load_avg": load_avg,
         "disk_usage_percent": disk_usage,
-        "memory_rss_kb": get_memory_usage_kb(),
+        "memory_rss_bytes": rss,
+        "memory_vms_bytes": vms,
+        "memory_rss_kb": rss // 1024, # backward compatibility
         "memory_percent": mem_percent,
-        "system_memory_available_bytes": sys_mem_avail,
+        "system_memory_available_bytes": sys_mem_avail, # backward compatibility
+        "system_memory": {
+            "available_bytes": sys_mem_avail,
+            "total_bytes": sys_mem_total
+        },
         "registry_size": registry.active_task_count, 
         "peak_registry_size": registry.peak_active_tasks,
         "total_tasks_started": registry.total_tasks_started,
         "task_success_rate_percent": success_rate,
         "registry_summary": tools_summary,
         "uptime_seconds": uptime_seconds,
+        "system_uptime_seconds": SYSTEM_UPTIME._value.get(),
         "uptime_human": get_uptime_human(uptime_seconds),
         "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APP_START_TIME)), 
         "timestamp": now,
@@ -529,7 +577,7 @@ async def get_version():
     return {
         "version": APP_VERSION, 
         "git_commit": GIT_COMMIT,
-        "status": "SUPREME ABSOLUTE APEX", 
+        "status": OPERATIONAL_APEX, 
         "timestamp": time.time()
     } 
 
@@ -547,7 +595,9 @@ async def metrics():
     CONTEXT_SWITCHES_VOLUNTARY.set(v)
     CONTEXT_SWITCHES_INVOLUNTARY.set(i)
     DISK_USAGE_PERCENT.set(get_disk_usage_percent())
-    SYSTEM_MEMORY_AVAILABLE.set(get_system_memory_available())
+    avail, total = get_system_memory_info()
+    SYSTEM_MEMORY_AVAILABLE.set(avail)
+    SYSTEM_MEMORY_TOTAL.set(total)
     min_pf, maj_pf = get_page_faults()
     PAGE_FAULTS_MINOR.set(min_pf)
     PAGE_FAULTS_MAJOR.set(maj_pf)
@@ -567,6 +617,17 @@ async def metrics():
     PROCESS_CONNECTIONS_COUNT.set(get_process_connections_count())
     load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
     SYSTEM_LOAD_1M.set(load_avg[0])
+
+    # v337
+    SYSTEM_LOAD_5M.set(load_avg[1])
+    SYSTEM_LOAD_15M.set(load_avg[2])
+    rss, vms = get_process_memory_bytes()
+    PROCESS_MEMORY_RSS.set(rss)
+    PROCESS_MEMORY_VMS.set(vms)
+    user_cpu, sys_cpu = get_system_cpu_usage_breakdown()
+    SYSTEM_CPU_USAGE_USER.set(user_cpu)
+    SYSTEM_CPU_USAGE_SYSTEM.set(sys_cpu)
+    SYSTEM_UPTIME.set(time.time() - (psutil.boot_time() if psutil else APP_START_TIME))
     
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 

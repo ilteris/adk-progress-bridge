@@ -15,7 +15,7 @@ def test_health_v336_metrics():
     # Version checks
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX"
+    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA"
     
     # New metrics in v336
     assert "cpu_frequency_current_mhz" in data
@@ -54,4 +54,4 @@ def test_version_v336():
     data = response.json()
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["status"] == "SUPREME ABSOLUTE APEX"
+    assert data["status"] == "SUPREME ABSOLUTE APEX OMEGA"

@@ -196,6 +196,47 @@ TOTAL_TASKS_STARTED = Counter(
     "Total number of tasks started since application launch"
 )
 
+# v337 Supreme Apex Ultra Millennium Omega Metrics
+SYSTEM_LOAD_5M = Gauge(
+    "adk_system_load_5m",
+    "System load average over the last 5 minutes"
+)
+
+SYSTEM_LOAD_15M = Gauge(
+    "adk_system_load_15m",
+    "System load average over the last 15 minutes"
+)
+
+PROCESS_MEMORY_RSS = Gauge(
+    "adk_process_memory_rss_bytes",
+    "Resident Set Size memory usage in bytes"
+)
+
+PROCESS_MEMORY_VMS = Gauge(
+    "adk_process_memory_vms_bytes",
+    "Virtual Memory Size usage in bytes"
+)
+
+SYSTEM_MEMORY_TOTAL = Gauge(
+    "adk_system_memory_total_bytes",
+    "Total system memory in bytes"
+)
+
+SYSTEM_CPU_USAGE_USER = Gauge(
+    "adk_system_cpu_usage_user_percent",
+    "System-wide CPU usage percentage in user mode"
+)
+
+SYSTEM_CPU_USAGE_SYSTEM = Gauge(
+    "adk_system_cpu_usage_system_percent",
+    "System-wide CPU usage percentage in system mode"
+)
+
+SYSTEM_UPTIME = Gauge(
+    "adk_system_uptime_seconds",
+    "System uptime in seconds"
+)
+
 BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():

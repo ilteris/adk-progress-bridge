@@ -11,7 +11,7 @@ def test_health_v324_metadata():
     data = response.json()
     assert data["version"] == APP_VERSION
     assert data["git_commit"] == GIT_COMMIT
-    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX"
+    assert data["operational_apex"] == "SUPREME ABSOLUTE APEX OMEGA"
 
 def test_version_v324():
     client = TestClient(app)
