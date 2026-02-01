@@ -266,7 +266,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.1.7", "v591-supreme-apex", "SUPREME APEX VERIFICATION")
+    data = await health_engine.get_health_data(dummy_state, "2.1.8", "v592-supreme-apex", "SUPREME APEX VERIFICATION")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -386,4 +386,47 @@ async def concurrency_stress_test(load: int = 3):
         "status": "stress_test_passed",
         "load_factor": load,
         "stability": "HIGH"
+    }
+
+@progress_tool(name="event_loop_latency_audit")
+async def event_loop_latency_audit(samples: int = 5):
+    """
+    Measures event loop latency by scheduling callbacks and measuring actual delay.
+    """
+    logger.info(f"Starting event loop latency audit with {samples} samples")
+    yield ProgressPayload(step="Initializing latency probe", pct=0, log="Calibrating timer...")
+    await asyncio.sleep(0.2)
+    
+    latencies = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        start_time = time.perf_counter()
+        # Schedule a no-op task to measure loop turn time
+        await asyncio.sleep(0)
+        end_time = time.perf_counter()
+        
+        # We expect sleep(0) to be near zero, any deviation is latency
+        latency_ms = (end_time - start_time) * 1000
+        latencies.append(latency_ms)
+        
+        logger.info(f"Sample {i+1}/{samples}: Event loop lag {latency_ms:.4f}ms")
+        yield ProgressPayload(
+            step="Sampling latency",
+            pct=pct,
+            log=f"Measured event loop lag sample {i+1}/{samples}: {latency_ms:.4f}ms",
+            metadata={"sample_id": i + 1, "latency_ms": latency_ms}
+        )
+        await asyncio.sleep(0.3)
+    
+    avg_latency = sum(latencies) / len(latencies)
+    max_latency = max(latencies)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Avg lag: {avg_latency:.4f}ms")
+    yield {
+        "status": "audit_complete",
+        "avg_latency_ms": avg_latency,
+        "max_latency_ms": max_latency,
+        "samples": samples,
+        "stability": "OPTIMAL" if max_latency < 5 else "STABLE"
     }

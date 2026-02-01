@@ -19,7 +19,7 @@ def test_deep_health_check_tool_ws():
             print(f"Received: {data['type']}")
             assert data["type"] == "connected"
             
-            request_id = "v591-health-test"
+            request_id = "v592-health-test"
             websocket.send_json({
                 "type": "start",
                 "tool_name": "deep_health_check",
@@ -50,14 +50,14 @@ def test_deep_health_check_tool_ws():
             assert progress_received, "Did not receive progress updates"
             assert result_received, "Did not receive final result"
 
-def test_v591_metadata_verification():
+def test_v592_metadata_verification():
     """
-    Verifies that the version and metadata are correctly updated for v591.
+    Verifies that the version and metadata are correctly updated for v592.
     """
     with TestClient(app) as client:
         response = client.get("/version")
         assert response.status_code == 200
         data = response.json()
-        assert data["version"] == "2.1.7"
-        assert "v591" in data["git_commit"]
-        assert "v591" in data["status"]
+        assert data["version"] == "2.1.8"
+        assert "v592" in data["git_commit"]
+        assert "v592" in data["status"]

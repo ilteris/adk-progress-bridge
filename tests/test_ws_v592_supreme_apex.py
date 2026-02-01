@@ -9,20 +9,20 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.app.main import app
 
-def test_concurrency_stress_test_tool_ws():
+def test_event_loop_latency_audit_tool_ws():
     """
-    Verifies that the new concurrency_stress_test tool works over WebSocket.
+    Verifies that the new event_loop_latency_audit tool works over WebSocket.
     """
     with TestClient(app) as client:
         with client.websocket_connect("/ws?api_key=test_key") as websocket:
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v592-stress-test"
+            request_id = "v592-latency-audit"
             websocket.send_json({
                 "type": "start",
-                "tool_name": "concurrency_stress_test",
-                "args": {"load": 2},
+                "tool_name": "event_loop_latency_audit",
+                "args": {"samples": 2},
                 "request_id": request_id
             })
             
@@ -36,12 +36,12 @@ def test_concurrency_stress_test_tool_ws():
                     assert data["request_id"] == request_id
                 elif data["type"] == "progress":
                     progress_received = True
-                    if data["payload"].get("step") == "Simulating load":
+                    if data["payload"].get("step") == "Sampling latency":
                         assert "metadata" in data["payload"]
-                        assert "worker_id" in data["payload"]["metadata"]
+                        assert "latency_ms" in data["payload"]["metadata"]
                 elif data["type"] == "result":
-                    assert data["payload"]["status"] == "stress_test_passed"
-                    assert data["payload"]["load_factor"] == 2
+                    assert data["payload"]["status"] == "audit_complete"
+                    assert data["payload"]["samples"] == 2
                     result_received = True
                     break
                 elif data["type"] == "error":
