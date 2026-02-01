@@ -34,10 +34,10 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.1.9"
-BUILD_TIMESTAMP = "2026-02-01T23:10:42Z"
-GIT_COMMIT = "v593-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v593 SUPREME APEX VERIFICATION ADELE"
+APP_VERSION = "2.2.0"
+BUILD_TIMESTAMP = "2026-02-01T23:55:12Z"
+GIT_COMMIT = "v594-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v594 SUPREME APEX VERIFICATION ADELE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT, "build_timestamp": BUILD_TIMESTAMP})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -283,7 +283,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         task_data = await registry.get_task_no_consume(call_id)
                         if task_data:
                             await task_data["gen"].aclose()
-                            if not task_data["consumed"]: await registry.remove_task(call_id)
+                            if not task_data["consumed"]: await registry.remove_task(actual_call_id)
                             await safe_send_json({"type": "stop_success", "call_id": call_id, "request_id": request_id})
                         else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No active task found"}})
                 elif msg_type == "subscribe":

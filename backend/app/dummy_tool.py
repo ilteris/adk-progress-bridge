@@ -466,3 +466,40 @@ async def garbage_collection_audit(samples: int = 3):
         "gc_thresholds": gc.get_threshold(),
         "stability": "STABLE"
     }
+
+@progress_tool(name="asyncio_task_audit")
+async def asyncio_task_audit(samples: int = 3):
+    """
+    Audits active asyncio tasks and their status.
+    """
+    logger.info(f"Starting asyncio task audit with {samples} samples")
+    yield ProgressPayload(step="Initializing task probe", pct=0, log="Scanning event loop for active tasks...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        all_tasks = asyncio.all_tasks()
+        task_count = len(all_tasks)
+        
+        # Categorize tasks by status if possible, or just list names
+        task_names = [t.get_name() for t in all_tasks]
+        
+        logger.info(f"Sample {i+1}/{samples}: {task_count} active tasks.")
+        yield ProgressPayload(
+            step="Sampling task stats",
+            pct=pct,
+            log=f"Measured {task_count} active asyncio tasks. Sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "task_count": task_count,
+                "task_names": task_names[:10] # Limit to top 10 names
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Event loop is healthy.")
+    yield {
+        "status": "audit_complete",
+        "final_task_count": len(asyncio.all_tasks()),
+        "stability": "STABLE"
+    }

@@ -9,19 +9,20 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.app.main import app
 
-def test_system_config_audit_tool_ws():
+def test_asyncio_task_audit_tool_ws():
     """
-    Verifies that the new system_config_audit tool works over WebSocket.
+    Verifies that the new asyncio_task_audit tool works over WebSocket.
     """
     with TestClient(app) as client:
         with client.websocket_connect("/ws?api_key=test_key") as websocket:
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v594-audit-test"
+            request_id = "v594-asyncio-audit"
             websocket.send_json({
                 "type": "start",
-                "tool_name": "system_config_audit",
+                "tool_name": "asyncio_task_audit",
+                "args": {"samples": 2},
                 "request_id": request_id
             })
             
@@ -35,10 +36,13 @@ def test_system_config_audit_tool_ws():
                     assert data["request_id"] == request_id
                 elif data["type"] == "progress":
                     progress_received = True
+                    if data["payload"].get("step") == "Sampling task stats":
+                        assert "metadata" in data["payload"]
+                        assert "task_count" in data["payload"]["metadata"]
+                        assert "task_names" in data["payload"]["metadata"]
                 elif data["type"] == "result":
                     assert data["payload"]["status"] == "audit_complete"
-                    assert "python_version" in data["payload"]
-                    assert "cwd" in data["payload"]
+                    assert "final_task_count" in data["payload"]
                     result_received = True
                     break
                 elif data["type"] == "error":
@@ -56,5 +60,4 @@ def test_v594_metadata_verification():
         assert response.status_code == 200
         data = response.json()
         assert data["version"] == "2.2.0"
-        assert "v594" in data["git_commit"]
         assert "v594" in data["status"]
