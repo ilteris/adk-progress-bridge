@@ -12,12 +12,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.app.main import app
 
 @pytest.mark.asyncio
-async def test_ws_v657_supreme_apex_comprehensive():
+async def test_ws_v658_supreme_apex_comprehensive():
     """
     V582 SUPREME APEX VERIFICATION:
     1. Verify connection handshake (connected message)
     2. Verify list_tools & list_active_tasks protocol
-    3. Verify health data includes v2.8.3 and v657 markers
+    3. Verify health data includes v2.8.4 and v658 markers
     4. Verify concurrent task execution and isolation
     5. Verify request_id correlation across all message types
     """
@@ -29,7 +29,7 @@ async def test_ws_v657_supreme_apex_comprehensive():
         assert data["status"] == "ready"
 
         # 2. Protocol: list_tools
-        req_id_list = "req_v657_list"
+        req_id_list = "req_v658_list"
         websocket.send_json({"type": "list_tools", "request_id": req_id_list})
         data = websocket.receive_json()
         while data["type"] != "tools_list":
@@ -39,7 +39,7 @@ async def test_ws_v657_supreme_apex_comprehensive():
         assert "long_audit" in data["tools"]
 
         # 3. Protocol: get_health & Version Check
-        req_id_health = "req_v657_health"
+        req_id_health = "req_v658_health"
         websocket.send_json({"type": "get_health", "request_id": req_id_health})
         data = websocket.receive_json()
         while data["type"] != "health_data":
@@ -47,15 +47,15 @@ async def test_ws_v657_supreme_apex_comprehensive():
         assert data["type"] == "health_data"
         assert data["request_id"] == req_id_health
         health = data["data"]
-        assert health["version"] == "2.8.3"
-        assert "v657" in health["operational_apex"]
+        assert health["version"] == "2.8.4"
+        assert "v658" in health["operational_apex"]
         assert "build_timestamp" in health
 
         # 4. Concurrent Task Execution
         num_tasks = 5
         call_ids = []
         for i in range(num_tasks):
-            req_id = f"v657_start_{i}"
+            req_id = f"v658_start_{i}"
             websocket.send_json({
                 "type": "start",
                 "tool_name": "security_scan",
@@ -73,7 +73,7 @@ async def test_ws_v657_supreme_apex_comprehensive():
             assert found_start
 
         # 5. list_active_tasks
-        req_id_active = "req_v657_active"
+        req_id_active = "req_v658_active"
         websocket.send_json({"type": "list_active_tasks", "request_id": req_id_active})
         
         data = websocket.receive_json()
@@ -98,7 +98,7 @@ async def test_ws_v657_supreme_apex_comprehensive():
         assert results_received == num_tasks
 
 @pytest.mark.asyncio
-async def test_ws_v657_boundary_conditions():
+async def test_ws_v658_boundary_conditions():
     """
     Verify boundary conditions:
     1. Message size limit (1MB)
@@ -123,7 +123,7 @@ async def test_ws_v657_boundary_conditions():
         assert "Invalid JSON" in data["payload"]["detail"]
 
         # 3. Tool not found
-        req_id = "v657_tool_not_found"
+        req_id = "v658_tool_not_found"
         websocket.send_json({
             "type": "start",
             "tool_name": "ghost_tool",

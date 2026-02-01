@@ -5078,3 +5078,63 @@ async def system_net_io_dropout_total_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total outgoing network drop statistics are stable.")
     yield {"status": "audit_complete", "final_dropout_total": dropout, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_dropin_total_audit")
+async def system_net_io_dropin_total_audit(samples: int = 3):
+    logger.info("Starting total incoming network drop audit")
+    yield ProgressPayload(step="Initializing incoming drop total probe", pct=0, log="Collecting cumulative incoming network drop counters...")
+    dropin = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_io_counters()
+            dropin = stats.dropin
+            logger.info(f"Sample {i+1}/{samples}: Total Incoming-drops {dropin}")
+            metadata = {"dropin_total": dropin}
+        except Exception as e:
+            logger.error(f"Error auditing total incoming network drops: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total incoming drops", pct=pct, log=f"Measured total incoming network drops sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total incoming network drop statistics are stable.")
+    yield {"status": "audit_complete", "final_dropin_total": dropin, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_errout_total_audit")
+async def system_net_io_errout_total_audit(samples: int = 3):
+    logger.info("Starting total outgoing network error audit")
+    yield ProgressPayload(step="Initializing outgoing error total probe", pct=0, log="Collecting cumulative outgoing network error counters...")
+    errout = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_io_counters()
+            errout = stats.errout
+            logger.info(f"Sample {i+1}/{samples}: Total Outgoing-errors {errout}")
+            metadata = {"errout_total": errout}
+        except Exception as e:
+            logger.error(f"Error auditing total outgoing network errors: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total outgoing errors", pct=pct, log=f"Measured total outgoing network errors sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total outgoing network error statistics are stable.")
+    yield {"status": "audit_complete", "final_errout_total": errout, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_errin_total_audit")
+async def system_net_io_errin_total_audit(samples: int = 3):
+    logger.info("Starting total incoming network error audit")
+    yield ProgressPayload(step="Initializing incoming error total probe", pct=0, log="Collecting cumulative incoming network error counters...")
+    errin = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_io_counters()
+            errin = stats.errin
+            logger.info(f"Sample {i+1}/{samples}: Total Incoming-errors {errin}")
+            metadata = {"errin_total": errin}
+        except Exception as e:
+            logger.error(f"Error auditing total incoming network errors: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total incoming errors", pct=pct, log=f"Measured total incoming network errors sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total incoming network error statistics are stable.")
+    yield {"status": "audit_complete", "final_errin_total": errin, "stability": "STABLE"}

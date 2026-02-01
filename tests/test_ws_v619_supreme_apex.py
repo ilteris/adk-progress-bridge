@@ -19,7 +19,7 @@ def test_process_status_audit_tool_ws():
             "type": "start",
             "tool_name": "process_status_audit",
             "args": {"samples": 2},
-            "request_id": "req-v657"
+            "request_id": "req-v658"
         }))
         
         resp = websocket.receive_json()
@@ -40,9 +40,9 @@ def test_process_status_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_status" in resp["payload"]
 
-def test_v657_metadata():
+def test_v658_metadata():
     """
-    Verifies that the system reports correct v657 Supreme Apex metadata.
+    Verifies that the system reports correct v658 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
