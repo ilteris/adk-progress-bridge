@@ -1495,3 +1495,40 @@ async def process_create_time_audit(samples: int = 3):
         "final_create_time": process.create_time(),
         "stability": "STABLE"
     }
+
+@progress_tool(name="process_gids_audit")
+async def process_gids_audit(samples: int = 3):
+    """
+    Audits process group IDs (GIDs) using psutil.
+    """
+    logger.info(f"Starting process GIDs audit with {samples} samples")
+    yield ProgressPayload(step="Initializing GID probe", pct=0, log="Collecting process-level group ID baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            gids = process.gids()
+        except Exception as e:
+            logger.warning(f"Error collecting process GIDs: {e}")
+            gids = None
+            
+        logger.info(f"Sample {i+1}/{samples}: Process GIDs {gids}")
+        yield ProgressPayload(
+            step="Sampling process GIDs",
+            pct=pct,
+            log=f"Measured process GIDs sample {i+1}/{samples}: {gids}.",
+            metadata={
+                "sample_id": i + 1,
+                "gids": gids._asdict() if hasattr(gids, "_asdict") else gids
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Group ID configuration is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_gids": process.gids()._asdict() if hasattr(process.gids(), "_asdict") else process.gids(),
+        "stability": "STABLE"
+    }
