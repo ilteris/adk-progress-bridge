@@ -1,0 +1,10 @@
+
+Running 5 tests using 5 workers
+
+  ✓  4 [chromium] › tests/e2e/websocket.test.ts:90:1 › websocket dynamic tool fetching (708ms)
+  ✓  1 [chromium] › tests/e2e/websocket.test.ts:65:1 › websocket stop flow (1.0s)
+  ✓  2 [chromium] › tests/e2e/audit.test.ts:3:1 › full audit flow (3.0s)
+  ✓  5 [chromium] › tests/e2e/websocket.test.ts:37:1 › websocket interactive flow (3.6s)
+  ✓  3 [chromium] › tests/e2e/websocket.test.ts:3:1 › websocket audit flow (3.9s)
+
+  5 passed (4.9s)
