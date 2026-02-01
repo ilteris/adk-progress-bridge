@@ -33,8 +33,8 @@ WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 APP_VERSION = "1.9.0"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v460-supreme-absolute-worker-verification"
-OPERATIONAL_APEX = "v460 SUPREME ABSOLUTE WORKER VERIFICATION"
+GIT_COMMIT = "v463-supreme-absolute-worker-verification"
+OPERATIONAL_APEX = "v463 SUPREME ABSOLUTE WORKER VERIFICATION"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -260,7 +260,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         task_data = await registry.get_task_no_consume(call_id)
                         if task_data:
                             await task_data["gen"].aclose()
-                            if not task_data["consumed"]: await registry.remove_task(call_id)
+                            if not task_data["consumed"]: await registry.remove_task(actual_call_id)
                             await safe_send_json({"type": "stop_success", "call_id": call_id, "request_id": request_id})
                         else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No active task found"}})
                 elif msg_type == "subscribe":
