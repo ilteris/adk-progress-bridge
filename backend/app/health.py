@@ -83,93 +83,97 @@ try:
 except ImportError:
     resource = None
 
+APP_START_TIME = time.time()
+
 class HealthEngine:
     def __init__(self, app_start_time: float):
         self.app_start_time = app_start_time
 
     def collect_raw_metrics(self) -> Dict[str, Any]:
         raw = {}
-        if psutil:
-            try:
-                mem = psutil.virtual_memory()
+        if not psutil: return raw
+        try:
+            mem = psutil.virtual_memory()
+            raw.update({
+                'sys_mem_available': mem.available, 'sys_mem_total': mem.total, 'sys_mem_used': mem.used, 
+                'sys_mem_free': mem.free, 'sys_mem_percent': mem.percent, 'sys_mem_active': getattr(mem, "active", 0), 
+                'sys_mem_inactive': getattr(mem, "inactive", 0), 'sys_mem_buffers': getattr(mem, "buffers", 0), 
+                'sys_mem_cached': getattr(mem, "cached", 0), 'sys_mem_shared': getattr(mem, "shared", 0), 
+                'sys_mem_slab': getattr(mem, "slab", 0), 'sys_mem_wired': getattr(mem, "wired", 0)
+            })
+            swap = psutil.swap_memory()
+            raw.update({
+                'sys_swap_total': swap.total, 'sys_swap_used': swap.used, 'sys_swap_free': swap.free, 
+                'sys_swap_percent': swap.percent, 'sys_swap_sin': swap.sin, 'sys_swap_sout': swap.sout
+            })
+            cpu_times = psutil.cpu_times_percent(interval=None)
+            raw.update({
+                'sys_cpu_user': cpu_times.user, 'sys_cpu_system': cpu_times.system, 'sys_cpu_idle': cpu_times.idle, 
+                'sys_cpu_iowait': getattr(cpu_times, "iowait", 0.0), 'sys_cpu_irq': getattr(cpu_times, "irq", 0.0), 
+                'sys_cpu_softirq': getattr(cpu_times, "softirq", 0.0), 'sys_cpu_steal': getattr(cpu_times, "steal", 0.0), 
+                'sys_cpu_guest': getattr(cpu_times, "guest", 0.0)
+            })
+            raw.update({
+                'sys_cpu_percent': psutil.cpu_percent(interval=None), 'sys_cpu_count': psutil.cpu_count(), 
+                'sys_cpu_physical_count': psutil.cpu_count(logical=False) or 0
+            })
+            cpu_freq = psutil.cpu_freq()
+            raw['sys_cpu_freq_current'] = cpu_freq.current if cpu_freq else 0.0
+            cpu_stats = psutil.cpu_stats()
+            raw.update({
+                'sys_cpu_ctx_switches': cpu_stats.ctx_switches, 'sys_cpu_interrupts': cpu_stats.interrupts, 
+                'sys_cpu_soft_interrupts': cpu_stats.soft_interrupts, 'sys_cpu_syscalls': cpu_stats.syscalls
+            })
+            disk_io = psutil.disk_io_counters()
+            if disk_io:
                 raw.update({
-                    'sys_mem_available': mem.available, 'sys_mem_total': mem.total, 'sys_mem_used': mem.used, 
-                    'sys_mem_free': mem.free, 'sys_mem_percent': mem.percent, 'sys_mem_active': getattr(mem, "active", 0), 
-                    'sys_mem_inactive': getattr(mem, "inactive", 0), 'sys_mem_buffers': getattr(mem, "buffers", 0), 
-                    'sys_mem_cached': getattr(mem, "cached", 0), 'sys_mem_shared': getattr(mem, "shared", 0), 
-                    'sys_mem_slab': getattr(mem, "slab", 0), 'sys_mem_wired': getattr(mem, "wired", 0)
+                    'sys_disk_read_bytes': disk_io.read_bytes, 'sys_disk_write_bytes': disk_io.write_bytes, 
+                    'sys_disk_read_count': disk_io.read_count, 'sys_disk_write_count': disk_io.write_count, 
+                    'sys_disk_read_time': disk_io.read_time, 'sys_disk_write_time': disk_io.write_time, 
+                    'sys_disk_busy_time': getattr(disk_io, "busy_time", 0), 
+                    'sys_disk_read_merged': getattr(disk_io, "read_merged_count", 0), 
+                    'sys_disk_write_merged': getattr(disk_io, "write_merged_count", 0)
                 })
-                swap = psutil.swap_memory()
-                raw.update({
-                    'sys_swap_total': swap.total, 'sys_swap_used': swap.used, 'sys_swap_free': swap.free, 
-                    'sys_swap_percent': swap.percent, 'sys_swap_sin': swap.sin, 'sys_swap_sout': swap.sout
-                })
-                cpu_times = psutil.cpu_times_percent(interval=None)
-                raw.update({
-                    'sys_cpu_user': cpu_times.user, 'sys_cpu_system': cpu_times.system, 'sys_cpu_idle': cpu_times.idle, 
-                    'sys_cpu_iowait': getattr(cpu_times, "iowait", 0.0), 'sys_cpu_irq': getattr(cpu_times, "irq", 0.0), 
-                    'sys_cpu_softirq': getattr(cpu_times, "softirq", 0.0), 'sys_cpu_steal': getattr(cpu_times, "steal", 0.0), 
-                    'sys_cpu_guest': getattr(cpu_times, "guest", 0.0)
-                })
-                raw.update({
-                    'sys_cpu_percent': psutil.cpu_percent(interval=None), 'sys_cpu_count': psutil.cpu_count(), 
-                    'sys_cpu_physical_count': psutil.cpu_count(logical=False) or 0
-                })
-                cpu_freq = psutil.cpu_freq()
-                raw['sys_cpu_freq_current'] = cpu_freq.current if cpu_freq else 0.0
-                cpu_stats = psutil.cpu_stats()
-                raw.update({
-                    'sys_cpu_ctx_switches': cpu_stats.ctx_switches, 'sys_cpu_interrupts': cpu_stats.interrupts, 
-                    'sys_cpu_soft_interrupts': cpu_stats.soft_interrupts, 'sys_cpu_syscalls': cpu_stats.syscalls
-                })
-                disk_io = psutil.disk_io_counters()
-                if disk_io:
-                    raw.update({
-                        'sys_disk_read_bytes': disk_io.read_bytes, 'sys_disk_write_bytes': disk_io.write_bytes, 
-                        'sys_disk_read_count': disk_io.read_count, 'sys_disk_write_count': disk_io.write_count, 
-                        'sys_disk_read_time': disk_io.read_time, 'sys_disk_write_time': disk_io.write_time, 
-                        'sys_disk_busy_time': getattr(disk_io, "busy_time", 0), 
-                        'sys_disk_read_merged': getattr(disk_io, "read_merged_count", 0), 
-                        'sys_disk_write_merged': getattr(disk_io, "write_merged_count", 0)
-                    })
-                raw.update({
-                    'sys_disk_usage_percent': psutil.disk_usage('/').percent, 
-                    'sys_disk_partitions_count': len(psutil.disk_partitions())
-                })
-                net_io = psutil.net_io_counters()
-                raw.update({
-                    'sys_net_bytes_sent': net_io.bytes_sent, 'sys_net_bytes_recv': net_io.bytes_recv, 
-                    'sys_net_packets_sent': net_io.packets_sent, 'sys_net_packets_recv': net_io.packets_recv, 
-                    'sys_net_errin': net_io.errin, 'sys_net_errout': net_io.errout, 
-                    'sys_net_dropin': net_io.dropin, 'sys_net_dropout': net_io.dropout
-                })
-                raw.update({
-                    'sys_net_interfaces_count': len(psutil.net_if_addrs()), 'sys_boot_time': psutil.boot_time(), 
-                    'sys_users_count': len(psutil.users()), 'sys_process_count': len(psutil.pids())
-                })
-                try:
-                    raw['sys_network_connections'] = len(psutil.net_connections(kind='all'))
-                except Exception:
-                    raw['sys_network_connections'] = 0
-                
-                if_stats = psutil.net_if_stats()
-                raw.update({
-                    'sys_net_interfaces_up': sum(1 for s in if_stats.values() if s.isup), 
-                    'sys_net_interfaces_down': sum(1 for s in if_stats.values() if not s.isup), 
-                    'sys_net_mtu_total': sum(s.mtu for s in if_stats.values()), 
-                    'sys_net_speed_total': sum(s.speed for s in if_stats.values() if s.speed > 0), 
-                    'sys_net_duplex_full': sum(1 for s in if_stats.values() if getattr(s, "duplex", 0) == 2)
-                })
-                load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
-                raw.update({'sys_load_1m': load_avg[0], 'sys_load_5m': load_avg[1], 'sys_load_15m': load_avg[2], 'sys_cpu_cores_usage': psutil.cpu_percent(interval=None, percpu=True)})
-                disk_part_usage = {}
-                for part in psutil.disk_partitions(all=False):
-                    try: disk_part_usage[part.mountpoint] = psutil.disk_usage(part.mountpoint).percent
-                    except: continue
-                raw['sys_disk_partitions_usage'] = disk_part_usage
-                net_io_per_nic = psutil.net_io_counters(pernic=True)
-                raw['sys_net_io_per_nic'] = {nic: {"bytes_sent": io.bytes_sent, "bytes_recv": io.bytes_recv} for nic, io in net_io_per_nic.items()}
-            except Exception as e: logger.error(f"Error collecting system metrics: {e}")
+            raw.update({
+                'sys_disk_usage_percent': psutil.disk_usage('/').percent, 
+                'sys_disk_partitions_count': len(psutil.disk_partitions())
+            })
+            net_io = psutil.net_io_counters()
+            raw.update({
+                'sys_net_bytes_sent': net_io.bytes_sent, 'sys_net_bytes_recv': net_io.bytes_recv, 
+                'sys_net_packets_sent': net_io.packets_sent, 'sys_net_packets_recv': net_io.packets_recv, 
+                'sys_net_errin': net_io.errin, 'sys_net_errout': net_io.errout, 
+                'sys_net_dropin': net_io.dropin, 'sys_net_dropout': net_io.dropout
+            })
+            raw.update({
+                'sys_net_interfaces_count': len(psutil.net_if_addrs()), 'sys_boot_time': psutil.boot_time(), 
+                'sys_users_count': len(psutil.users()), 'sys_process_count': len(psutil.pids())
+            })
+            # Skip potentially slow net_connections call in tests if requested via env
+            if os.getenv("SKIP_SLOW_METRICS") != "1":
+                try: raw['sys_network_connections'] = len(psutil.net_connections(kind='all'))
+                except Exception: raw['sys_network_connections'] = 0
+            else:
+                raw['sys_network_connections'] = 0
+            
+            if_stats = psutil.net_if_stats()
+            raw.update({
+                'sys_net_interfaces_up': sum(1 for s in if_stats.values() if s.isup), 
+                'sys_net_interfaces_down': sum(1 for s in if_stats.values() if not s.isup), 
+                'sys_net_mtu_total': sum(s.mtu for s in if_stats.values()), 
+                'sys_net_speed_total': sum(s.speed for s in if_stats.values() if s.speed > 0), 
+                'sys_net_duplex_full': sum(1 for s in if_stats.values() if getattr(s, "duplex", 0) == 2)
+            })
+            load_avg = os.getloadavg() if hasattr(os, "getloadavg") else (0, 0, 0)
+            raw.update({'sys_load_1m': load_avg[0], 'sys_load_5m': load_avg[1], 'sys_load_15m': load_avg[2], 'sys_cpu_cores_usage': psutil.cpu_percent(interval=None, percpu=True)})
+            disk_part_usage = {}
+            for part in psutil.disk_partitions(all=False):
+                try: disk_part_usage[part.mountpoint] = psutil.disk_usage(part.mountpoint).percent
+                except: continue
+            raw['sys_disk_partitions_usage'] = disk_part_usage
+            net_io_per_nic = psutil.net_io_counters(pernic=True)
+            raw['sys_net_io_per_nic'] = {nic: {"bytes_sent": io.bytes_sent, "bytes_recv": io.bytes_recv} for nic, io in net_io_per_nic.items()}
+        except Exception as e: logger.error(f"Error collecting system metrics: {e}")
 
         if _process:
             try:
@@ -198,8 +202,13 @@ class HealthEngine:
                         if io: raw.update({'proc_io_read_bytes': io.read_bytes, 'proc_io_write_bytes': io.write_bytes, 'proc_io_read_count': io.read_count, 'proc_io_write_count': io.write_count})
                     except: pass
                 
+                if os.getenv("SKIP_SLOW_METRICS") != "1":
+                    try: raw['proc_connections_count'] = len(_process.net_connections())
+                    except: raw['proc_connections_count'] = 0
+                else:
+                    raw['proc_connections_count'] = 0
+
                 raw.update({
-                    'proc_connections_count': len(_process.net_connections()), 
                     'proc_children_count': len(_process.children()), 
                     'proc_nice': _process.nice(), 
                     'proc_cpu_affinity_count': len(_process.cpu_affinity()) if hasattr(_process, "cpu_affinity") else 0
@@ -447,6 +456,8 @@ class HealthEngine:
         if minutes > 0: parts.append(f"{minutes}m")
         parts.append(f"{seconds}s")
         return " ".join(parts)
+
+health_engine = HealthEngine(APP_START_TIME)
 
 class BroadcastMetricsManager:
     def __init__(self, health_engine: HealthEngine, app: Any, version: str, commit: str, apex: str):

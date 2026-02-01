@@ -1,9 +1,11 @@
 import asyncio
 import random
 import psutil
+import time
 from .bridge import progress_tool, ProgressPayload, input_manager
 from .logger import logger
 from .context import call_id_var
+from .health import health_engine
 
 @progress_tool(name="long_audit")
 async def long_audit(duration: int = 10):
@@ -36,7 +38,7 @@ async def long_audit(duration: int = 10):
         # Simulate work
         await asyncio.sleep(duration / n_steps)
 
-    # Yield final result
+    # Yield final report
     logger.info("Audit task finished")
     yield {
         "status": "complete",
@@ -237,4 +239,36 @@ async def resource_monitor(iterations: int = 5):
             "rss": process.memory_info().rss,
             "cpu": process.cpu_percent(interval=None)
         }
+    }
+
+@progress_tool(name="deep_health_check")
+async def deep_health_check():
+    """
+    Performs a deep system health check using the HealthEngine.
+    """
+    logger.info("Starting deep health check tool")
+    yield ProgressPayload(step="Initializing health engine", pct=10, log="Warming up engine...")
+    await asyncio.sleep(0.2)
+    
+    yield ProgressPayload(step="Collecting raw metrics", pct=40, log="Gathering CPU, Memory, Disk and Network data...")
+    # Since we don't have easy access to app.state here without globalizing it,
+    # we use a dummy state or just rely on health_engine's internal collection.
+    # In main.py, get_health_data takes app.state.
+    class DummyState:
+        def __init__(self):
+            self.peak_ws_connections = 0
+            self.last_throughput_time = time.time()
+            self.last_bytes_received = 0
+            self.last_bytes_sent = 0
+    
+    dummy_state = DummyState()
+    
+    yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
+    data = await health_engine.get_health_data(dummy_state, "2.1.3", "v587-supreme-apex", "SUPREME APEX VERIFICATION")
+    await asyncio.sleep(0.2)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
+    yield {
+        "status": "healthy",
+        "snapshot": data
     }

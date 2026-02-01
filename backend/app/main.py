@@ -25,7 +25,7 @@ from .metrics import (
     PEAK_ACTIVE_WS_CONNECTIONS, WS_MESSAGE_SIZE_BYTES,
     WS_BINARY_FRAMES_REJECTED_TOTAL, WS_CONNECTION_ERRORS_TOTAL
 )
-from .health import HealthEngine, BroadcastMetricsManager
+from .health import health_engine, BroadcastMetricsManager, APP_START_TIME
 
 # Configuration Constants
 WS_HEARTBEAT_TIMEOUT = 60.0
@@ -34,16 +34,13 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.1.2"
-APP_START_TIME = time.time()
-BUILD_TIMESTAMP = "2026-02-01T23:55:00Z"
-GIT_COMMIT = "v586-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v586 SUPREME APEX VERIFICATION ADELE"
+APP_VERSION = "2.1.3"
+BUILD_TIMESTAMP = "2026-02-01T23:59:59Z"
+GIT_COMMIT = "v587-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v587 SUPREME APEX VERIFICATION ADELE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT, "build_timestamp": BUILD_TIMESTAMP})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
-
-health_engine = HealthEngine(APP_START_TIME)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -168,8 +165,8 @@ async def stop_task(call_id: Optional[str] = None, cid: Optional[str] = Query(No
     return {"status": "stop signal sent"}
 
 @app.get("/health") 
-async def health_check():
-    health = await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
+async def health_check(request: Request):
+    health = await health_engine.get_health_data(request.app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
     health["last_updated_str"] = datetime.now().isoformat()
     health["build_timestamp"] = BUILD_TIMESTAMP
     return health
@@ -186,10 +183,10 @@ async def get_version():
     }
 
 @app.get("/metrics")
-async def metrics():
+async def metrics(request: Request):
     from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
     from fastapi.responses import Response
-    await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
+    await health_engine.get_health_data(request.app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 @app.websocket("/ws")
@@ -198,8 +195,8 @@ async def websocket_endpoint(websocket: WebSocket):
     conn_start_time = time.perf_counter()
     ACTIVE_WS_CONNECTIONS.inc()
     current_ws = int(ACTIVE_WS_CONNECTIONS._value.get())
-    if current_ws > getattr(app.state, "peak_ws_connections", 0):
-        app.state.peak_ws_connections = current_ws
+    if current_ws > getattr(websocket.app.state, "peak_ws_connections", 0):
+        websocket.app.state.peak_ws_connections = current_ws
         PEAK_ACTIVE_WS_CONNECTIONS.set(current_ws)
     active_tasks: Dict[str, asyncio.Task] = {}
     try:
@@ -252,7 +249,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 elif msg_type == "list_tools": await safe_send_json({"type": "tools_list", "tools": registry.list_tools(), "request_id": request_id})
                 elif msg_type == "list_active_tasks": await safe_send_json({"type": "active_tasks_list", "tasks": await registry.list_active_tasks(), "request_id": request_id})
                 elif msg_type == "get_health":
-                    health = await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
+                    health = await health_engine.get_health_data(websocket.app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
                     health["last_updated_str"] = datetime.now().isoformat()
                     health["build_timestamp"] = BUILD_TIMESTAMP
                     await safe_send_json({"type": "health_data", "data": health, "request_id": request_id})

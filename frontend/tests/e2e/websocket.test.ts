@@ -92,14 +92,14 @@ test('websocket dynamic tool fetching', async ({ page }) => {
   
   // Initially on SSE (REST fetch)
   const toolSelect = page.locator('#toolSelect');
-  // Real backend has 6 tools
-  await expect(toolSelect.locator('option')).toHaveCount(7);
+  // Real backend has 9 tools
+  await expect(toolSelect.locator('option')).toHaveCount(9);
   
   // Toggle to WS
   await page.locator('#useWS').check();
   
   // Should still have options (re-fetched via WS)
-  await expect(toolSelect.locator('option')).toHaveCount(7);
+  await expect(toolSelect.locator('option')).toHaveCount(9);
   await expect(toolSelect).toContainText('Long Audit');
 });
 
@@ -128,4 +128,27 @@ test('websocket clear console flow', async ({ page }) => {
   // Verify logs are cleared (back to "No logs yet...")
   await expect(logEntries).toHaveCount(1);
   await expect(consoleDiv).toContainText('No logs yet...');
+});
+
+test('websocket deep health check tool', async ({ page }) => {
+  await page.goto('http://localhost:5173');
+  
+  // Enable WebSockets
+  await page.locator('#useWS').check();
+  
+  // Select Deep Health Check
+  await page.locator('#toolSelect').selectOption('deep_health_check');
+  
+  // Start task
+  await page.getByRole('button', { name: 'Start Task' }).click();
+  
+  // Wait for completion
+  await expect(page.locator('.alert-success')).toBeVisible({ timeout: 15000 });
+  await expect(page.getByTestId('status-badge')).toContainText('Done');
+  
+  // Verify final result contains health metrics
+  const resultPre = page.locator('pre');
+  await expect(resultPre).toContainText('"status": "healthy"');
+  await expect(resultPre).toContainText('"snapshot"');
+  await expect(resultPre).toContainText('"cpu_count"');
 });
