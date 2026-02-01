@@ -16,6 +16,7 @@ def test_ws_rapid_start_stop_stress():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         for i in range(10):
             req_id = f"stress_start_{i}"
             websocket.send_json({
@@ -56,6 +57,7 @@ def test_ws_large_args_validation():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Create a large args dictionary using a tool that accepts **kwargs
         large_args = {"data": "x" * 10000, "meta": "y" * 5000}
         
@@ -76,6 +78,7 @@ def test_ws_multiple_pings_sequence():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         for _ in range(20):
             websocket.send_json({"type": "ping"})
             data = websocket.receive_json()
@@ -87,6 +90,7 @@ def test_ws_input_unsolicited():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # 1. Start a normal (non-interactive) task
         websocket.send_json({
             "type": "start",
@@ -126,6 +130,7 @@ def test_ws_malformed_json_recovery():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # 1. Send malformed JSON
         websocket.send_text("{ invalid json")
         data = websocket.receive_json()
@@ -151,6 +156,7 @@ def test_ws_null_request_id_robustness():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Null request_id
         websocket.send_json({
             "type": "ping",

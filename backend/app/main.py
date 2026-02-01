@@ -32,10 +32,10 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "1.9.0"
+APP_VERSION = "1.9.2"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v561-supreme-ultimate-worker-verification-adele"
-OPERATIONAL_APEX = "v561 SUPREME ULTIMATE WORKER VERIFICATION ADELE"
+GIT_COMMIT = "v562-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v562 SUPREME APEX VERIFICATION ADELE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -58,7 +58,6 @@ async def lifespan(app: FastAPI):
 
 async def cleanup_background_task():
     try:
-        await safe_send_json({"type": "connected", "status": "ready"})
         while True:
             await asyncio.sleep(CLEANUP_INTERVAL); await registry.cleanup_stale_tasks(max_age_seconds=STALE_TASK_MAX_AGE)
     except asyncio.CancelledError: pass
@@ -117,12 +116,16 @@ async def stream_task(call_id: Optional[str] = None, cid: Optional[str] = Query(
             
             async def pull_metrics():
                 try:
-        await safe_send_json({"type": "connected", "status": "ready"})                    while True: await combined_queue.put(("metrics", await metrics_queue.get()))
+                    while True: await combined_queue.put(("metrics", await metrics_queue.get()))
                 except asyncio.CancelledError: pass
             
             gen_task, metrics_task = asyncio.create_task(pull_gen()), asyncio.create_task(pull_metrics())
             try:
-        await safe_send_json({"type": "connected", "status": "ready"})                while True:
+                # SSE connection acknowledgement (ignore failures if client disconnected immediately)
+                try: yield await format_sse(ProgressEvent(call_id=actual_call_id, type="connected", payload={"status": "ready"}))
+                except: pass
+                
+                while True:
                     msg_type, payload = await combined_queue.get()
                     if msg_type == "done": break
                     elif msg_type == "error": raise payload
@@ -198,7 +201,11 @@ async def websocket_endpoint(websocket: WebSocket):
                     WS_BYTES_SENT_TOTAL.inc(len(json_str)); WS_MESSAGE_SIZE_BYTES.observe(len(json_str))
                     await websocket.send_text(json_str)
                 except Exception as e: logger.error(f"Error sending WS message: {e}"); raise
-        await safe_send_json({"type": "connected", "status": "ready"})
+        
+        # Explicit handshake acknowledgement (ignore failures if client disconnected immediately)
+        try: await safe_send_json({"type": "connected", "status": "ready"})
+        except: pass
+        
         while True:
             try:
                 msg = await asyncio.wait_for(websocket.receive(), timeout=WS_HEARTBEAT_TIMEOUT)
@@ -300,7 +307,7 @@ async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
         start_time, status, metrics_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(call_id)
         async def metrics_pusher():
             try:
-        await safe_send_json({"type": "connected", "status": "ready"})                while True: await send_func({"call_id": call_id, "type": "system_metrics", "payload": await metrics_queue.get()})
+                while True: await send_func({"call_id": call_id, "type": "system_metrics", "payload": await metrics_queue.get()})
             except asyncio.CancelledError: pass
         metrics_task = asyncio.create_task(metrics_pusher())
         try:

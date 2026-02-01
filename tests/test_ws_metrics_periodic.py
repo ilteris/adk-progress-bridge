@@ -19,6 +19,7 @@ async def test_ws_metrics_periodic():
     
     with TestClient(app) as client:
         with client.websocket_connect("/ws?api_key=test_key") as websocket:
+            websocket.receive_json() # Consume connected message
             # Start a task that sleeps for 5 seconds
             websocket.send_json({
                 "type": "start",

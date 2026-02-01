@@ -13,6 +13,7 @@ from backend.app.main import app
 def test_websocket_invalid_json():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Send raw invalid JSON
         websocket.send_text("not a json")
         
@@ -23,6 +24,7 @@ def test_websocket_invalid_json():
 def test_websocket_non_dict_json():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Send a JSON list instead of a dict
         websocket.send_json([1, 2, 3])
         
@@ -33,6 +35,7 @@ def test_websocket_non_dict_json():
 def test_websocket_unknown_type():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({"type": "unknown_command"})
         
         data = websocket.receive_json()
@@ -42,6 +45,7 @@ def test_websocket_unknown_type():
 def test_websocket_missing_tool():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({
             "type": "start",
             "tool_name": "missing_tool",
@@ -56,6 +60,7 @@ def test_websocket_missing_tool():
 def test_websocket_ping_pong():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({"type": "ping"})
         
         data = websocket.receive_json()
@@ -64,6 +69,7 @@ def test_websocket_ping_pong():
 def test_websocket_unknown_type_with_request_id():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({
             "type": "unknown_command",
             "request_id": "robust_unknown"
@@ -77,6 +83,7 @@ def test_websocket_unknown_type_with_request_id():
 def test_websocket_message_size_limit():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Create a message larger than 1MB (default limit)
         large_payload = "a" * (1024 * 1024 + 100)
         large_message = json.dumps({"type": "ping", "data": large_payload})
@@ -90,6 +97,7 @@ def test_websocket_message_size_limit():
 def test_websocket_start_missing_tool_name():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({
             "type": "start",
             "request_id": "missing_tool_name"
@@ -103,6 +111,7 @@ def test_websocket_start_missing_tool_name():
 def test_websocket_stop_missing_call_id():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({
             "type": "stop",
             "request_id": "missing_call_id"
@@ -116,6 +125,7 @@ def test_websocket_stop_missing_call_id():
 def test_websocket_input_missing_call_id():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({
             "type": "input",
             "value": "some value",
@@ -130,6 +140,7 @@ def test_websocket_input_missing_call_id():
 def test_websocket_input_missing_value():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({
             "type": "input",
             "call_id": "some_id",

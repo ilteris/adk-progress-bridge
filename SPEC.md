@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v1.9.0
+# Specification: ADK Progress Bridge v1.9.2
 
 ## 1. System Overview
 The system consists of a Python backend (FastAPI) acting as the ADK Agent host and a Vue.js frontend client. They communicate via **Server-Sent Events (SSE)** or **WebSockets** for real-time progress updates.
@@ -10,7 +10,7 @@ The system consists of a Python backend (FastAPI) acting as the ADK Agent host a
 #### `ProgressEvent` (Pydantic Model)
 A structured container for event data.
 *   `call_id`: UUID string.
-*   `type`: Literal ["progress", "result", "error", "input_request", "task_started", "system_metrics"].
+*   `type`: Literal ["progress", "result", "error", "input_request", "task_started", "system_metrics", "connected"].
 *   `payload`: Any event-specific data.
 
 #### `ToolRegistry`
@@ -60,6 +60,7 @@ Centralized singleton for broadcasting real-time health metrics to all active st
         *   Response: `{"type": "pong"}`
     *   Message `{"type": "get_health"}` requests the latest system health data.
         *   Response: `{"type": "health_data", "data": {...}}`
+    *   **Handshake Acknowledgement:** Immediately upon connection, the server sends `{"type": "connected", "status": "ready"}` to confirm the bi-directional stream is operational.
 
 ## 3. Frontend Specification (Vue.js)
 
@@ -99,6 +100,6 @@ The bridge provides deep visibility into the host system performance:
 *   **Thread Safety:** `asyncio.Lock` ensures frame integrity during concurrent streaming.
 
 ## 6. Versioning & Identity
-- **APP_VERSION**: 1.9.0
-- **GIT_COMMIT**: v556-supreme-ultimate-worker-verification-adele
-- **OPERATIONAL_APEX**: SUPREME ULTIMATE VERIFICATION ADELE (v556)
+- **APP_VERSION**: 1.9.2
+- **GIT_COMMIT**: v562-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: SUPREME APEX VERIFICATION ADELE (v562)

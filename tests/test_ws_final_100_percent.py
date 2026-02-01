@@ -16,6 +16,7 @@ def test_websocket_list_tools_comprehensive():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({
             "type": "list_tools",
             "request_id": "final_100"

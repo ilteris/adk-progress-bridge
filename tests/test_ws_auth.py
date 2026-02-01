@@ -22,6 +22,7 @@ def enable_auth(monkeypatch):
 def test_websocket_auth_disabled_by_default():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({"type": "ping"})
         data = websocket.receive_json()
         assert data["type"] == "pong"
@@ -44,6 +45,7 @@ def test_websocket_auth_enabled_wrong_key(enable_auth):
 def test_websocket_auth_enabled_correct_key(enable_auth):
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-secret-key") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({"type": "ping"})
         data = websocket.receive_json()
         assert data["type"] == "pong"

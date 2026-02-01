@@ -37,6 +37,7 @@ async def test_websocket_non_generator_fail():
         return {"result": "oops"}
 
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({
             "type": "start",
             "tool_name": "non_gen_ws",

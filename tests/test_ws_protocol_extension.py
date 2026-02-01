@@ -16,6 +16,7 @@ async def test_websocket_list_tools():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         req_id = "list_req_1"
         websocket.send_json({
             "type": "list_tools",
@@ -48,6 +49,7 @@ async def test_websocket_stop_acknowledgement():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Start a task
         websocket.send_json({
             "type": "start",
@@ -90,6 +92,7 @@ async def test_websocket_input_acknowledgement():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Start interactive task
         websocket.send_json({
             "type": "start",

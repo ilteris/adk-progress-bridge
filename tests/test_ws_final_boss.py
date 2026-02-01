@@ -18,6 +18,7 @@ async def test_ws_ultimate_concurrency_and_robustness():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # 1. Start multiple tasks
         num_tasks = 3
         call_ids = []
@@ -79,6 +80,7 @@ def test_ws_protocol_compliance_audit():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # list_tools
         websocket.send_json({"type": "list_tools", "request_id": "req_list"})
         data = websocket.receive_json()
@@ -143,6 +145,7 @@ def test_ws_error_correlation_robustness():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Invalid tool_name
         req_id = "error_req_1"
         websocket.send_json({

@@ -20,6 +20,7 @@ async def test_ws_god_tier_final_verification():
     with patch("backend.app.auth.BRIDGE_API_KEY", None):
         client = TestClient(app)
         with client.websocket_connect("/ws") as websocket:
+            websocket.receive_json() # Consume connected message
             # 1. Ping
             websocket.send_json({"type": "ping"})
             assert websocket.receive_json()["type"] == "pong"
@@ -89,5 +90,6 @@ async def test_ws_authentication_enforcement():
                 
         # Try with correct key
         with client.websocket_connect("/ws?api_key=god-tier-secret") as websocket:
+            websocket.receive_json() # Consume connected message
             websocket.send_json({"type": "ping"})
             assert websocket.receive_json()["type"] == "pong"

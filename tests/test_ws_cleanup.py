@@ -19,6 +19,7 @@ async def test_websocket_marks_consumed():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # 1. Start a task
         websocket.send_json({
             "type": "start",
@@ -49,6 +50,7 @@ async def test_websocket_not_reaped_by_cleanup():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # 1. Start a task
         websocket.send_json({
             "type": "start",

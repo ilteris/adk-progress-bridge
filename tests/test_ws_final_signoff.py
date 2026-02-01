@@ -22,6 +22,7 @@ async def test_ws_final_sanity_check():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
+        websocket.receive_json() # Consume connected message
         # 1. list_tools
         websocket.send_json({"type": "list_tools", "request_id": "req_list"})
         data = websocket.receive_json()

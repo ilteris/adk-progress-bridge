@@ -21,6 +21,7 @@ def test_websocket_heartbeat_timeout():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Send a ping
         websocket.send_json({"type": "ping"})
         data = websocket.receive_json()

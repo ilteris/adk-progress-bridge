@@ -24,6 +24,7 @@ def test_websocket_metrics_increment():
 
     # 2. Run a task via WebSocket
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({
             "type": "start",
             "tool_name": "long_audit",

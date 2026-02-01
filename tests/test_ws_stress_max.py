@@ -18,6 +18,7 @@ async def test_ws_extreme_stress():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         num_tasks = 10
         call_ids = []
         
@@ -75,6 +76,7 @@ async def test_ws_interleaved_interactive_stress():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Start background task
         websocket.send_json({
             "type": "start",
