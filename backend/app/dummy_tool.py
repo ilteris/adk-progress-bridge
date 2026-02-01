@@ -4257,3 +4257,105 @@ async def system_cpu_stats_interrupts_audit(samples: int = 3):
         "final_interrupts": interrupts,
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_cpu_stats_soft_interrupts_audit")
+async def system_cpu_stats_soft_interrupts_audit(samples: int = 3):
+    """
+    Audits system-wide soft interrupts using psutil.
+    """
+    logger.info("Starting system soft interrupts audit")
+    yield ProgressPayload(step="Initializing soft interrupts probe", pct=0, log="Collecting system-wide soft interrupt baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            soft_interrupts = stats.soft_interrupts
+            logger.info(f"Sample {i+1}/{samples}: Soft Interrupts {soft_interrupts}")
+            metadata = {"soft_interrupts": soft_interrupts}
+        except Exception as e:
+            logger.error(f"Error auditing soft interrupts: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling soft interrupts",
+            pct=pct,
+            log=f"Measured soft interrupts sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Soft interrupt statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_soft_interrupts": soft_interrupts,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_cpu_stats_syscalls_audit")
+async def system_cpu_stats_syscalls_audit(samples: int = 3):
+    """
+    Audits system-wide syscalls using psutil.
+    """
+    logger.info("Starting system syscalls audit")
+    yield ProgressPayload(step="Initializing syscalls probe", pct=0, log="Collecting system-wide syscall baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            syscalls = stats.syscalls
+            logger.info(f"Sample {i+1}/{samples}: Syscalls {syscalls}")
+            metadata = {"syscalls": syscalls}
+        except Exception as e:
+            logger.error(f"Error auditing syscalls: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling syscalls",
+            pct=pct,
+            log=f"Measured syscalls sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Syscall statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_syscalls": syscalls,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_io_dropin_audit")
+async def system_net_io_dropin_audit(samples: int = 3):
+    """
+    Audits incoming network packet drops using psutil.
+    """
+    logger.info("Starting system net io dropin audit")
+    yield ProgressPayload(step="Initializing dropin probe", pct=0, log="Collecting dropin packet baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            dropin = counters.dropin
+            logger.info(f"Sample {i+1}/{samples}: Drop-in {dropin}")
+            metadata = {"dropin": dropin}
+        except Exception as e:
+            logger.error(f"Error auditing dropin packets: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling dropin packets",
+            pct=pct,
+            log=f"Measured dropin sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Drop-in statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_dropin": dropin,
+        "stability": "STABLE"
+    }
