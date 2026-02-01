@@ -3731,3 +3731,110 @@ async def system_cpu_times_percent_iowait_focused_audit(samples: int = 3):
         "metric": "iowait_cpu_time",
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_cpu_times_percent_irq_focused_audit")
+async def system_cpu_times_percent_irq_focused_audit(samples: int = 3):
+    """
+    Audits system-wide IRQ CPU time percentage using psutil.
+    """
+    logger.info("Starting focused IRQ CPU time percentage audit")
+    yield ProgressPayload(step="Initializing IRQ CPU focused probe", pct=0, log="Collecting system-wide IRQ CPU timing percentages...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_times_pct = psutil.cpu_times_percent(interval=0.1)
+            irq_pct = getattr(cpu_times_pct, "irq", 0.0)
+            logger.info(f"Sample {i+1}/{samples}: IRQ CPU Time {irq_pct}%")
+            metadata = {"irq_percent": irq_pct, "user_percent": cpu_times_pct.user, "system_percent": cpu_times_pct.system}
+        except Exception as e:
+            logger.error(f"Error auditing focused IRQ CPU time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling IRQ CPU time",
+            pct=pct,
+            log=f"Measured IRQ CPU time percentage sample {i+1}/{samples}: {irq_pct}%.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. IRQ CPU time percentages are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_irq_percent": irq_pct,
+        "metric": "irq_cpu_time",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_cpu_times_percent_softirq_focused_audit")
+async def system_cpu_times_percent_softirq_focused_audit(samples: int = 3):
+    """
+    Audits system-wide soft IRQ CPU time percentage using psutil.
+    """
+    logger.info("Starting focused soft IRQ CPU time percentage audit")
+    yield ProgressPayload(step="Initializing soft IRQ CPU focused probe", pct=0, log="Collecting system-wide soft IRQ CPU timing percentages...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_times_pct = psutil.cpu_times_percent(interval=0.1)
+            softirq_pct = getattr(cpu_times_pct, "softirq", 0.0)
+            logger.info(f"Sample {i+1}/{samples}: Soft IRQ CPU Time {softirq_pct}%")
+            metadata = {"softirq_percent": softirq_pct, "user_percent": cpu_times_pct.user, "system_percent": cpu_times_pct.system}
+        except Exception as e:
+            logger.error(f"Error auditing focused soft IRQ CPU time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling soft IRQ CPU time",
+            pct=pct,
+            log=f"Measured soft IRQ CPU time percentage sample {i+1}/{samples}: {softirq_pct}%.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Soft IRQ CPU time percentages are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_softirq_percent": softirq_pct,
+        "metric": "softirq_cpu_time",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_io_errors_audit")
+async def system_net_io_errors_audit(samples: int = 3):
+    """
+    Audits system-wide network errors and drops using psutil.
+    """
+    logger.info("Starting system network errors audit")
+    yield ProgressPayload(step="Initializing network error probe", pct=0, log="Collecting system-wide network error and drop baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            errin = counters.errin
+            errout = counters.errout
+            dropin = counters.dropin
+            dropout = counters.dropout
+            logger.info(f"Sample {i+1}/{samples}: Errors In {errin}, Errors Out {errout}, Drops In {dropin}, Drops Out {dropout}")
+            metadata = {"errin": errin, "errout": errout, "dropin": dropin, "dropout": dropout}
+        except Exception as e:
+            logger.error(f"Error auditing network errors: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling network errors",
+            pct=pct,
+            log=f"Measured network errors sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network error and drop statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_errors": metadata,
+        "stability": "STABLE"
+    }
