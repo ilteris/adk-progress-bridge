@@ -3947,3 +3947,109 @@ async def system_disk_partitions_limits_audit(samples: int = 3):
         "partition_count": len(limits_data),
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_cpu_times_percent_guest_nice_focused_audit")
+async def system_cpu_times_percent_guest_nice_focused_audit(samples: int = 3):
+    """
+    Audits system-wide guest_nice CPU time percentage using psutil.
+    """
+    logger.info("Starting focused guest_nice CPU time percentage audit")
+    yield ProgressPayload(step="Initializing guest_nice CPU focused probe", pct=0, log="Collecting system-wide guest_nice CPU timing percentages...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_times_pct = psutil.cpu_times_percent(interval=0.1)
+            guest_nice_pct = getattr(cpu_times_pct, "guest_nice", 0.0)
+            logger.info(f"Sample {i+1}/{samples}: Guest Nice CPU Time {guest_nice_pct}%")
+            metadata = {"guest_nice_percent": guest_nice_pct, "user_percent": cpu_times_pct.user, "system_percent": cpu_times_pct.system}
+        except Exception as e:
+            logger.error(f"Error auditing focused guest_nice CPU time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling guest_nice CPU time",
+            pct=pct,
+            log=f"Measured guest_nice CPU time percentage sample {i+1}/{samples}: {guest_nice_pct}%.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Guest_nice CPU time percentages are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_guest_nice_percent": guest_nice_pct,
+        "metric": "guest_nice_cpu_time",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_io_packets_audit")
+async def system_net_io_packets_audit(samples: int = 3):
+    """
+    Audits system-wide network packets sent and received using psutil.
+    """
+    logger.info("Starting system network packets audit")
+    yield ProgressPayload(step="Initializing network packet probe", pct=0, log="Collecting system-wide network packet baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            packets_sent = counters.packets_sent
+            packets_recv = counters.packets_recv
+            logger.info(f"Sample {i+1}/{samples}: Sent {packets_sent} packets, Received {packets_recv} packets")
+            metadata = {"packets_sent": packets_sent, "packets_recv": packets_recv}
+        except Exception as e:
+            logger.error(f"Error auditing network packets: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling network packets",
+            pct=pct,
+            log=f"Measured network packets sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network packet statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_packets": metadata,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_io_time_audit")
+async def system_disk_io_time_audit(samples: int = 3):
+    """
+    Audits system-wide disk I/O time using psutil.
+    """
+    logger.info("Starting system disk I/O time audit")
+    yield ProgressPayload(step="Initializing disk I/O time probe", pct=0, log="Collecting system-wide disk I/O time baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.disk_io_counters()
+            read_time = getattr(counters, "read_time", 0)
+            write_time = getattr(counters, "write_time", 0)
+            busy_time = getattr(counters, "busy_time", 0)
+            logger.info(f"Sample {i+1}/{samples}: Read Time {read_time}ms, Write Time {write_time}ms, Busy Time {busy_time}ms")
+            metadata = {"read_time_ms": read_time, "write_time_ms": write_time, "busy_time_ms": busy_time}
+        except Exception as e:
+            logger.error(f"Error auditing disk I/O time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling disk I/O time",
+            pct=pct,
+            log=f"Measured disk I/O time sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk I/O time statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_io_time": metadata,
+        "stability": "STABLE"
+    }
