@@ -2,6 +2,8 @@ import asyncio
 import random
 import psutil
 import time
+import sys
+import os
 from .bridge import progress_tool, ProgressPayload, input_manager
 from .logger import logger
 from .context import call_id_var
@@ -264,11 +266,65 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.1.3", "v587-supreme-apex", "SUPREME APEX VERIFICATION")
+    data = await health_engine.get_health_data(dummy_state, "2.1.5", "v589-supreme-apex", "SUPREME APEX VERIFICATION")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
     yield {
         "status": "healthy",
         "snapshot": data
+    }
+
+@progress_tool(name="network_status_check")
+async def network_status_check():
+    """
+    Simulates checking network connectivity and latency.
+    """
+    logger.info("Starting network status check")
+    yield ProgressPayload(step="Initializing network probe", pct=10, log="Checking interface status...")
+    await asyncio.sleep(0.2)
+    
+    yield ProgressPayload(step="Pinging gateways", pct=40, log="Measuring latency to primary gateway...")
+    # Simulate some latency measurements
+    latencies = [random.uniform(10, 50) for _ in range(3)]
+    avg_latency = sum(latencies) / len(latencies)
+    await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(
+        step="Checking DNS resolution", 
+        pct=70, 
+        log=f"Average gateway latency: {avg_latency:.2f}ms. Testing DNS lookup for google.com...",
+        metadata={"avg_gateway_latency_ms": avg_latency}
+    )
+    await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Network check complete.")
+    yield {
+        "status": "online",
+        "avg_latency_ms": avg_latency,
+        "dns_resolved": True
+    }
+
+@progress_tool(name="system_config_audit")
+async def system_config_audit():
+    """
+    Audits basic system configurations and environment settings.
+    """
+    logger.info("Starting system configuration audit")
+    yield ProgressPayload(step="Checking environment", pct=20, log="Inspecting environment variables and paths...")
+    await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Verifying Python runtime", pct=50, log=f"Python version: {sys.version}")
+    await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Auditing working directory", pct=80, log=f"Current working directory: {os.getcwd()}")
+    await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing audit", pct=100, log="System configuration audit complete.")
+    yield {
+        "status": "audit_complete",
+        "python_version": sys.version,
+        "cwd": os.getcwd(),
+        "platform": sys.platform,
+        "audit_timestamp": time.time()
     }
