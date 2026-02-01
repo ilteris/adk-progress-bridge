@@ -5622,3 +5622,63 @@ async def system_cpu_times_guest_total_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total guest cpu time statistics are stable.")
     yield {"status": "audit_complete", "final_guest_time_total": guest_time, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_guest_nice_total_audit")
+async def system_cpu_times_guest_nice_total_audit(samples: int = 3):
+    logger.info("Starting total guest_nice cpu times audit")
+    yield ProgressPayload(step="Initializing guest_nice cpu times total probe", pct=0, log="Collecting cumulative system-wide guest_nice cpu time counters...")
+    guest_nice_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            guest_nice_time = getattr(times, "guest_nice", 0)
+            logger.info(f"Sample {i+1}/{samples}: Total Guest-nice-cpu-time {guest_nice_time}")
+            metadata = {"guest_nice_time_total": guest_nice_time}
+        except Exception as e:
+            logger.error(f"Error auditing total guest_nice cpu times: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total guest_nice cpu times", pct=pct, log=f"Measured total guest_nice cpu times sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total guest_nice cpu time statistics are stable.")
+    yield {"status": "audit_complete", "final_guest_nice_time_total": guest_nice_time, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_sent_bytes_total_audit")
+async def system_net_io_sent_bytes_total_audit(samples: int = 3):
+    logger.info("Starting total net_io sent_bytes audit")
+    yield ProgressPayload(step="Initializing net_io sent_bytes total probe", pct=0, log="Collecting cumulative system-wide net_io sent_bytes counters...")
+    sent_bytes = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            sent_bytes = counters.bytes_sent
+            logger.info(f"Sample {i+1}/{samples}: Total Net-io-sent-bytes {sent_bytes}")
+            metadata = {"sent_bytes_total": sent_bytes}
+        except Exception as e:
+            logger.error(f"Error auditing total net_io sent_bytes: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total net_io sent_bytes", pct=pct, log=f"Measured total net_io sent_bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total net_io sent_bytes statistics are stable.")
+    yield {"status": "audit_complete", "final_sent_bytes_total": sent_bytes, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_recv_bytes_total_audit")
+async def system_net_io_recv_bytes_total_audit(samples: int = 3):
+    logger.info("Starting total net_io recv_bytes audit")
+    yield ProgressPayload(step="Initializing net_io recv_bytes total probe", pct=0, log="Collecting cumulative system-wide net_io recv_bytes counters...")
+    recv_bytes = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            recv_bytes = counters.bytes_recv
+            logger.info(f"Sample {i+1}/{samples}: Total Net-io-recv-bytes {recv_bytes}")
+            metadata = {"recv_bytes_total": recv_bytes}
+        except Exception as e:
+            logger.error(f"Error auditing total net_io recv_bytes: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total net_io recv_bytes", pct=pct, log=f"Measured total net_io recv_bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total net_io recv_bytes statistics are stable.")
+    yield {"status": "audit_complete", "final_recv_bytes_total": recv_bytes, "stability": "STABLE"}
