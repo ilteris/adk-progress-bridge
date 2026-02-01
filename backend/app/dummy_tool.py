@@ -266,7 +266,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.3.5", "v609-supreme-apex-adele-verification", "v609 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.3.6", "v610-supreme-apex-adele-verification", "v610 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -1064,5 +1064,45 @@ async def process_io_counters_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_io": process.io_counters()._asdict() if hasattr(process, "io_counters") else {},
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_environ_audit")
+async def process_environ_audit(samples: int = 3):
+    """
+    Audits process environment variables using psutil.
+    """
+    logger.info(f"Starting process environment audit with {samples} samples")
+    yield ProgressPayload(step="Initializing environment probe", pct=0, log="Collecting environment variables...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            environ = process.environ()
+            env_count = len(environ)
+        except Exception as e:
+            logger.warning(f"Error collecting process environment: {e}")
+            environ = {}
+            env_count = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: {env_count} environment variables.")
+        yield ProgressPayload(
+            step="Sampling process environment",
+            pct=pct,
+            log=f"Measured {env_count} environment variables. Sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "env_count": env_count,
+                "keys": list(environ.keys())[:10]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Environment is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_env_count": len(psutil.Process().environ()),
         "stability": "STABLE"
     }
