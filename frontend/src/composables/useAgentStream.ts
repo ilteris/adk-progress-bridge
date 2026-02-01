@@ -53,6 +53,13 @@ const WS_RECONNECT_MAX_DELAY = 30000
 const WS_BUFFER_SIZE = 1000
 
 /**
+ * Utility to generate a random request ID for command correlation.
+ */
+function generateRequestId(): string {
+  return Math.random().toString(36).substring(2, 11)
+}
+
+/**
  * Shared WebSocket Manager to support multiple concurrent tasks over a single connection.
  * Enhanced with automatic reconnection and heartbeat support.
  */
@@ -279,7 +286,7 @@ export class WebSocketManager {
 
   private async sendWithCorrelation(data: any, timeoutMs: number = WS_REQUEST_TIMEOUT): Promise<any> {
       await this.connect()
-      const requestId = Math.random().toString(36).substring(2, 11)
+      const requestId = generateRequestId()
       data.request_id = requestId
 
       return new Promise((resolve, reject) => {
@@ -424,7 +431,7 @@ export function useAgentStream() {
         }
       }
 
-      eventSource.onerror = (err) => {
+      eventSource.onerror = () => {
         if (eventSource?.readyState === EventSource.CONNECTING) {
           state.status = 'reconnecting'
           state.isConnected = false
@@ -463,7 +470,7 @@ export function useAgentStream() {
 
   const stopTool = async () => {
     if (state.useWS && state.callId && state.isStreaming) {
-      const requestId = Math.random().toString(36).substring(2, 11)
+      const requestId = generateRequestId()
       const sent = wsManager.send({
         type: 'stop',
         call_id: state.callId,
@@ -488,7 +495,7 @@ export function useAgentStream() {
           method: 'POST',
           headers
         })
-      } catch (err) {}
+      } catch {}
       
       if (eventSource) {
         eventSource.close()
@@ -506,7 +513,7 @@ export function useAgentStream() {
   const sendInput = async (value: string) => {
     if (state.callId && state.status === 'waiting_for_input') {
         if (state.useWS) {
-            const requestId = Math.random().toString(36).substring(2, 11)
+            const requestId = generateRequestId()
             const sent = wsManager.send({
                 type: 'input',
                 call_id: state.callId,
@@ -532,7 +539,7 @@ export function useAgentStream() {
                         value: value
                     })
                 })
-            } catch (err) {}
+            } catch {}
         }
         state.status = 'connected'
         state.inputPrompt = null
