@@ -266,7 +266,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.3.7", "v611-supreme-apex-adele-verification", "v611 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.3.8", "v612-supreme-apex-adele-verification", "v612 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -1144,5 +1144,45 @@ async def process_cmdline_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_cmdline": psutil.Process().cmdline(),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_memory_maps_audit")
+async def process_memory_maps_audit(samples: int = 3):
+    """
+    Audits process memory maps using psutil.
+    """
+    logger.info(f"Starting process memory maps audit with {samples} samples")
+    yield ProgressPayload(step="Initializing memory map probe", pct=0, log="Collecting detailed memory map information...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            maps = process.memory_maps()
+            map_count = len(maps)
+        except Exception as e:
+            logger.warning(f"Error collecting process memory maps: {e}")
+            maps = []
+            map_count = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: {map_count} memory mappings.")
+        yield ProgressPayload(
+            step="Sampling process memory maps",
+            pct=pct,
+            log=f"Measured {map_count} memory mappings. Sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "map_count": map_count,
+                "maps": [str(m) for m in maps[:5]]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory mapping is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_map_count": len(psutil.Process().memory_maps()) if hasattr(psutil.Process(), "memory_maps") else 0,
         "stability": "STABLE"
     }

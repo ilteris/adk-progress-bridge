@@ -1,110 +1,92 @@
-# Specification: ADK Progress Bridge v2.3.7
+# Specification: ADK Progress Bridge v2.3.8
 
-## 1. System Overview
-The system consists of a Python backend (FastAPI) acting as the ADK Agent host and a Vue.js frontend client. They communicate via **Server-Sent Events (SSE)** or **WebSockets** for real-time progress updates.
+## Overview
+The ADK Progress Bridge is a high-performance middleware designed to connect background tools/tasks with a real-time terminal user interface (TUI). It provides a standardized protocol for reporting progress, logs, and results via Server-Sent Events (SSE) and WebSockets.
 
-## 2. Backend Specification (Python)
+## 1. Architectural Components
 
-### 2.1 Core Components (`backend/app/`)
+### 1.1 Backend (FastAPI)
+- **Tool Registry**: Manages registered tools and their metadata.
+- **Task Manager**: Orchestrates task execution, input management, and lifecycle.
+- **WebSocket Manager**: Handles bi-directional communication, heartbeats, and correlation.
+- **Health Engine**: Provides deep system metrics and audit data.
+- **Structured Logging**: JSON-based logging with context tracking (call_id, tool_name).
 
-#### `ProgressEvent` (Pydantic Model)
-A structured container for event data.
-*   `call_id`: UUID string.
-*   `type`: Literal ["progress", "result", "error", "input_request", "task_started", "system_metrics", "connected"].
-*   `payload`: Any event-specific data.
+### 1.2 Frontend (Vue 3 / Pinia)
+- **WebSocket Manager**: Manages connection lifecycle with exponential backoff.
+- **useAgentStream**: Composable for managing task state and streaming updates.
+- **Material 3 UI**: Clean, responsive interface for monitoring tasks.
 
-#### `ToolRegistry`
-Manages tool registration and active task sessions.
-*   `register(func)`: Decorator to register a tool.
-*   `store_task(call_id, gen, tool_name)`: Persists an active generator.
-*   `list_tools()`: Returns a list of all registered tool names.
-*   `cleanup_tasks()`: Graceful shutdown handler.
+## 2. Protocol Specification
 
-#### `InputManager`
-Manages bi-directional input for tasks that require user interaction.
-*   `provide_input(call_id, value)`: Signals a waiting generator with user input.
+### 2.1 WebSocket Messages
 
-#### `HealthEngine` (`health.py`)
-Decoupled metrics engine for deep system observability.
-*   `collect_raw_metrics()`: Aggregates 100+ points of data from `psutil` and `resource`.
-*   `get_health_data()`: Maps raw metrics to Prometheus Gauges and returns a structured health report.
+#### Client to Server
+- `ping`: Keep-alive heartbeat.
+- `list_tools`: Request available tools.
+- `list_active_tasks`: Request currently running tasks.
+- `get_health`: Request system health and audit data.
+- `start`: Initialize a new tool execution.
+- `stop`: Terminate a running task.
+- `subscribe`: Connect to an existing task stream.
+- `input`: Provide input for a waiting task.
 
-#### `BroadcastMetricsManager` (`health.py`)
-Centralized singleton for broadcasting real-time health metrics to all active streams.
-*   `start()`: Begins periodic metrics gathering.
-*   `stop()`: Halts gathering.
-*   `subscribe(call_id)`: Returns an asyncio.Queue for receiving metrics.
-*   `unsubscribe(call_id)`: Removes a listener.
+#### Server to Client
+- `connected`: Handshake acknowledgement.
+- `pong`: Heartbeat response.
+- `tools_list`: List of available tools.
+- `active_tasks_list`: List of active tasks.
+- `health_data`: System metrics and audit findings.
+- `task_started`: Confirmation of task initiation.
+- `progress`: Incremental update (step, pct, log).
+- `input_request`: Request for user input.
+- `result`: Final task outcome.
+- `error`: Failure notification.
+- `system_metrics`: Real-time performance data.
 
-### 2.2 API Endpoints (`backend/main.py`)
+## 3. Security & Stability
 
-*   **REST Flow (SSE):**
-    *   `GET /tools`: Returns a list of all registered tool names.
-    *   `POST /start_task/{tool_name}`: Initiates a task, returns `call_id`.
-    *   `GET /stream/{call_id}`: SSE endpoint for progress streaming.
-    *   `POST /stop_task/{call_id}`: Manual termination.
-    *   `POST /provide_input`: REST fallback for providing input for SSE tasks.
-    *   `GET /version`: Returns system version, status, `build_timestamp`, and `last_updated_str`.
-*   **WebSocket Flow:**
-    *   `WS /ws`: Bi-directional connection for task control and streaming.
-    *   Message `{"type": "list_tools", "request_id": "..."}` requests all tool names.
-        *   Response: `{"type": "tools_list", "tools": [...], "request_id": "..."}`
-    *   Message `{"type": "list_active_tasks", "request_id": "..."}` requests all active tasks.
-        *   Response: `{"type": "active_tasks_list", "tasks": [...], "request_id": "..."}`
-    *   Message `{"type": "start", "tool_name": "...", "args": {...}, "request_id": "..."}` starts a task.
-        *   Response: `{"type": "task_started", "call_id": "...", "tool_name": "...", "request_id": "..."}`
-    *   Message `{"type": "stop", "call_id": "...", "request_id": "..."}` stops a task.
-        *   Response: `{"type": "stop_success", "call_id": "...", "request_id": "..."}`
-    *   Message `{"type": "input", "call_id": "...", "value": "...", "request_id": "..."}` provides interactive input.
-        *   Response: `{"type": "input_success", "call_id": "...", "request_id": "..."}`
-    *   Message `{"type": "ping"}` requests a heartbeat check.
-        *   Response: `{"type": "pong"}`
-    *   Message `{"type": "get_health"}` requests the latest system health data (includes `build_timestamp` and `last_updated_str`).
-        *   Response: `{"type": "health_data", "data": {...}}`
-    *   Message `{"type": "subscribe", "call_id": "..."}` attempts to subscribe to an existing task.
-        *   Error detail includes `call_id` if task is not found.
-    *   **Handshake Acknowledgement:** Immediately upon connection, the server sends `{"type": "connected", "status": "ready"}` to confirm the bi-directional stream is operational.
+### 3.1 Authentication
+- API Key based authentication for both REST and WebSocket endpoints.
+- WebSocket handshake verification via query parameters.
 
-## 3. Frontend Specification (Vue.js)
+### 3.2 Robustness
+- **Thread-Safe Writes**: Mutex-protected WebSocket message sending.
+- **Error Correlation**: `request_id` tracking across asynchronous boundaries.
+- **Reconnection**: Frontend automatically reconnects with backoff.
+- **Input Validation**: Strict Pydantic models for API requests.
 
-### 3.1 Composable: `useAgentStream.ts`
-Reactive state manager for the bridge.
+## 4. Auditing & Monitoring
 
-**State:**
-```typescript
-interface AgentState {
-  status: ConnectionStatus; // idle, connecting, connected, error, waiting_for_input, etc.
-  isConnected: boolean;
-  callId: string | null;
-  currentStep: string;
-  progressPct: number;
-  logs: string[];
-  result: any | null;
-  error: string | null;
-  isStreaming: boolean;
-  useWS: boolean; // Toggle between SSE and WS
-  inputPrompt: string | null; // Prompt text when waiting for input
-  tools: string[]; // List of available tools fetched from backend
-  systemMetrics: any | null; // Real-time system health metrics
-}
-```
+### 4.1 Audit Tools
+- `resource_monitor`: CPU, Memory, Threads, FDs.
+- `deep_health_check`: Comprehensive system snapshot.
+- `network_status_check`: Latency and DNS resolution.
+- `system_config_audit`: Environment and runtime config.
+- `connectivity_benchmark`: Latency sampling and quality scoring.
+- `concurrency_stress_test`: Event loop latency under load.
+- `garbage_collection_audit`: Memory management stats.
+- `asyncio_task_audit`: Active task tracking.
+- `disk_io_audit`: I/O throughput monitoring.
+- `context_switch_audit`: Scheduler efficiency.
+- `memory_leak_audit`: RSS growth tracking.
+- `network_connections_audit`: Socket lifecycle monitoring.
+- `open_files_audit`: File handle tracking.
+- `cpu_usage_audit`: Per-core utilization.
+- `load_average_audit`: System load tracking.
+- `process_uptime_audit`: Reliability monitoring.
+- `virtual_memory_audit`: System memory stats.
+- `disk_usage_audit`: Storage monitoring.
+- `swap_memory_audit`: Page file usage.
+- `process_priority_audit`: Nice value and scheduling.
+- `process_memory_full_audit`: USS/PSS monitoring.
+- `process_io_counters_audit`: Process-level I/O.
+- `process_environ_audit`: Environment variable tracking.
+- `process_cmdline_audit`: Command line argument tracking.
+- `process_memory_maps_audit`: Memory mapping tracking.
 
-## 4. Real-time System Observability
-The bridge provides deep visibility into the host system performance:
-1. **Health Engine:** A dedicated subsystem in `health.py` extracts 100+ metrics (CPU, Kernel, Throughput) with sub-second precision.
-2. **Metrics Injection:** Real-time metrics are injected into progress streams every 3 seconds via a centralized singleton broadcaster.
-3. **Fidelity:** Full alignment with Pydantic v2 for high-performance serialization.
-
-## 5. Security & Robustness
-*   **API Key Auth:** Mandatory for all endpoints (SSE, WS, REST).
-*   **Heartbeats:** Bi-directional ping/pong every 60s.
-*   **Message Limits:** 1MB ceiling on incoming WS frames.
-*   **Reconnection:** Exponential backoff implemented on the frontend.
-*   **Thread Safety:** `asyncio.Lock` ensures frame integrity during concurrent streaming.
-*   **Backpressure:** SSE streams use a bounded `combined_queue` (size 1000) to ensure tool generators respect client consumption rates.
-
-## 6. Versioning & Identity
-- **APP_VERSION**: 2.3.7
-- **GIT_COMMIT**: v611-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: v611 SUPREME APEX VERIFICATION ADELE
+## 5. Metadata
+- **APP_VERSION**: 2.3.8
 - **BUILD_TIMESTAMP**: 2026-02-01T16:00:00Z
+- **GIT_COMMIT**: v612-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: v612 SUPREME APEX VERIFICATION ADELE
