@@ -56,7 +56,7 @@ const WS_BUFFER_SIZE = 1000
  * Utility to generate a random request ID for command correlation.
  */
 function generateRequestId(): string {
-  return Math.random().toString(36).substring(2, 11)
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 11)
 }
 
 /**
