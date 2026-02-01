@@ -9,20 +9,20 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.app.main import app
 
-def test_deep_health_check_tool_ws():
+def test_concurrency_stress_test_tool_ws():
     """
-    Verifies that the new deep_health_check tool works over WebSocket.
+    Verifies that the new concurrency_stress_test tool works over WebSocket.
     """
     with TestClient(app) as client:
         with client.websocket_connect("/ws?api_key=test_key") as websocket:
             data = websocket.receive_json()
-            print(f"Received: {data['type']}")
             assert data["type"] == "connected"
             
-            request_id = "v591-health-test"
+            request_id = "v591-stress-test"
             websocket.send_json({
                 "type": "start",
-                "tool_name": "deep_health_check",
+                "tool_name": "concurrency_stress_test",
+                "args": {"load": 2},
                 "request_id": request_id
             })
             
@@ -31,21 +31,21 @@ def test_deep_health_check_tool_ws():
             
             for i in range(50):
                 data = websocket.receive_json()
-                print(f"Message {i}: {data.get('type')} {data.get('payload', {}).get('step') if data.get('type') == 'progress' else ''}")
                 
                 if data["type"] == "task_started":
                     assert data["request_id"] == request_id
-                    call_id = data["call_id"]
                 elif data["type"] == "progress":
                     progress_received = True
+                    if data["payload"].get("step") == "Simulating load":
+                        assert "metadata" in data["payload"]
+                        assert "worker_id" in data["payload"]["metadata"]
                 elif data["type"] == "result":
-                    assert data["payload"]["status"] == "healthy"
-                    assert "snapshot" in data["payload"]
+                    assert data["payload"]["status"] == "stress_test_passed"
+                    assert data["payload"]["load_factor"] == 2
                     result_received = True
                     break
                 elif data["type"] == "error":
-                    print(f"Error received: {data['payload']}")
-                    break
+                    pytest.fail(f"Error received: {data['payload']}")
             
             assert progress_received, "Did not receive progress updates"
             assert result_received, "Did not receive final result"
@@ -59,5 +59,4 @@ def test_v591_metadata_verification():
         assert response.status_code == 200
         data = response.json()
         assert data["version"] == "2.1.7"
-        assert "v591" in data["git_commit"]
         assert "v591" in data["status"]

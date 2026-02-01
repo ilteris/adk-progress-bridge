@@ -18,7 +18,7 @@ def test_connectivity_benchmark_tool_ws():
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v590-benchmark-test"
+            request_id = "v591-benchmark-test"
             websocket.send_json({
                 "type": "start",
                 "tool_name": "connectivity_benchmark",
@@ -52,13 +52,13 @@ def test_connectivity_benchmark_tool_ws():
             assert progress_received, "Did not receive progress updates"
             assert result_received, "Did not receive final result"
 
-def test_v590_metadata_verification():
+def test_v591_metadata_verification():
     """
-    Verifies that the version and metadata are correctly updated for v590.
+    Verifies that the version and metadata are correctly updated for v591.
     """
     with TestClient(app) as client:
         response = client.get("/version")
         assert response.status_code == 200
         data = response.json()
-        assert data["version"] == "2.1.6"
-        assert "v590" in data["status"]
+        assert data["version"] == "2.1.7"
+        assert "v591" in data["status"]
