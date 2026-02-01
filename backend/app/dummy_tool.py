@@ -1,5 +1,6 @@
 import asyncio
 import random
+import psutil
 from .bridge import progress_tool, ProgressPayload, input_manager
 from .logger import logger
 from .context import call_id_var
@@ -201,3 +202,39 @@ async def large_payload_tool(**kwargs):
     """
     yield ProgressPayload(step="Received large payload", pct=100, log=f"Args keys: {list(kwargs.keys())}")
     yield {"status": "success", "received_keys": len(kwargs)}
+
+@progress_tool(name="resource_monitor")
+async def resource_monitor(iterations: int = 5):
+    """
+    Monitors process resources using psutil.
+    """
+    process = psutil.Process()
+    for i in range(iterations):
+        pct = int(((i + 1) / iterations) * 100)
+        mem = process.memory_info()
+        cpu = process.cpu_percent(interval=0.1)
+        fds = process.num_fds() if hasattr(process, "num_fds") else 0
+        threads = process.num_threads()
+        
+        logger.info(f"Resource Monitor - Iteration {i+1}: CPU {cpu}%, MEM {mem.rss / 1024 / 1024:.2f}MB")
+        
+        yield ProgressPayload(
+            step="Monitoring resources",
+            pct=pct,
+            log=f"Iteration {i+1}/{iterations}: CPU {cpu}%, RSS {mem.rss / 1024 / 1024:.2f}MB, FDs {fds}, Threads {threads}",
+            metadata={
+                "cpu_percent": cpu,
+                "memory_rss_bytes": mem.rss,
+                "num_fds": fds,
+                "num_threads": threads
+            }
+        )
+        await asyncio.sleep(0.5)
+
+    yield {
+        "status": "complete",
+        "final_stats": {
+            "rss": process.memory_info().rss,
+            "cpu": process.cpu_percent(interval=None)
+        }
+    }

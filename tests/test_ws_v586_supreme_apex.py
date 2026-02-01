@@ -17,8 +17,6 @@ def test_v586_metadata():
 async def test_v586_ws_health_metrics():
     # Verify that get_health via WS returns the correct metadata
     from backend.app.auth import BRIDGE_API_KEY
-    
-    # Use BRIDGE_API_KEY if it's set, otherwise use "test-key" or similar if the app defaults to something
     api_key = BRIDGE_API_KEY or "test-key"
     
     with TestClient(app).websocket_connect(f"/ws?api_key={api_key}") as websocket:
@@ -33,6 +31,40 @@ async def test_v586_ws_health_metrics():
         assert resp["request_id"] == "v586-test"
         assert resp["data"]["version"] == "2.1.2"
         assert resp["data"]["operational_apex"] == "v586 SUPREME APEX VERIFICATION ADELE"
+
+@pytest.mark.asyncio
+async def test_v586_resource_monitor_tool():
+    from backend.app.auth import BRIDGE_API_KEY
+    api_key = BRIDGE_API_KEY or "test-key"
+    
+    with TestClient(app).websocket_connect(f"/ws?api_key={api_key}") as websocket:
+        # Handshake
+        websocket.receive_json()
+        
+        # Start resource_monitor
+        websocket.send_json({
+            "type": "start", 
+            "tool_name": "resource_monitor", 
+            "args": {"iterations": 2},
+            "request_id": "v586-resource-test"
+        })
+        
+        # task_started
+        resp = websocket.receive_json()
+        assert resp["type"] == "task_started"
+        call_id = resp["call_id"]
+        
+        # Receive progress updates
+        for _ in range(2):
+            resp = websocket.receive_json()
+            assert resp["type"] == "progress"
+            assert resp["call_id"] == call_id
+            assert "cpu_percent" in resp["payload"]["metadata"]
+            
+        # Receive result
+        resp = websocket.receive_json()
+        assert resp["type"] == "result"
+        assert resp["payload"]["status"] == "complete"
 
 def test_v586_health_endpoint():
     client = TestClient(app)
