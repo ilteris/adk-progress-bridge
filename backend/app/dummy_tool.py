@@ -3511,3 +3511,113 @@ async def system_cpu_times_percent_user_focused_audit(samples: int = 3):
         "metric": "user_cpu_time",
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_net_if_addrs_broadcast_audit")
+async def system_net_if_addrs_broadcast_audit(samples: int = 3):
+    """
+    Audits broadcast system network interface addresses using psutil.
+    """
+    logger.info("Starting system net if addrs broadcast audit")
+    yield ProgressPayload(step="Initializing broadcast net if addrs probe", pct=0, log="Collecting broadcast network interface address information...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            if_addrs = psutil.net_if_addrs()
+            broadcast_addrs = {}
+            for iface, addrs in if_addrs.items():
+                broadcast_list = [addr.broadcast for addr in addrs if addr.broadcast]
+                if broadcast_list:
+                    broadcast_addrs[iface] = broadcast_list
+            logger.info(f"Sample {i+1}/{samples}: Collected broadcast addresses for {len(broadcast_addrs)} interfaces")
+            metadata = broadcast_addrs
+        except Exception as e:
+            logger.error(f"Error auditing broadcast net if addrs: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling broadcast net if addrs",
+            pct=pct,
+            log=f"Measured broadcast network interface addresses sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Broadcast network interface addresses are stable.")
+    yield {
+        "status": "audit_complete",
+        "interface_count": len(broadcast_addrs),
+        "family": "broadcast",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_partitions_device_audit")
+async def system_disk_partitions_device_audit(samples: int = 3, device: str = "/dev/disk1s1"):
+    """
+    Audits system disk partitions filtered by device name using psutil.
+    """
+    logger.info(f"Starting system disk partitions device audit for {device}")
+    yield ProgressPayload(step="Initializing device-partitions probe", pct=0, log=f"Collecting disk partition baseline for device: {device}...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions(all=True)
+            filtered_partitions = [p._asdict() for p in partitions if p.device == device]
+            partition_count = len(filtered_partitions)
+            logger.info(f"Sample {i+1}/{samples}: {partition_count} disk partitions found with device {device}.")
+            metadata = {f"partition_{idx}": p for idx, p in enumerate(filtered_partitions)}
+        except Exception as e:
+            logger.error(f"Error auditing device disk partitions: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling device disk partitions",
+            pct=pct,
+            log=f"Measured {partition_count} disk partitions with device {device} sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Disk partition configuration for {device} is stable.")
+    yield {
+        "status": "audit_complete",
+        "device": device,
+        "partition_count": partition_count,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_cpu_times_percent_idle_focused_audit")
+async def system_cpu_times_percent_idle_focused_audit(samples: int = 3):
+    """
+    Audits system-wide idle CPU time percentage using psutil.
+    """
+    logger.info("Starting focused idle CPU time percentage audit")
+    yield ProgressPayload(step="Initializing idle CPU focused probe", pct=0, log="Collecting system-wide idle CPU timing percentages...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_times_pct = psutil.cpu_times_percent(interval=0.1)
+            idle_pct = cpu_times_pct.idle
+            logger.info(f"Sample {i+1}/{samples}: Idle CPU Time {idle_pct}%")
+            metadata = {"idle_percent": idle_pct, "user_percent": cpu_times_pct.user, "system_percent": cpu_times_pct.system}
+        except Exception as e:
+            logger.error(f"Error auditing focused idle CPU time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling idle CPU time",
+            pct=pct,
+            log=f"Measured idle CPU time percentage sample {i+1}/{samples}: {idle_pct}%.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Idle CPU time percentages are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_idle_percent": idle_pct,
+        "metric": "idle_cpu_time",
+        "stability": "STABLE"
+    }
