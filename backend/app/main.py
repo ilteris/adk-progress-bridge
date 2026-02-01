@@ -34,11 +34,11 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.1.0"
+APP_VERSION = "2.1.1"
 APP_START_TIME = time.time()
-BUILD_TIMESTAMP = "2026-02-01T22:00:00Z"
-GIT_COMMIT = "v583-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v584 SUPREME APEX VERIFICATION ADELE"
+BUILD_TIMESTAMP = "2026-02-01T23:00:00Z"
+GIT_COMMIT = "v585-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v585 SUPREME APEX VERIFICATION ADELE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT, "build_timestamp": BUILD_TIMESTAMP})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -102,7 +102,6 @@ async def stream_task(call_id: Optional[str] = None, cid: Optional[str] = Query(
     if not task_data_check: raise HTTPException(status_code=404, detail="Task not found")
 
     async def event_generator():
-        # ULTIMATE LEAK PROTECTION
         try:
             task_data = await registry.get_task(actual_call_id)
             if not task_data: return
@@ -124,7 +123,6 @@ async def stream_task(call_id: Optional[str] = None, cid: Optional[str] = Query(
             
             gen_task, metrics_task = asyncio.create_task(pull_gen()), asyncio.create_task(pull_metrics())
             try:
-                # SSE connection acknowledgement (ignore failures if client disconnected immediately)
                 try: yield await format_sse(ProgressEvent(call_id=actual_call_id, type="connected", payload={"status": "ready"}))
                 except: pass
                 
@@ -217,7 +215,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     await websocket.send_text(json_str)
                 except Exception as e: logger.error(f"Error sending WS message: {e}"); raise
         
-        # Explicit handshake acknowledgement (ignore failures if client disconnected immediately)
         try: await safe_send_json({"type": "connected", "status": "ready"})
         except: pass
         
