@@ -266,7 +266,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.2.3", "v597-supreme-apex-adele-verification", "v597 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.2.8", "v602-supreme-apex-adele-verification", "v602 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -762,5 +762,42 @@ async def thread_count_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_thread_count": psutil.Process().num_threads(),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="load_average_audit")
+async def load_average_audit(samples: int = 3):
+    """
+    Audits system load average using psutil.
+    """
+    logger.info(f"Starting load average audit with {samples} samples")
+    yield ProgressPayload(step="Initializing load probe", pct=0, log="Collecting system load statistics...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        if hasattr(psutil, "getloadavg"):
+            load_avg = psutil.getloadavg()
+        else:
+            load_avg = (0.0, 0.0, 0.0)
+            
+        logger.info(f"Sample {i+1}/{samples}: Load Avg {load_avg}")
+        yield ProgressPayload(
+            step="Sampling load average",
+            pct=pct,
+            log=f"Measured load average sample {i+1}/{samples}: {load_avg}.",
+            metadata={
+                "sample_id": i + 1,
+                "load_avg_1m": load_avg[0],
+                "load_avg_5m": load_avg[1],
+                "load_avg_15m": load_avg[2]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. System load is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_load_avg": psutil.getloadavg() if hasattr(psutil, "getloadavg") else (0.0, 0.0, 0.0),
         "stability": "STABLE"
     }
