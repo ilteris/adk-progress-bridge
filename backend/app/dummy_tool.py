@@ -945,3 +945,41 @@ async def swap_memory_audit(samples: int = 3):
         "final_percent": psutil.swap_memory().percent,
         "stability": "STABLE"
     }
+
+@progress_tool(name="process_priority_audit")
+async def process_priority_audit(samples: int = 3):
+    """
+    Audits process priority and scheduling class.
+    """
+    logger.info(f"Starting process priority audit with {samples} samples")
+    yield ProgressPayload(step="Initializing priority probe", pct=0, log="Checking process nice value and scheduling...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        nice = process.nice()
+        try:
+            ionice = process.ionice() if hasattr(process, "ionice") else "N/A"
+        except Exception:
+            ionice = "N/A"
+        
+        logger.info(f"Sample {i+1}/{samples}: Nice {nice}, IONice {ionice}")
+        yield ProgressPayload(
+            step="Sampling process priority",
+            pct=pct,
+            log=f"Measured process priority sample {i+1}/{samples}: Nice {nice}.",
+            metadata={
+                "sample_id": i + 1,
+                "nice": nice,
+                "ionice": str(ionice)
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Process priority is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_nice": psutil.Process().nice(),
+        "stability": "STABLE"
+    }

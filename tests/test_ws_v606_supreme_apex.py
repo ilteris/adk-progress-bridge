@@ -48,6 +48,6 @@ def test_v606_metadata():
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.3.2"
-    assert data["git_commit"] == "v606-supreme-apex-adele-verification"
-    assert "v606 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.3.3"
+    assert data["git_commit"] == "v607-supreme-apex-adele-verification"
+    assert "v607 SUPREME APEX" in data["status"]

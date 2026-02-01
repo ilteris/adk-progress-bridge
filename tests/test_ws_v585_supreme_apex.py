@@ -9,9 +9,9 @@ def test_v606_metadata():
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.3.2"
-    assert data["status"] == "v606 SUPREME APEX VERIFICATION ADELE"
-    assert data["git_commit"] == "v606-supreme-apex-adele-verification"
+    assert data["version"] == "2.3.3"
+    assert data["status"] == "v607 SUPREME APEX VERIFICATION ADELE"
+    assert data["git_commit"] == "v607-supreme-apex-adele-verification"
 
 @pytest.mark.asyncio
 async def test_v606_ws_health_metrics():
@@ -31,14 +31,14 @@ async def test_v606_ws_health_metrics():
         resp = websocket.receive_json()
         assert resp["type"] == "health_data"
         assert resp["request_id"] == "v606-test"
-        assert resp["data"]["version"] == "2.3.2"
-        assert resp["data"]["operational_apex"] == "v606 SUPREME APEX VERIFICATION ADELE"
+        assert resp["data"]["version"] == "2.3.3"
+        assert resp["data"]["operational_apex"] == "v607 SUPREME APEX VERIFICATION ADELE"
 
 def test_v606_health_endpoint():
     client = TestClient(app)
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.3.2"
+    assert data["version"] == "2.3.3"
     assert "last_updated_str" in data
     assert "build_timestamp" in data

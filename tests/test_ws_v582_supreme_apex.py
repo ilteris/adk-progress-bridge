@@ -47,8 +47,8 @@ async def test_ws_v606_supreme_apex_comprehensive():
         assert data["type"] == "health_data"
         assert data["request_id"] == req_id_health
         health = data["data"]
-        assert health["version"] == "2.3.2"
-        assert "v606" in health["operational_apex"]
+        assert health["version"] == "2.3.3"
+        assert "v607" in health["operational_apex"]
         assert "build_timestamp" in health
 
         # 4. Concurrent Task Execution

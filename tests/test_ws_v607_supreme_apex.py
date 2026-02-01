@@ -4,9 +4,9 @@ import asyncio
 from fastapi.testclient import TestClient
 from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
-def test_thread_count_audit_tool_ws():
+def test_process_priority_audit_tool_ws():
     """
-    Verifies that the new thread_count_audit tool works over WebSocket.
+    Verifies that the new process_priority_audit tool works over WebSocket.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
@@ -14,12 +14,12 @@ def test_thread_count_audit_tool_ws():
         resp = websocket.receive_json()
         assert resp["type"] == "connected"
 
-        # 2. Start thread_count_audit
+        # 2. Start process_priority_audit
         websocket.send_text(json.dumps({
             "type": "start",
-            "tool_name": "thread_count_audit",
+            "tool_name": "process_priority_audit",
             "args": {"samples": 2},
-            "request_id": "req-v606"
+            "request_id": "req-v607"
         }))
         
         resp = websocket.receive_json()
@@ -36,13 +36,13 @@ def test_thread_count_audit_tool_ws():
                 progress_events.append(resp)
         
         assert len(progress_events) >= 2
-        assert any("Sampling thread counts" in p["payload"]["step"] for p in progress_events)
+        assert any("Sampling process priority" in p["payload"]["step"] for p in progress_events)
         assert resp["payload"]["status"] == "audit_complete"
-        assert "final_thread_count" in resp["payload"]
+        assert "final_nice" in resp["payload"]
 
-def test_v606_metadata():
+def test_v607_metadata():
     """
-    Verifies that the system reports correct v606 Supreme Apex metadata.
+    Verifies that the system reports correct v607 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
