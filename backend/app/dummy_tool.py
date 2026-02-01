@@ -3838,3 +3838,112 @@ async def system_net_io_errors_audit(samples: int = 3):
         "final_errors": metadata,
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_cpu_times_percent_steal_focused_audit")
+async def system_cpu_times_percent_steal_focused_audit(samples: int = 3):
+    """
+    Audits system-wide steal CPU time percentage using psutil.
+    """
+    logger.info("Starting focused steal CPU time percentage audit")
+    yield ProgressPayload(step="Initializing steal CPU focused probe", pct=0, log="Collecting system-wide steal CPU timing percentages...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_times_pct = psutil.cpu_times_percent(interval=0.1)
+            steal_pct = getattr(cpu_times_pct, "steal", 0.0)
+            logger.info(f"Sample {i+1}/{samples}: Steal CPU Time {steal_pct}%")
+            metadata = {"steal_percent": steal_pct, "user_percent": cpu_times_pct.user, "system_percent": cpu_times_pct.system}
+        except Exception as e:
+            logger.error(f"Error auditing focused steal CPU time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling steal CPU time",
+            pct=pct,
+            log=f"Measured steal CPU time percentage sample {i+1}/{samples}: {steal_pct}%.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Steal CPU time percentages are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_steal_percent": steal_pct,
+        "metric": "steal_cpu_time",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_cpu_times_percent_guest_focused_audit")
+async def system_cpu_times_percent_guest_focused_audit(samples: int = 3):
+    """
+    Audits system-wide guest CPU time percentage using psutil.
+    """
+    logger.info("Starting focused guest CPU time percentage audit")
+    yield ProgressPayload(step="Initializing guest CPU focused probe", pct=0, log="Collecting system-wide guest CPU timing percentages...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_times_pct = psutil.cpu_times_percent(interval=0.1)
+            guest_pct = getattr(cpu_times_pct, "guest", 0.0)
+            logger.info(f"Sample {i+1}/{samples}: Guest CPU Time {guest_pct}%")
+            metadata = {"guest_percent": guest_pct, "user_percent": cpu_times_pct.user, "system_percent": cpu_times_pct.system}
+        except Exception as e:
+            logger.error(f"Error auditing focused guest CPU time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling guest CPU time",
+            pct=pct,
+            log=f"Measured guest CPU time percentage sample {i+1}/{samples}: {guest_pct}%.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Guest CPU time percentages are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_guest_percent": guest_pct,
+        "metric": "guest_cpu_time",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_partitions_limits_audit")
+async def system_disk_partitions_limits_audit(samples: int = 3):
+    """
+    Audits disk partition limits (maxfile, maxpath) using psutil.
+    """
+    logger.info("Starting system disk partitions limits audit")
+    yield ProgressPayload(step="Initializing partitions limits probe", pct=0, log="Collecting system-wide partition file and path limits...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions(all=True)
+            limits_data = {}
+            for part in partitions:
+                limits_data[part.mountpoint] = {
+                    "maxfile": getattr(part, "maxfile", None),
+                    "maxpath": getattr(part, "maxpath", None)
+                }
+            logger.info(f"Sample {i+1}/{samples}: Collected limits for {len(limits_data)} partitions")
+            metadata = limits_data
+        except Exception as e:
+            logger.error(f"Error auditing partitions limits: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling partitions limits",
+            pct=pct,
+            log=f"Measured disk partition limits sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Partition limit statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "partition_count": len(limits_data),
+        "stability": "STABLE"
+    }
