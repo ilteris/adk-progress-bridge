@@ -3621,3 +3621,113 @@ async def system_cpu_times_percent_idle_focused_audit(samples: int = 3):
         "metric": "idle_cpu_time",
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_net_if_addrs_ptp_audit")
+async def system_net_if_addrs_ptp_audit(samples: int = 3):
+    """
+    Audits PTP system network interface addresses using psutil.
+    """
+    logger.info("Starting system net if addrs PTP audit")
+    yield ProgressPayload(step="Initializing PTP net if addrs probe", pct=0, log="Collecting PTP network interface address information...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            if_addrs = psutil.net_if_addrs()
+            ptp_addrs = {}
+            for iface, addrs in if_addrs.items():
+                ptp_list = [addr.ptp for addr in addrs if addr.ptp]
+                if ptp_list:
+                    ptp_addrs[iface] = ptp_list
+            logger.info(f"Sample {i+1}/{samples}: Collected PTP addresses for {len(ptp_addrs)} interfaces")
+            metadata = ptp_addrs
+        except Exception as e:
+            logger.error(f"Error auditing PTP net if addrs: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling PTP net if addrs",
+            pct=pct,
+            log=f"Measured PTP network interface addresses sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. PTP network interface addresses are stable.")
+    yield {
+        "status": "audit_complete",
+        "interface_count": len(ptp_addrs),
+        "family": "PTP",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_partitions_opts_audit")
+async def system_disk_partitions_opts_audit(samples: int = 3, opts: str = "rw"):
+    """
+    Audits system disk partitions filtered by mount options using psutil.
+    """
+    logger.info(f"Starting system disk partitions opts audit for {opts}")
+    yield ProgressPayload(step="Initializing opts-partitions probe", pct=0, log=f"Collecting disk partition baseline for opts: {opts}...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions(all=True)
+            filtered_partitions = [p._asdict() for p in partitions if opts.lower() in p.opts.lower()]
+            partition_count = len(filtered_partitions)
+            logger.info(f"Sample {i+1}/{samples}: {partition_count} disk partitions found with opts {opts}.")
+            metadata = {f"partition_{idx}": p for idx, p in enumerate(filtered_partitions)}
+        except Exception as e:
+            logger.error(f"Error auditing opts disk partitions: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling opts disk partitions",
+            pct=pct,
+            log=f"Measured {partition_count} disk partitions with opts {opts} sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Disk partition configuration for {opts} is stable.")
+    yield {
+        "status": "audit_complete",
+        "opts": opts,
+        "partition_count": partition_count,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_cpu_times_percent_iowait_focused_audit")
+async def system_cpu_times_percent_iowait_focused_audit(samples: int = 3):
+    """
+    Audits system-wide I/O wait CPU time percentage using psutil.
+    """
+    logger.info("Starting focused I/O wait CPU time percentage audit")
+    yield ProgressPayload(step="Initializing I/O wait CPU focused probe", pct=0, log="Collecting system-wide I/O wait CPU timing percentages...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_times_pct = psutil.cpu_times_percent(interval=0.1)
+            iowait_pct = getattr(cpu_times_pct, "iowait", 0.0)
+            logger.info(f"Sample {i+1}/{samples}: I/O Wait CPU Time {iowait_pct}%")
+            metadata = {"iowait_percent": iowait_pct, "user_percent": cpu_times_pct.user, "idle_percent": cpu_times_pct.idle}
+        except Exception as e:
+            logger.error(f"Error auditing focused I/O wait CPU time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling I/O wait CPU time",
+            pct=pct,
+            log=f"Measured I/O wait CPU time percentage sample {i+1}/{samples}: {iowait_pct}%.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. I/O wait CPU time percentages are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_iowait_percent": iowait_pct,
+        "metric": "iowait_cpu_time",
+        "stability": "STABLE"
+    }
