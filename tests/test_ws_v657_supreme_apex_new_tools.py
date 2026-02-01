@@ -7,7 +7,7 @@ import time
 async def test_ws_v657_new_tools():
     """
     SUPREME APEX VERIFICATION v657:
-    Verify the 3 new focused audit tools are present and functional.
+    Verify the 3 new total audit tools are present and functional.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
@@ -23,18 +23,18 @@ async def test_ws_v657_new_tools():
             data = websocket.receive_json()
             if data["type"] == "tools_list":
                 tools = data["tools"]
-                assert "system_net_io_dropout_focused_audit" in tools
-                assert "system_swap_memory_sin_focused_audit" in tools
-                assert "system_swap_memory_sout_focused_audit" in tools
+                assert "system_swap_memory_sin_total_audit" in tools
+                assert "system_swap_memory_sout_total_audit" in tools
+                assert "system_net_io_dropout_total_audit" in tools
                 found_tools = True
                 break
         assert found_tools
 
         # Test one tool via WS
-        req_id = "v657_test_dropout"
+        req_id = "v657_test_sin_total"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_net_io_dropout_focused_audit",
+            "tool_name": "system_swap_memory_sin_total_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -43,9 +43,9 @@ async def test_ws_v657_new_tools():
         found_result = False
         for _ in range(200):
             data = websocket.receive_json()
-            # print(f"Received: {data.get('type')} for {data.get('request_id')}")
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
+                assert "final_sin_total" in data["payload"]
                 found_result = True
                 break
             if data.get("type") == "error" and data.get("request_id") == req_id:
