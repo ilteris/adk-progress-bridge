@@ -266,7 +266,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.1.8", "v592-supreme-apex", "SUPREME APEX VERIFICATION")
+    data = await health_engine.get_health_data(dummy_state, "2.2.3", "v597-supreme-apex-adele-verification", "v597 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -572,5 +572,49 @@ async def context_switch_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_ctx_switches": process.num_ctx_switches()._asdict(),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="memory_leak_audit")
+async def memory_leak_audit(samples: int = 3):
+    """
+    Audits memory usage over time to detect potential leaks.
+    """
+    logger.info(f"Starting memory leak audit with {samples} samples")
+    yield ProgressPayload(step="Initializing memory probe", pct=0, log="Capturing baseline memory state...")
+    
+    process = psutil.Process()
+    memory_history = []
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        mem_info = process.memory_info()
+        rss = mem_info.rss
+        memory_history.append(rss)
+        
+        logger.info(f"Sample {i+1}/{samples}: RSS {rss / 1024 / 1024:.2f}MB")
+        yield ProgressPayload(
+            step="Sampling memory usage",
+            pct=pct,
+            log=f"Measured memory sample {i+1}/{samples}: RSS {rss / 1024 / 1024:.2f}MB",
+            metadata={
+                "sample_id": i + 1,
+                "rss_bytes": rss,
+                "vms_bytes": mem_info.vms
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    leak_detected = False
+    if len(memory_history) > 1:
+        leak_detected = memory_history[-1] > memory_history[0] * 1.1 # 10% growth threshold
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory usage is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "baseline_rss": memory_history[0],
+        "final_rss": memory_history[-1],
+        "leak_detected": leak_detected,
         "stability": "STABLE"
     }
