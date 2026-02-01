@@ -2191,3 +2191,120 @@ async def system_users_audit(samples: int = 3):
         "final_user_count": len(psutil.users()),
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_disk_partitions_audit")
+async def system_disk_partitions_audit(samples: int = 3):
+    """
+    Audits system disk partitions using psutil.
+    """
+    logger.info(f"Starting system disk partitions audit with {samples} samples")
+    yield ProgressPayload(step="Initializing disk partition probe", pct=0, log="Collecting system-wide disk partition baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            partitions = psutil.disk_partitions(all=False)
+            partition_count = len(partitions)
+        except Exception as e:
+            logger.warning(f"Error collecting system disk partitions: {e}")
+            partitions = []
+            partition_count = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: {partition_count} disk partitions found.")
+        yield ProgressPayload(
+            step="Sampling disk partitions",
+            pct=pct,
+            log=f"Measured {partition_count} disk partitions sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "partition_count": partition_count,
+                "partitions": [p._asdict() for p in partitions[:5]]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk partition configuration is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_partition_count": len(psutil.disk_partitions(all=False)),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_if_addrs_audit")
+async def system_net_if_addrs_audit(samples: int = 3):
+    """
+    Audits system network interface addresses using psutil.
+    """
+    logger.info(f"Starting system net if addrs audit with {samples} samples")
+    yield ProgressPayload(step="Initializing net if addrs probe", pct=0, log="Collecting system-wide network interface address baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            if_addrs = psutil.net_if_addrs()
+            if_count = len(if_addrs)
+        except Exception as e:
+            logger.warning(f"Error collecting system net if addrs: {e}")
+            if_addrs = {}
+            if_count = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: {if_count} network interfaces with addresses found.")
+        yield ProgressPayload(
+            step="Sampling net if addrs",
+            pct=pct,
+            log=f"Measured {if_count} network interfaces sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "interface_count": if_count,
+                "interfaces": list(if_addrs.keys())[:5]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface addresses are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_interface_count": len(psutil.net_if_addrs()),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_if_stats_audit")
+async def system_net_if_stats_audit(samples: int = 3):
+    """
+    Audits system network interface stats using psutil.
+    """
+    logger.info(f"Starting system net if stats audit with {samples} samples")
+    yield ProgressPayload(step="Initializing net if stats probe", pct=0, log="Collecting system-wide network interface statistics baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            if_stats = psutil.net_if_stats()
+            if_count = len(if_stats)
+        except Exception as e:
+            logger.warning(f"Error collecting system net if stats: {e}")
+            if_stats = {}
+            if_count = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: {if_count} network interfaces with stats found.")
+        yield ProgressPayload(
+            step="Sampling net if stats",
+            pct=pct,
+            log=f"Measured {if_count} network interfaces sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "interface_count": if_count,
+                "interfaces": list(if_stats.keys())[:5]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_interface_count": len(psutil.net_if_stats()),
+        "stability": "STABLE"
+    }
