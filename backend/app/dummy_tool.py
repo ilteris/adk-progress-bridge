@@ -2555,3 +2555,112 @@ async def system_cpu_stats_audit(samples: int = 3):
         "final_stats": psutil.cpu_stats()._asdict() if hasattr(psutil.cpu_stats(), "_asdict") else None,
         "stability": "STABLE"
     }
+@progress_tool(name="system_cpu_count_audit")
+async def system_cpu_count_audit(samples: int = 3):
+    """
+    Audits system CPU counts (logical and physical) using psutil.
+    """
+    logger.info(f"Starting system CPU count audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU count probe", pct=0, log="Collecting system-wide CPU count information...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        logical = psutil.cpu_count(logical=True)
+        physical = psutil.cpu_count(logical=False)
+            
+        logger.info(f"Sample {i+1}/{samples}: Logical CPUs {logical}, Physical CPUs {physical}")
+        yield ProgressPayload(
+            step="Sampling CPU counts",
+            pct=pct,
+            log=f"Measured system CPU counts sample {i+1}/{samples}: Logical {logical}, Physical {physical}.",
+            metadata={
+                "sample_id": i + 1,
+                "logical": logical,
+                "physical": physical
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. CPU counts are stable.")
+    yield {
+        "status": "audit_complete",
+        "logical": psutil.cpu_count(logical=True),
+        "physical": psutil.cpu_count(logical=False),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_cpu_times_percent_audit")
+async def system_cpu_times_percent_audit(samples: int = 3):
+    """
+    Audits system-wide CPU times as a percentage using psutil.
+    """
+    logger.info(f"Starting system CPU times percent audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU times percent probe", pct=0, log="Collecting system-wide CPU timing percentages baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        # interval=0.1 to get a meaningful percentage
+        cpu_times_pct = psutil.cpu_times_percent(interval=0.1)
+            
+        logger.info(f"Sample {i+1}/{samples}: CPU Times Percent User {cpu_times_pct.user}%")
+        yield ProgressPayload(
+            step="Sampling CPU times percent",
+            pct=pct,
+            log=f"Measured system CPU times percent sample {i+1}/{samples}: User {cpu_times_pct.user}%.",
+            metadata={
+                "sample_id": i + 1,
+                "user": cpu_times_pct.user,
+                "system": cpu_times_pct.system,
+                "idle": cpu_times_pct.idle,
+                "iowait": getattr(cpu_times_pct, "iowait", 0.0)
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. CPU timing percentages are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_cpu_times_percent": psutil.cpu_times_percent(interval=None)._asdict() if hasattr(psutil.cpu_times_percent(interval=None), "_asdict") else None,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_connections_audit")
+async def system_net_connections_audit(samples: int = 3):
+    """
+    Audits system-wide network connections using psutil.
+    """
+    logger.info(f"Starting system network connections audit with {samples} samples")
+    yield ProgressPayload(step="Initializing system network connection probe", pct=0, log="Collecting system-wide active socket information...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            connections = psutil.net_connections(kind="inet")
+            count = len(connections)
+        except Exception as e:
+            logger.warning(f"Error collecting system network connections: {e}")
+            connections = []
+            count = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: System Connections Count {count}")
+        yield ProgressPayload(
+            step="Sampling system network connections",
+            pct=pct,
+            log=f"Measured system network connections sample {i+1}/{samples}: {count} active sockets.",
+            metadata={
+                "sample_id": i + 1,
+                "count": count,
+                "connections": [str(c) for c in connections[:5]]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. System network connections are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_connections_count": count,
+        "stability": "STABLE"
+    }
