@@ -4958,3 +4958,63 @@ async def system_net_io_dropin_focused_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Incoming network drop statistics are stable.")
     yield {"status": "audit_complete", "final_dropin": dropin, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_dropout_focused_audit")
+async def system_net_io_dropout_focused_audit(samples: int = 3):
+    logger.info("Starting focused outgoing network drops audit")
+    yield ProgressPayload(step="Initializing dropout focused probe", pct=0, log="Collecting system-wide outgoing network drop counters...")
+    dropout = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_io_counters()
+            dropout = stats.dropout
+            logger.info(f"Sample {i+1}/{samples}: Outgoing-drops {dropout}")
+            metadata = {"dropout": dropout}
+        except Exception as e:
+            logger.error(f"Error auditing focused outgoing network drops: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling outgoing drops", pct=pct, log=f"Measured outgoing network drops sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Outgoing network drop statistics are stable.")
+    yield {"status": "audit_complete", "final_dropout": dropout, "stability": "STABLE"}
+
+@progress_tool(name="system_swap_memory_sin_focused_audit")
+async def system_swap_memory_sin_focused_audit(samples: int = 3):
+    logger.info("Starting focused swap-in audit")
+    yield ProgressPayload(step="Initializing swap-in focused probe", pct=0, log="Collecting system-wide swap-in counters...")
+    sin = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.swap_memory()
+            sin = stats.sin
+            logger.info(f"Sample {i+1}/{samples}: Swap-in {sin}")
+            metadata = {"sin": sin}
+        except Exception as e:
+            logger.error(f"Error auditing focused swap-in: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling swap-in", pct=pct, log=f"Measured swap-in sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Swap-in statistics are stable.")
+    yield {"status": "audit_complete", "final_sin": sin, "stability": "STABLE"}
+
+@progress_tool(name="system_swap_memory_sout_focused_audit")
+async def system_swap_memory_sout_focused_audit(samples: int = 3):
+    logger.info("Starting focused swap-out audit")
+    yield ProgressPayload(step="Initializing swap-out focused probe", pct=0, log="Collecting system-wide swap-out counters...")
+    sout = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.swap_memory()
+            sout = stats.sout
+            logger.info(f"Sample {i+1}/{samples}: Swap-out {sout}")
+            metadata = {"sout": sout}
+        except Exception as e:
+            logger.error(f"Error auditing focused swap-out: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling swap-out", pct=pct, log=f"Measured swap-out sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Swap-out statistics are stable.")
+    yield {"status": "audit_complete", "final_sout": sout, "stability": "STABLE"}

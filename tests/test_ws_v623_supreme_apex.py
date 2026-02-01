@@ -19,7 +19,7 @@ def test_process_children_audit_tool_ws():
             "type": "start",
             "tool_name": "process_children_audit",
             "args": {"samples": 2},
-            "request_id": "req-v655"
+            "request_id": "req-v656"
         }))
         
         resp = websocket.receive_json()
@@ -40,9 +40,9 @@ def test_process_children_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_child_count" in resp["payload"]
 
-def test_v655_metadata():
+def test_v656_metadata():
     """
-    Verifies that the system reports correct v655 Supreme Apex metadata.
+    Verifies that the system reports correct v656 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
