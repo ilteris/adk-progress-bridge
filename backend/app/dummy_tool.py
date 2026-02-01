@@ -5322,3 +5322,63 @@ async def system_disk_io_read_time_total_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total disk read time statistics are stable.")
     yield {"status": "audit_complete", "final_read_time_total": read_time, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_write_time_total_audit")
+async def system_disk_io_write_time_total_audit(samples: int = 3):
+    logger.info("Starting total disk write time audit")
+    yield ProgressPayload(step="Initializing disk write time total probe", pct=0, log="Collecting cumulative system-wide disk write time counters...")
+    write_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.disk_io_counters()
+            write_time = stats.write_time
+            logger.info(f"Sample {i+1}/{samples}: Total Disk-write-time {write_time}")
+            metadata = {"write_time_total": write_time}
+        except Exception as e:
+            logger.error(f"Error auditing total disk write time: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total disk write time", pct=pct, log=f"Measured total disk write time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total disk write time statistics are stable.")
+    yield {"status": "audit_complete", "final_write_time_total": write_time, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_busy_time_total_audit")
+async def system_disk_io_busy_time_total_audit(samples: int = 3):
+    logger.info("Starting total disk busy time audit")
+    yield ProgressPayload(step="Initializing disk busy time total probe", pct=0, log="Collecting cumulative system-wide disk busy time counters...")
+    busy_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.disk_io_counters()
+            busy_time = getattr(stats, "busy_time", 0)
+            logger.info(f"Sample {i+1}/{samples}: Total Disk-busy-time {busy_time}")
+            metadata = {"busy_time_total": busy_time}
+        except Exception as e:
+            logger.error(f"Error auditing total disk busy time: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total disk busy time", pct=pct, log=f"Measured total disk busy time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total disk busy time statistics are stable.")
+    yield {"status": "audit_complete", "final_busy_time_total": busy_time, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_ctx_switches_total_audit")
+async def system_cpu_stats_ctx_switches_total_audit(samples: int = 3):
+    logger.info("Starting total context switches audit")
+    yield ProgressPayload(step="Initializing context switches total probe", pct=0, log="Collecting cumulative system-wide context switch counters...")
+    ctx_switches = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            ctx_switches = stats.ctx_switches
+            logger.info(f"Sample {i+1}/{samples}: Total Context-switches {ctx_switches}")
+            metadata = {"ctx_switches_total": ctx_switches}
+        except Exception as e:
+            logger.error(f"Error auditing total context switches: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total context switches", pct=pct, log=f"Measured total context switches sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total context switch statistics are stable.")
+    yield {"status": "audit_complete", "final_ctx_switches_total": ctx_switches, "stability": "STABLE"}
