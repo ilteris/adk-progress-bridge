@@ -3,7 +3,7 @@ from backend.app.main import app
 import pytest
 import json
 
-def test_ws_v674_new_tools():
+def test_ws_v675_new_tools():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Handshake
@@ -11,7 +11,7 @@ def test_ws_v674_new_tools():
         assert data["type"] == "connected"
 
         # List tools
-        websocket.send_json({"type": "list_tools", "request_id": "v674_list"})
+        websocket.send_json({"type": "list_tools", "request_id": "v675_list"})
         
         while True:
             data = websocket.receive_json()
@@ -23,7 +23,7 @@ def test_ws_v674_new_tools():
                 break
 
         # Test tool 1
-        req_id = "v674_test_speed_avg"
+        req_id = "v675_test_speed_avg"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_net_if_stats_speed_avg_audit",
@@ -39,7 +39,7 @@ def test_ws_v674_new_tools():
                 break
 
         # Test tool 2
-        req_id = "v674_test_mtu_avg"
+        req_id = "v675_test_mtu_avg"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_net_if_stats_mtu_avg_audit",
@@ -55,7 +55,7 @@ def test_ws_v674_new_tools():
                 break
 
         # Test tool 3
-        req_id = "v674_test_family_count"
+        req_id = "v675_test_family_count"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_net_if_addrs_family_count_audit",

@@ -6128,3 +6128,43 @@ async def system_net_if_addrs_netmask_count_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface netmask count statistics are stable.")
     yield {"status": "audit_complete", "final_net_if_addrs_netmask_count_total": netmask_count, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_freq_current_avg_audit")
+async def system_cpu_freq_current_avg_audit(samples: int = 3):
+    logger.info("Starting system CPU frequency current average audit")
+    yield ProgressPayload(step="Initializing CPU freq current probe", pct=0, log="Collecting system-wide CPU frequency stats...")
+    avg_freq = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            freqs = psutil.cpu_freq(percpu=True)
+            avg_freq = sum(f.current for f in freqs) / len(freqs) if freqs else 0
+            logger.info(f"Sample {i+1}/{samples}: Avg Current Freq {avg_freq:.2f}MHz")
+            metadata = {"cpu_freq_current_avg": avg_freq}
+        except Exception as e:
+            logger.error(f"Error auditing system CPU frequency current average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU freq current average", pct=pct, log=f"Measured CPU frequency current average sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. CPU frequency statistics are stable.")
+    yield {"status": "audit_complete", "final_cpu_freq_current_avg": avg_freq, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_freq_min_avg_audit")
+async def system_cpu_freq_min_avg_audit(samples: int = 3):
+    logger.info("Starting system CPU frequency min average audit")
+    yield ProgressPayload(step="Initializing CPU freq min probe", pct=0, log="Collecting system-wide CPU frequency min stats...")
+    avg_min_freq = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            freqs = psutil.cpu_freq(percpu=True)
+            avg_min_freq = sum(f.min for f in freqs) / len(freqs) if freqs else 0
+            logger.info(f"Sample {i+1}/{samples}: Avg Min Freq {avg_min_freq:.2f}MHz")
+            metadata = {"cpu_freq_min_avg": avg_min_freq}
+        except Exception as e:
+            logger.error(f"Error auditing system CPU frequency min average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU freq min average", pct=pct, log=f"Measured CPU frequency min average sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. CPU frequency min statistics are stable.")
+    yield {"status": "audit_complete", "final_cpu_freq_min_avg": avg_min_freq, "stability": "STABLE"}

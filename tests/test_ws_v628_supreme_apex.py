@@ -19,7 +19,7 @@ def test_process_cpu_num_audit_tool_ws():
             "type": "start",
             "tool_name": "process_cpu_num_audit",
             "args": {"samples": 2},
-            "request_id": "req-v674-cpu-num"
+            "request_id": "req-v675-cpu-num"
         }))
         
         resp = websocket.receive_json()
@@ -49,7 +49,7 @@ def test_system_net_io_counters_audit_tool_ws():
             "type": "start",
             "tool_name": "system_net_io_counters_audit",
             "args": {"samples": 2},
-            "request_id": "req-v674-net-io"
+            "request_id": "req-v675-net-io"
         }))
         
         resp = websocket.receive_json()
@@ -79,7 +79,7 @@ def test_system_users_audit_tool_ws():
             "type": "start",
             "tool_name": "system_users_audit",
             "args": {"samples": 2},
-            "request_id": "req-v674-users"
+            "request_id": "req-v675-users"
         }))
         
         resp = websocket.receive_json()
@@ -94,14 +94,14 @@ def test_system_users_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_user_count" in resp["payload"]
 
-def test_v674_metadata():
+def test_v675_metadata():
     """
-    Verifies that the system reports correct v674 Supreme Apex metadata.
+    Verifies that the system reports correct v675 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.10.0"
-    assert data["git_commit"] == "v674-supreme-apex-adele-verification"
-    assert data["status"] == "v674 SUPREME APEX VERIFICATION ADELE"
+    assert data["version"] == "2.10.1"
+    assert data["git_commit"] == "v675-supreme-apex-adele-verification"
+    assert data["status"] == "v675 SUPREME APEX VERIFICATION ADELE"
