@@ -1,64 +1,57 @@
-
-@progress_tool(name="system_net_io_errors_total_audit")
-async def system_net_io_errors_total_audit(samples: int = 3):
-    logger.info("Starting total network errors audit")
-    yield ProgressPayload(step="Initializing network errors total probe", pct=0, log="Collecting cumulative system-wide network errors...")
-    errin = 0
-    errout = 0
+@progress_tool(name="system_net_connections_count_audit")
+async def system_net_connections_count_audit(samples: int = 3):
+    logger.info("Starting total network connections count audit")
+    yield ProgressPayload(step="Initializing network connections count total probe", pct=0, log="Collecting system-wide active network connection count...")
+    conn_count = 0
     for i in range(samples):
         pct = int(((i + 1) / samples) * 100)
         try:
-            stats = psutil.net_io_counters()
-            errin = stats.errin
-            errout = stats.errout
-            logger.info(f"Sample {i+1}/{samples}: Total Net-errors In={errin}, Out={errout}")
-            metadata = {"errin_total": errin, "errout_total": errout}
+            connections = psutil.net_connections(kind='all')
+            conn_count = len(connections)
+            logger.info(f"Sample {i+1}/{samples}: Total Connections {conn_count}")
+            metadata = {"net_connections_count_total": conn_count}
         except Exception as e:
-            logger.error(f"Error auditing total network errors: {e}")
+            logger.error(f"Error auditing total network connections count: {e}")
             metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling total network errors", pct=pct, log=f"Measured total network errors sample {i+1}/{samples}.", metadata=metadata)
+        yield ProgressPayload(step="Sampling total network connections count", pct=pct, log=f"Measured total network connections count sample {i+1}/{samples}.", metadata=metadata)
         await asyncio.sleep(0.1)
-    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total network error statistics are stable.")
-    yield {"status": "audit_complete", "final_errin_total": errin, "final_errout_total": errout, "stability": "STABLE"}
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network connection count statistics are stable.")
+    yield {"status": "audit_complete", "final_net_connections_count_total": conn_count, "stability": "STABLE"}
 
-@progress_tool(name="system_net_io_drop_total_audit")
-async def system_net_io_drop_total_audit(samples: int = 3):
-    logger.info("Starting total network drops audit")
-    yield ProgressPayload(step="Initializing network drops total probe", pct=0, log="Collecting cumulative system-wide network drops...")
-    dropin = 0
-    dropout = 0
+@progress_tool(name="system_cpu_count_logical_audit")
+async def system_cpu_count_logical_audit(samples: int = 3):
+    logger.info("Starting total logical CPU count audit")
+    yield ProgressPayload(step="Initializing logical CPU count total probe", pct=0, log="Collecting system-wide logical CPU count...")
+    cpu_count = 0
     for i in range(samples):
         pct = int(((i + 1) / samples) * 100)
         try:
-            stats = psutil.net_io_counters()
-            dropin = stats.dropin
-            dropout = stats.dropout
-            logger.info(f"Sample {i+1}/{samples}: Total Net-drops In={dropin}, Out={dropout}")
-            metadata = {"dropin_total": dropin, "dropout_total": dropout}
+            cpu_count = psutil.cpu_count(logical=True)
+            logger.info(f"Sample {i+1}/{samples}: Total Logical CPUs {cpu_count}")
+            metadata = {"cpu_count_logical_total": cpu_count}
         except Exception as e:
-            logger.error(f"Error auditing total network drops: {e}")
+            logger.error(f"Error auditing total logical CPU count: {e}")
             metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling total network drops", pct=pct, log=f"Measured total network drops sample {i+1}/{samples}.", metadata=metadata)
+        yield ProgressPayload(step="Sampling total logical CPU count", pct=pct, log=f"Measured total logical CPU count sample {i+1}/{samples}.", metadata=metadata)
         await asyncio.sleep(0.1)
-    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total network drop statistics are stable.")
-    yield {"status": "audit_complete", "final_dropin_total": dropin, "final_dropout_total": dropout, "stability": "STABLE"}
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Logical CPU count statistics are stable.")
+    yield {"status": "audit_complete", "final_cpu_count_logical_total": cpu_count, "stability": "STABLE"}
 
-@progress_tool(name="system_disk_io_write_count_total_audit")
-async def system_disk_io_write_count_total_audit(samples: int = 3):
-    logger.info("Starting total disk write count audit")
-    yield ProgressPayload(step="Initializing disk write total probe", pct=0, log="Collecting cumulative system-wide disk write counters...")
-    write_count = 0
+@progress_tool(name="system_cpu_count_physical_audit")
+async def system_cpu_count_physical_audit(samples: int = 3):
+    logger.info("Starting total physical CPU count audit")
+    yield ProgressPayload(step="Initializing physical CPU count total probe", pct=0, log="Collecting system-wide physical CPU count...")
+    cpu_count = 0
     for i in range(samples):
         pct = int(((i + 1) / samples) * 100)
         try:
-            stats = psutil.disk_io_counters()
-            write_count = stats.write_count
-            logger.info(f"Sample {i+1}/{samples}: Total Disk-writes {write_count}")
-            metadata = {"write_count_total": write_count}
+            cpu_count = psutil.cpu_count(logical=False)
+            logger.info(f"Sample {i+1}/{samples}: Total Physical CPUs {cpu_count}")
+            metadata = {"cpu_count_physical_total": cpu_count}
         except Exception as e:
-            logger.error(f"Error auditing total disk write count: {e}")
+            logger.error(f"Error auditing total physical CPU count: {e}")
             metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling total disk write count", pct=pct, log=f"Measured total disk write count sample {i+1}/{samples}.", metadata=metadata)
+        yield ProgressPayload(step="Sampling total physical CPU count", pct=pct, log=f"Measured total physical CPU count sample {i+1}/{samples}.", metadata=metadata)
         await asyncio.sleep(0.1)
-    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total disk write statistics are stable.")
-    yield {"status": "audit_complete", "final_write_count_total": write_count, "stability": "STABLE"}
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Physical CPU count statistics are stable.")
+    yield {"status": "audit_complete", "final_cpu_count_physical_total": cpu_count, "stability": "STABLE"}
