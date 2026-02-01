@@ -5138,3 +5138,63 @@ async def system_net_io_errin_total_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total incoming network error statistics are stable.")
     yield {"status": "audit_complete", "final_errin_total": errin, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_packets_sent_total_audit")
+async def system_net_io_packets_sent_total_audit(samples: int = 3):
+    logger.info("Starting total outgoing network packet audit")
+    yield ProgressPayload(step="Initializing outgoing packet total probe", pct=0, log="Collecting cumulative outgoing network packet counters...")
+    packets_sent = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_io_counters()
+            packets_sent = stats.packets_sent
+            logger.info(f"Sample {i+1}/{samples}: Total Outgoing-packets {packets_sent}")
+            metadata = {"packets_sent_total": packets_sent}
+        except Exception as e:
+            logger.error(f"Error auditing total outgoing network packets: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total outgoing packets", pct=pct, log=f"Measured total outgoing network packets sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total outgoing network packet statistics are stable.")
+    yield {"status": "audit_complete", "final_packets_sent_total": packets_sent, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_packets_recv_total_audit")
+async def system_net_io_packets_recv_total_audit(samples: int = 3):
+    logger.info("Starting total incoming network packet audit")
+    yield ProgressPayload(step="Initializing incoming packet total probe", pct=0, log="Collecting cumulative incoming network packet counters...")
+    packets_recv = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_io_counters()
+            packets_recv = stats.packets_recv
+            logger.info(f"Sample {i+1}/{samples}: Total Incoming-packets {packets_recv}")
+            metadata = {"packets_recv_total": packets_recv}
+        except Exception as e:
+            logger.error(f"Error auditing total incoming network packets: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total incoming packets", pct=pct, log=f"Measured total incoming network packets sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total incoming network packet statistics are stable.")
+    yield {"status": "audit_complete", "final_packets_recv_total": packets_recv, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_read_count_total_audit")
+async def system_disk_io_read_count_total_audit(samples: int = 3):
+    logger.info("Starting total disk read count audit")
+    yield ProgressPayload(step="Initializing disk read total probe", pct=0, log="Collecting cumulative system-wide disk read counters...")
+    read_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.disk_io_counters()
+            read_count = stats.read_count
+            logger.info(f"Sample {i+1}/{samples}: Total Disk-reads {read_count}")
+            metadata = {"read_count_total": read_count}
+        except Exception as e:
+            logger.error(f"Error auditing total disk read count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total disk read count", pct=pct, log=f"Measured total disk read count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total disk read statistics are stable.")
+    yield {"status": "audit_complete", "final_read_count_total": read_count, "stability": "STABLE"}

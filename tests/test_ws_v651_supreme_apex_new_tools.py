@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from backend.app.main import app
 import json
 
-def test_ws_v658_new_tools_availability():
+def test_ws_v659_new_tools_availability():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -20,7 +20,7 @@ def test_ws_v658_new_tools_availability():
         assert "system_net_io_sent_bytes_audit" in tools
         assert "system_net_io_recv_bytes_audit" in tools
 
-def test_ws_v658_system_disk_io_write_bytes_audit():
+def test_ws_v659_system_disk_io_write_bytes_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -48,7 +48,7 @@ def test_ws_v658_system_disk_io_write_bytes_audit():
         final_msg = messages[-1]
         assert "final_write_bytes" in final_msg["payload"]
 
-def test_ws_v658_system_net_io_sent_bytes_audit():
+def test_ws_v659_system_net_io_sent_bytes_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -76,7 +76,7 @@ def test_ws_v658_system_net_io_sent_bytes_audit():
         final_msg = messages[-1]
         assert "final_bytes_sent" in final_msg["payload"]
 
-def test_ws_v658_system_net_io_recv_bytes_audit():
+def test_ws_v659_system_net_io_recv_bytes_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
