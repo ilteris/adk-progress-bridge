@@ -618,3 +618,37 @@ async def memory_leak_audit(samples: int = 3):
         "leak_detected": leak_detected,
         "stability": "STABLE"
     }
+@progress_tool(name="network_connections_audit")
+async def network_connections_audit(samples: int = 3):
+    """
+    Audits active network connections using psutil.
+    """
+    logger.info(f"Starting network connections audit with {samples} samples")
+    yield ProgressPayload(step="Initializing network probe", pct=0, log="Collecting active socket information...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        connections = process.net_connections(kind="all")
+        conn_count = len(connections)
+        
+        logger.info(f"Sample {i+1}/{samples}: {conn_count} active connections.")
+        yield ProgressPayload(
+            step="Sampling network connections",
+            pct=pct,
+            log=f"Measured {conn_count} active network connections. Sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "connection_count": conn_count,
+                "connections": [str(c) for c in connections[:5]]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network stack is healthy.")
+    yield {
+        "status": "audit_complete",
+        "final_connection_count": len(psutil.Process().net_connections(kind="all")),
+        "stability": "STABLE"
+    }

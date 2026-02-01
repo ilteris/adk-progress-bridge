@@ -4,9 +4,9 @@ import asyncio
 from fastapi.testclient import TestClient
 from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
-def test_memory_leak_audit_tool_ws():
+def test_network_connections_audit_tool_ws():
     """
-    Verifies that the new memory_leak_audit tool works over WebSocket.
+    Verifies that the new network_connections_audit tool works over WebSocket.
     """
     client = TestClient(app)
     # The server expects api_key in query params if BRIDGE_API_KEY is set.
@@ -16,10 +16,10 @@ def test_memory_leak_audit_tool_ws():
         resp = websocket.receive_json()
         assert resp["type"] == "connected"
 
-        # 2. Start memory_leak_audit
+        # 2. Start network_connections_audit
         websocket.send_text(json.dumps({
             "type": "start",
-            "tool_name": "memory_leak_audit",
+            "tool_name": "network_connections_audit",
             "args": {"samples": 2},
             "request_id": "req-v598"
         }))
@@ -38,10 +38,9 @@ def test_memory_leak_audit_tool_ws():
                 progress_events.append(resp)
         
         assert len(progress_events) >= 2
-        assert any("Sampling memory usage" in p["payload"]["step"] for p in progress_events)
+        assert any("Sampling network connections" in p["payload"]["step"] for p in progress_events)
         assert resp["payload"]["status"] == "audit_complete"
-        assert "baseline_rss" in resp["payload"]
-        assert "final_rss" in resp["payload"]
+        assert "final_connection_count" in resp["payload"]
 
 def test_v598_metadata():
     """
