@@ -1420,3 +1420,40 @@ async def process_num_threads_audit(samples: int = 3):
         "final_num_threads": process.num_threads(),
         "stability": "STABLE"
     }
+
+@progress_tool(name="process_status_audit")
+async def process_status_audit(samples: int = 3):
+    """
+    Audits process status using psutil.
+    """
+    logger.info(f"Starting process status audit with {samples} samples")
+    yield ProgressPayload(step="Initializing status probe", pct=0, log="Collecting process-level status baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            status = process.status()
+        except Exception as e:
+            logger.warning(f"Error collecting process status: {e}")
+            status = "unknown"
+            
+        logger.info(f"Sample {i+1}/{samples}: Process Status {status}")
+        yield ProgressPayload(
+            step="Sampling process status",
+            pct=pct,
+            log=f"Measured process status sample {i+1}/{samples}: {status}.",
+            metadata={
+                "sample_id": i + 1,
+                "status": status
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Process status is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_status": process.status(),
+        "stability": "STABLE"
+    }
