@@ -4,9 +4,9 @@ import asyncio
 from fastapi.testclient import TestClient
 from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
-def test_process_uptime_audit_tool_ws():
+def test_process_num_fds_audit_tool_ws():
     """
-    Verifies that the new process_uptime_audit tool works over WebSocket.
+    Verifies that the new process_num_fds_audit tool works over WebSocket.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
@@ -14,10 +14,10 @@ def test_process_uptime_audit_tool_ws():
         resp = websocket.receive_json()
         assert resp["type"] == "connected"
 
-        # 2. Start process_uptime_audit
+        # 2. Start process_num_fds_audit
         websocket.send_text(json.dumps({
             "type": "start",
-            "tool_name": "process_uptime_audit",
+            "tool_name": "process_num_fds_audit",
             "args": {"samples": 2},
             "request_id": "req-v615"
         }))
@@ -36,9 +36,9 @@ def test_process_uptime_audit_tool_ws():
                 progress_events.append(resp)
         
         assert len(progress_events) >= 2
-        assert any("Sampling uptime" in p["payload"]["step"] for p in progress_events)
+        assert any("Sampling FD count" in p["payload"]["step"] for p in progress_events)
         assert resp["payload"]["status"] == "audit_complete"
-        assert "final_uptime_seconds" in resp["payload"]
+        assert "final_num_fds" in resp["payload"]
 
 def test_v615_metadata():
     """
