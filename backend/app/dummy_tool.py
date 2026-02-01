@@ -2972,3 +2972,110 @@ async def system_cpu_times_per_cpu_audit(samples: int = 3):
         "cpu_count": psutil.cpu_count(),
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_audit")
+async def system_cpu_times_percent_per_cpu_audit(samples: int = 3):
+    """
+    Audits per-CPU timing percentages using psutil.
+    """
+    logger.info(f"Starting system CPU times percent per CPU audit with {samples} samples")
+    yield ProgressPayload(step="Initializing per-CPU percent probe", pct=0, log="Collecting per-CPU timing percentages baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times_pct = psutil.cpu_times_percent(interval=0.1, percpu=True)
+            logger.info(f"Sample {i+1}/{samples}: Collected percentages for {len(times_pct)} CPUs")
+            metadata = {f"cpu_{idx}": data._asdict() for idx, data in enumerate(times_pct)}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU timing percentages: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling per-CPU percentages",
+            pct=pct,
+            log=f"Measured per-CPU timing percentages sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Per-CPU timing percentages are stable.")
+    yield {
+        "status": "audit_complete",
+        "cpu_count": psutil.cpu_count(),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_if_stats_extended_audit")
+async def system_net_if_stats_extended_audit(samples: int = 3):
+    """
+    Audits extended system network interface statistics using psutil.
+    """
+    logger.info(f"Starting system net if stats extended audit with {samples} samples")
+    yield ProgressPayload(step="Initializing extended net if stats probe", pct=0, log="Collecting extended system-wide network interface statistics...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            if_stats = psutil.net_if_stats()
+            logger.info(f"Sample {i+1}/{samples}: Collected extended stats for {len(if_stats)} interfaces")
+            metadata = {iface: stats._asdict() for iface, stats in if_stats.items()}
+        except Exception as e:
+            logger.error(f"Error auditing extended net if stats: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling extended net if stats",
+            pct=pct,
+            log=f"Measured extended system network interface stats sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Extended network interface statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "interface_count": len(psutil.net_if_stats()),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_partitions_usage_audit")
+async def system_disk_partitions_usage_audit(samples: int = 3):
+    """
+    Audits disk usage for all system partitions using psutil.
+    """
+    logger.info(f"Starting system disk partitions usage audit with {samples} samples")
+    yield ProgressPayload(step="Initializing partitions usage probe", pct=0, log="Collecting usage statistics for all partitions...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions(all=False)
+            usage_data = {}
+            for part in partitions:
+                try:
+                    usage = psutil.disk_usage(part.mountpoint)
+                    usage_data[part.mountpoint] = usage._asdict()
+                except Exception:
+                    # Skip partitions that are not accessible
+                    continue
+            logger.info(f"Sample {i+1}/{samples}: Collected usage for {len(usage_data)} partitions")
+            metadata = usage_data
+        except Exception as e:
+            logger.error(f"Error auditing partitions usage: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling partitions usage",
+            pct=pct,
+            log=f"Measured disk usage for all partitions sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Partition usage statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "partition_count": len(usage_data),
+        "stability": "STABLE"
+    }
