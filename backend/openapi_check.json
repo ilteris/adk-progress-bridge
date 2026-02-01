@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "ADK Progress Bridge",
-    "description": "A bridge between long-running agent tools and a real-time progress TUI/Frontend.",
-    "version": "1.8.1"
+    "description": "Bridge between tools and TUI.",
+    "version": "1.9.0"
   },
   "paths": {
     "/tools": {
