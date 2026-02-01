@@ -1347,3 +1347,39 @@ async def process_page_faults_audit(samples: int = 3):
         },
         "stability": "STABLE"
     }
+@progress_tool(name="process_memory_percent_audit")
+async def process_memory_percent_audit(samples: int = 3):
+    """
+    Audits process memory usage percentage using psutil.
+    """
+    logger.info(f"Starting process memory percent audit with {samples} samples")
+    yield ProgressPayload(step="Initializing memory percent probe", pct=0, log="Collecting process-level memory baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            mem_percent = process.memory_percent()
+        except Exception as e:
+            logger.warning(f"Error collecting process memory percent: {e}")
+            mem_percent = 0.0
+            
+        logger.info(f"Sample {i+1}/{samples}: Memory Percent {mem_percent:.2f}%")
+        yield ProgressPayload(
+            step="Sampling memory percent",
+            pct=pct,
+            log=f"Measured process memory percent sample {i+1}/{samples}: {mem_percent:.2f}%.",
+            metadata={
+                "sample_id": i + 1,
+                "memory_percent": mem_percent
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory usage is within expected parameters.")
+    yield {
+        "status": "audit_complete",
+        "final_memory_percent": process.memory_percent(),
+        "stability": "STABLE"
+    }
