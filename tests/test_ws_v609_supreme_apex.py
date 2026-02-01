@@ -19,7 +19,7 @@ def test_process_io_counters_audit_tool_ws():
             "type": "start",
             "tool_name": "process_io_counters_audit",
             "args": {"samples": 2},
-            "request_id": "req-v613"
+            "request_id": "req-v614"
         }))
         
         resp = websocket.receive_json()
@@ -40,14 +40,14 @@ def test_process_io_counters_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_io" in resp["payload"]
 
-def test_v613_metadata():
+def test_v614_metadata():
     """
-    Verifies that the system reports correct v613 Supreme Apex metadata.
+    Verifies that the system reports correct v614 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.3.9"
-    assert data["git_commit"] == "v613-supreme-apex-adele-verification"
-    assert "v613 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.4.0"
+    assert data["git_commit"] == "v614-supreme-apex-adele-verification"
+    assert "v614 SUPREME APEX" in data["status"]

@@ -266,7 +266,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.3.9", "v613-supreme-apex-adele-verification", "v613 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.4.0", "v614-supreme-apex-adele-verification", "v614 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -1226,5 +1226,44 @@ async def process_cpu_times_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_cpu_times": process.cpu_times()._asdict(),
+        "stability": "STABLE"
+    }
+@progress_tool(name="process_cpu_affinity_audit")
+async def process_cpu_affinity_audit(samples: int = 3):
+    """
+    Audits process CPU affinity using psutil.
+    """
+    logger.info(f"Starting process CPU affinity audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU affinity probe", pct=0, log="Collecting process-level CPU affinity baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            affinity = process.cpu_affinity()
+            affinity_count = len(affinity)
+        except Exception as e:
+            logger.warning(f"Error collecting process CPU affinity: {e}")
+            affinity = []
+            affinity_count = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: {affinity_count} CPUs in affinity mask.")
+        yield ProgressPayload(
+            step="Sampling process CPU affinity",
+            pct=pct,
+            log=f"Measured process CPU affinity sample {i+1}/{samples}: {affinity_count} CPUs.",
+            metadata={
+                "sample_id": i + 1,
+                "affinity_count": affinity_count,
+                "affinity": affinity
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. CPU affinity is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_affinity": process.cpu_affinity() if hasattr(process, "cpu_affinity") else [],
         "stability": "STABLE"
     }

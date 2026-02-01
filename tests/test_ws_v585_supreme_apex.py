@@ -4,17 +4,17 @@ import asyncio
 from fastapi.testclient import TestClient
 from backend.app.main import app
 
-def test_v613_metadata():
+def test_v614_metadata():
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.3.9"
-    assert data["status"] == "v613 SUPREME APEX VERIFICATION ADELE"
-    assert data["git_commit"] == "v613-supreme-apex-adele-verification"
+    assert data["version"] == "2.4.0"
+    assert data["status"] == "v614 SUPREME APEX VERIFICATION ADELE"
+    assert data["git_commit"] == "v614-supreme-apex-adele-verification"
 
 @pytest.mark.asyncio
-async def test_v613_ws_health_metrics():
+async def test_v614_ws_health_metrics():
     # Verify that get_health via WS returns the correct metadata
     from backend.app.auth import BRIDGE_API_KEY
     
@@ -27,18 +27,18 @@ async def test_v613_ws_health_metrics():
         assert resp["type"] == "connected"
         
         # Get Health
-        websocket.send_json({"type": "get_health", "request_id": "v613-test"})
+        websocket.send_json({"type": "get_health", "request_id": "v614-test"})
         resp = websocket.receive_json()
         assert resp["type"] == "health_data"
-        assert resp["request_id"] == "v613-test"
-        assert resp["data"]["version"] == "2.3.9"
-        assert resp["data"]["operational_apex"] == "v613 SUPREME APEX VERIFICATION ADELE"
+        assert resp["request_id"] == "v614-test"
+        assert resp["data"]["version"] == "2.4.0"
+        assert resp["data"]["operational_apex"] == "v614 SUPREME APEX VERIFICATION ADELE"
 
-def test_v613_health_endpoint():
+def test_v614_health_endpoint():
     client = TestClient(app)
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.3.9"
+    assert data["version"] == "2.4.0"
     assert "last_updated_str" in data
     assert "build_timestamp" in data
