@@ -1,0 +1,25 @@
+
+--- Testing start/stop flow ---
+Start message sent for long_audit
+WS Event: task_started | None
+WS Event: progress | Initializing scan...
+Reaching 20%, sending STOP for 6466126d-fb92-466b-9a92-acfc26a0490f
+WS Event: progress | Cancelled
+Received Cancelled confirmation from server
+
+--- Testing interactive flow ---
+Start message sent for interactive_task
+WS Event: task_started | None
+WS Event: progress | Analyzing situation
+WS Event: input_request | None
+RECEIVED INPUT REQUEST: I need your approval to proceed with the final phase. Should I continue? (yes/no)
+Sent input response: yes
+WS Event: input_success | None
+Received input_success acknowledgement
+WS Event: progress | Finalizing
+WS Event: result | None
+FINAL RESULT: {'status': 'complete', 'message': 'Task finished with user approval.'}
+
+--- Testing list_tools flow ---
+WS Event: tools_list | Tools: ['long_audit', 'security_scan', 'multi_stage_analysis', 'parallel_report_generation', 'brittle_process', 'interactive_task', 'large_payload_tool']
+list_tools verification SUCCESS
