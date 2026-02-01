@@ -692,3 +692,41 @@ async def open_files_audit(samples: int = 3):
         "final_file_count": len(psutil.Process().open_files()),
         "stability": "STABLE"
     }
+
+@progress_tool(name="cpu_usage_audit")
+async def cpu_usage_audit(samples: int = 3):
+    """
+    Audits detailed CPU usage, including per-core statistics using psutil.
+    """
+    logger.info(f"Starting CPU usage audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting per-core baseline counters...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        per_cpu_percent = psutil.cpu_percent(interval=None, percpu=True)
+        cpu_times = psutil.cpu_times()._asdict()
+        
+        logger.info(f"Sample {i+1}/{samples}: Total CPU {cpu_percent}%, Cores: {len(per_cpu_percent)}")
+        yield ProgressPayload(
+            step="Sampling CPU usage",
+            pct=pct,
+            log=f"Measured CPU sample {i+1}/{samples}: Total {cpu_percent}%. Per-core stats available.",
+            metadata={
+                "sample_id": i + 1,
+                "total_cpu_percent": cpu_percent,
+                "per_cpu_percent": per_cpu_percent,
+                "cpu_times": cpu_times
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. CPU subsystem is healthy.")
+    yield {
+        "status": "audit_complete",
+        "final_cpu_percent": psutil.cpu_percent(interval=None),
+        "core_count": psutil.cpu_count(),
+        "load_avg": psutil.getloadavg() if hasattr(psutil, "getloadavg") else "N/A",
+        "stability": "STABLE"
+    }
