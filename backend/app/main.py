@@ -34,10 +34,10 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.8.5"
+APP_VERSION = "2.8.6"
 BUILD_TIMESTAMP = "2026-02-01T15:30:00Z"
-GIT_COMMIT = "v659-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v659 SUPREME APEX VERIFICATION ADELE"
+GIT_COMMIT = "v660-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v660 SUPREME APEX VERIFICATION ADELE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT, "build_timestamp": BUILD_TIMESTAMP})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -265,7 +265,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             try:
                                 gen = tool(**message.get("args", {}))
                                 await registry.store_task(call_id, gen, tool_name); await registry.mark_consumed(call_id)
-                                active_tasks[call_id] = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks))
+                                active_tasks[call_id] = asyncio.create_task(run_ws_generator(safe_send_json, call_id, tool_name, gen, active_tasks, request_id=request_id))
                                 await safe_send_json({"type": "task_started", "call_id": call_id, "tool_name": tool_name, "request_id": request_id})
                             except Exception as e:
                                 if call_id in active_tasks: active_tasks[call_id].cancel()
@@ -277,7 +277,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     call_id = message.get("call_id")
                     if call_id in active_tasks:
                         active_tasks[call_id].cancel()
-                        await safe_send_json({"call_id": call_id, "type": "progress", "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}})
+                        await safe_send_json({"call_id": call_id, "request_id": request_id, "type": "progress", "payload": {"step": "Cancelled", "pct": 0, "log": "Task stopped by user."}})
                         await safe_send_json({"type": "stop_success", "call_id": call_id, "request_id": request_id})
                     else:
                         task_data = await registry.get_task_no_consume(call_id)
@@ -291,7 +291,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     try:
                         task_data = await registry.get_task(call_id)
                         if task_data:
-                            active_tasks[call_id] = asyncio.create_task(run_ws_generator(safe_send_json, call_id, task_data["tool_name"], task_data["gen"], active_tasks))
+                            active_tasks[call_id] = asyncio.create_task(run_ws_generator(safe_send_json, call_id, task_data["tool_name"], task_data["gen"], active_tasks, request_id=request_id))
                             await safe_send_json({"type": "task_started", "call_id": call_id, "tool_name": task_data["tool_name"], "request_id": request_id})
                         else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": f"No active task found for call_id: {call_id}"}})
                     except Exception as e:
@@ -314,7 +314,7 @@ async def websocket_endpoint(websocket: WebSocket):
         for t in active_tasks.values():
             if not t.done(): t.cancel()
 
-async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
+async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks, request_id=None):
     try:
         call_id_var.set(call_id); tool_name_var.set(tool_name)
         start_time, status, metrics_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(call_id)
@@ -323,7 +323,7 @@ async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
                 while True:
                     metrics_data = await metrics_queue.get()
                     try:
-                        await send_func({"call_id": call_id, "type": "system_metrics", "payload": metrics_data})
+                        await send_func({"call_id": call_id, "request_id": request_id, "type": "system_metrics", "payload": metrics_data})
                     except: break
             except asyncio.CancelledError: pass
         metrics_task = asyncio.create_task(metrics_pusher())
@@ -332,18 +332,18 @@ async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
                 async for item in gen:
                     if isinstance(item, ProgressPayload):
                         TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                        msg = {"call_id": call_id, "type": "progress", "payload": item.model_dump()}
+                        msg = {"call_id": call_id, "request_id": request_id, "type": "progress", "payload": item.model_dump()}
                     elif isinstance(item, dict) and item.get("type") == "input_request":
-                        msg = {"call_id": call_id, "type": "input_request", "payload": item["payload"]}
+                        msg = {"call_id": call_id, "request_id": request_id, "type": "input_request", "payload": item["payload"]}
                     else:
-                        msg = {"call_id": call_id, "type": "result", "payload": item}
+                        msg = {"call_id": call_id, "request_id": request_id, "type": "result", "payload": item}
                     try: await send_func(msg)
                     except Exception as transport_err:
                         logger.warning(f"Transport error during task {call_id}: {transport_err}")
                         status = "error"; return
             except Exception as tool_err:
                 status = "error"
-                try: await send_func({"call_id": call_id, "type": "error", "payload": {"detail": str(tool_err)}})
+                try: await send_func({"call_id": call_id, "request_id": request_id, "type": "error", "payload": {"detail": str(tool_err)}})
                 except: pass
         except asyncio.CancelledError: status = "cancelled"; await gen.aclose()
         finally:
