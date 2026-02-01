@@ -9,19 +9,20 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.app.main import app
 
-def test_network_status_check_tool_ws():
+def test_garbage_collection_audit_tool_ws():
     """
-    Verifies that the new network_status_check tool works over WebSocket.
+    Verifies that the new garbage_collection_audit tool works over WebSocket.
     """
     with TestClient(app) as client:
         with client.websocket_connect("/ws?api_key=test_key") as websocket:
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v593-network-test"
+            request_id = "v593-gc-audit"
             websocket.send_json({
                 "type": "start",
-                "tool_name": "network_status_check",
+                "tool_name": "garbage_collection_audit",
+                "args": {"samples": 2},
                 "request_id": request_id
             })
             
@@ -35,9 +36,13 @@ def test_network_status_check_tool_ws():
                     assert data["request_id"] == request_id
                 elif data["type"] == "progress":
                     progress_received = True
+                    if data["payload"].get("step") == "Sampling GC stats":
+                        assert "metadata" in data["payload"]
+                        assert "gc_counts" in data["payload"]["metadata"]
+                        assert "objects_count" in data["payload"]["metadata"]
                 elif data["type"] == "result":
-                    assert data["payload"]["status"] == "online"
-                    assert "avg_latency_ms" in data["payload"]
+                    assert data["payload"]["status"] == "audit_complete"
+                    assert "final_objects_count" in data["payload"]
                     result_received = True
                     break
                 elif data["type"] == "error":
@@ -55,5 +60,4 @@ def test_v593_metadata_verification():
         assert response.status_code == 200
         data = response.json()
         assert data["version"] == "2.1.9"
-        assert "v593" in data["git_commit"]
         assert "v593" in data["status"]

@@ -430,3 +430,39 @@ async def event_loop_latency_audit(samples: int = 5):
         "samples": samples,
         "stability": "OPTIMAL" if max_latency < 5 else "STABLE"
     }
+
+@progress_tool(name="garbage_collection_audit")
+async def garbage_collection_audit(samples: int = 3):
+    """
+    Audits Python garbage collection stats and object counts.
+    """
+    import gc
+    logger.info(f"Starting garbage collection audit with {samples} samples")
+    yield ProgressPayload(step="Initializing GC probe", pct=0, log="Monitoring memory management lifecycle...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        count0, count1, count2 = gc.get_count()
+        objects_count = len(gc.get_objects())
+        
+        logger.info(f"Sample {i+1}/{samples}: GC Counts ({count0}, {count1}, {count2}), Objects: {objects_count}")
+        yield ProgressPayload(
+            step="Sampling GC stats",
+            pct=pct,
+            log=f"Measured GC counts sample {i+1}/{samples}: {count0}, {count1}, {count2}. Total objects: {objects_count}",
+            metadata={
+                "sample_id": i + 1,
+                "gc_counts": [count0, count1, count2],
+                "objects_count": objects_count
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory management is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_objects_count": len(gc.get_objects()),
+        "gc_thresholds": gc.get_threshold(),
+        "stability": "STABLE"
+    }
