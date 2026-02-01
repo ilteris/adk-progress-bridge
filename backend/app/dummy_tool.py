@@ -266,7 +266,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.3.6", "v610-supreme-apex-adele-verification", "v610 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.3.7", "v611-supreme-apex-adele-verification", "v611 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -1104,5 +1104,45 @@ async def process_environ_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_env_count": len(psutil.Process().environ()),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_cmdline_audit")
+async def process_cmdline_audit(samples: int = 3):
+    """
+    Audits process command line arguments using psutil.
+    """
+    logger.info(f"Starting process command line audit with {samples} samples")
+    yield ProgressPayload(step="Initializing command line probe", pct=0, log="Collecting command line arguments...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            cmdline = process.cmdline()
+            arg_count = len(cmdline)
+        except Exception as e:
+            logger.warning(f"Error collecting process cmdline: {e}")
+            cmdline = []
+            arg_count = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: {arg_count} command line arguments.")
+        yield ProgressPayload(
+            step="Sampling process command line",
+            pct=pct,
+            log=f"Measured {arg_count} command line arguments. Sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "arg_count": arg_count,
+                "cmdline": cmdline
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Command line is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_cmdline": psutil.Process().cmdline(),
         "stability": "STABLE"
     }
