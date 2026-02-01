@@ -32,6 +32,7 @@ export interface AgentState {
   useWS: boolean
   inputPrompt: string | null
   tools: string[]
+  tasks: any[]
   systemMetrics: any | null
 }
 
@@ -138,9 +139,6 @@ export class WebSocketManager {
                 if (this.messageBuffer.length > WS_BUFFER_SIZE) {
                     this.messageBuffer.shift()
                 }
-                
-                // If it's system_metrics, also notify anyone who might be interested globally
-                // In this simplified version, we just let the subscribers handle it if they match
             }
         } catch (e) {
             console.error('[WS] Failed to parse message', e)
@@ -307,6 +305,13 @@ export class WebSocketManager {
     return data.tools
   }
 
+  async getActiveTasks(): Promise<any[]> {
+    const data = await this.sendWithCorrelation({
+        type: 'list_active_tasks'
+    })
+    return data.tasks
+  }
+
   async getHealth(): Promise<any> {
     const data = await this.sendWithCorrelation({
         type: 'get_health'
@@ -331,6 +336,7 @@ export function useAgentStream() {
     useWS: false,
     inputPrompt: null,
     tools: [],
+    tasks: [],
     systemMetrics: null
   })
 
@@ -377,6 +383,28 @@ export function useAgentStream() {
       return tools
     } catch (err: any) {
       console.error('Failed to fetch tools:', err)
+      return []
+    }
+  }
+
+  const fetchActiveTasks = async (): Promise<any[]> => {
+    try {
+      let tasks: any[] = []
+      if (state.useWS) {
+          tasks = await wsManager.getActiveTasks()
+      } else {
+          const headers: Record<string, string> = {}
+          if (BRIDGE_API_KEY) {
+              headers['X-API-Key'] = BRIDGE_API_KEY
+          }
+          const response = await fetch(`${API_BASE_URL}/tasks`, { headers })
+          if (!response.ok) throw new Error('Failed to fetch tasks via REST')
+          tasks = await response.json()
+      }
+      state.tasks = tasks
+      return tasks
+    } catch (err: any) {
+      console.error('Failed to fetch active tasks:', err)
       return []
     }
   }
@@ -623,5 +651,5 @@ export function useAgentStream() {
     })
   }
   
-  return { state, runTool, stopTool, sendInput, reset, fetchTools, fetchHealth }
+  return { state, runTool, stopTool, sendInput, reset, fetchTools, fetchActiveTasks, fetchHealth }
 }
