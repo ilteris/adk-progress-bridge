@@ -1,3 +1,4 @@
+from datetime import datetime
 import asyncio
 import random
 import psutil
@@ -1455,5 +1456,42 @@ async def process_status_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_status": process.status(),
+        "stability": "STABLE"
+    }
+@progress_tool(name="process_create_time_audit")
+async def process_create_time_audit(samples: int = 3):
+    """
+    Audits process creation time using psutil.
+    """
+    logger.info(f"Starting process creation time audit with {samples} samples")
+    yield ProgressPayload(step="Initializing creation time probe", pct=0, log="Collecting process-level creation timing baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            create_time = process.create_time()
+        except Exception as e:
+            logger.warning(f"Error collecting process create time: {e}")
+            create_time = 0.0
+            
+        logger.info(f"Sample {i+1}/{samples}: Process Create Time {create_time}")
+        yield ProgressPayload(
+            step="Sampling process creation time",
+            pct=pct,
+            log=f"Measured process creation time sample {i+1}/{samples}: {create_time}.",
+            metadata={
+                "sample_id": i + 1,
+                "create_time": create_time,
+                "create_time_iso": datetime.fromtimestamp(create_time).isoformat() if create_time > 0 else "N/A"
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Creation timing is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_create_time": process.create_time(),
         "stability": "STABLE"
     }
