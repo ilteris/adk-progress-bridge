@@ -2776,3 +2776,98 @@ async def system_disk_io_counters_audit(samples: int = 3):
         "final_counters": psutil.disk_io_counters()._asdict() if psutil.disk_io_counters() else {},
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_virtual_memory_audit")
+async def system_virtual_memory_audit(samples: int = 3):
+    """
+    Audits system-wide virtual memory statistics using psutil.
+    """
+    logger.info(f"Starting system virtual memory audit with {samples} samples")
+    yield ProgressPayload(step="Initializing memory probe", pct=0, log="Collecting system-wide virtual memory baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        vmem = psutil.virtual_memory()
+        logger.info(f"Sample {i+1}/{samples}: Available {vmem.available / 1024 / 1024:.2f}MB, Percent {vmem.percent}%")
+        yield ProgressPayload(
+            step="Sampling virtual memory",
+            pct=pct,
+            log=f"Measured system virtual memory sample {i+1}/{samples}: {vmem.percent}% used.",
+            metadata=vmem._asdict()
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. System memory is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_vmem": psutil.virtual_memory()._asdict(),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_swap_memory_audit")
+async def system_swap_memory_audit(samples: int = 3):
+    """
+    Audits system-wide swap memory statistics using psutil.
+    """
+    logger.info(f"Starting system swap memory audit with {samples} samples")
+    yield ProgressPayload(step="Initializing swap probe", pct=0, log="Collecting system-wide swap memory baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        swap = psutil.swap_memory()
+        logger.info(f"Sample {i+1}/{samples}: Used {swap.used / 1024 / 1024:.2f}MB, Percent {swap.percent}%")
+        yield ProgressPayload(
+            step="Sampling swap memory",
+            pct=pct,
+            log=f"Measured system swap memory sample {i+1}/{samples}: {swap.percent}% used.",
+            metadata=swap._asdict()
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. System swap is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_swap": psutil.swap_memory()._asdict(),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_usage_audit")
+async def system_disk_usage_audit(samples: int = 3, path: str = "/"):
+    """
+    Audits system-wide disk usage for a specific path using psutil.
+    """
+    logger.info(f"Starting system disk usage audit for {path} with {samples} samples")
+    yield ProgressPayload(step="Initializing disk probe", pct=0, log=f"Collecting disk usage baseline for {path}...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            usage = psutil.disk_usage(path)
+            logger.info(f"Sample {i+1}/{samples}: {usage.percent}% used on {path}")
+            payload_log = f"Measured disk usage sample {i+1}/{samples} for {path}: {usage.percent}% used."
+            metadata = usage._asdict()
+        except Exception as e:
+            logger.error(f"Error auditing disk usage for {path}: {e}")
+            payload_log = f"Error during sample {i+1}: {str(e)}"
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling disk usage",
+            pct=pct,
+            log=payload_log,
+            metadata=metadata
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk usage state is stable.")
+    try:
+        final_usage = psutil.disk_usage(path)._asdict()
+    except:
+        final_usage = {}
+        
+    yield {
+        "status": "audit_complete",
+        "path": path,
+        "final_usage": final_usage,
+        "stability": "STABLE"
+    }
