@@ -17,7 +17,7 @@ async def test_websocket_start_error_correlation():
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
         websocket.receive_json() # Consume connected message
-        req_id = "error_test_req_123"
+        req_id = "error_test_req_126"
         websocket.send_json({
             "type": "start",
             "tool_name": "non_existent_tool",

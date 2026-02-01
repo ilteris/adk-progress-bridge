@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.7.5
+# Specification: ADK Progress Bridge v2.7.6
 
 ## Overview
 The ADK Progress Bridge is a high-performance middleware designed to connect background tools/tasks with a real-time terminal user interface (TUI). It provides a standardized protocol for reporting progress, logs, and results via Server-Sent Events (SSE) and WebSockets.
@@ -169,7 +169,10 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - `system_net_io_dropin_audit`: System network I/O drop-in packet tracking.
 - `system_net_io_dropout_audit`: System network I/O drop-out packet tracking.
 - `system_net_io_errin_audit`: System network I/O incoming error tracking.
-- `system_net_io_errout_audit`: System network I/O outgoing error tracking.
+- `system_net_io_errout_audit.
+- system_net_io_packets_sent_audit: System-wide network packet sent tracking.
+- system_net_io_packets_recv_audit: System-wide network packet received tracking.
+- system_disk_io_read_bytes_audit: System-wide disk read byte tracking.: System network I/O outgoing error tracking.
 
 ## 5. Metadata
 - **APP_VERSION**: 2.7.5

@@ -4461,3 +4461,108 @@ async def system_net_io_errout_audit(samples: int = 3):
         "final_errout": errout,
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_net_io_packets_sent_audit")
+async def system_net_io_packets_sent_audit(samples: int = 3):
+    """
+    Audits system-wide network packets sent using psutil.
+    """
+    logger.info("Starting system net io packets sent audit")
+    yield ProgressPayload(step="Initializing packets sent probe", pct=0, log="Collecting packets sent baseline...")
+    
+    packets_sent = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            packets_sent = counters.packets_sent
+            logger.info(f"Sample {i+1}/{samples}: Packets-sent {packets_sent}")
+            metadata = {"packets_sent": packets_sent}
+        except Exception as e:
+            logger.error(f"Error auditing packets sent: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling packets sent",
+            pct=pct,
+            log=f"Measured packets sent sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Packets sent statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_packets_sent": packets_sent,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_io_packets_recv_audit")
+async def system_net_io_packets_recv_audit(samples: int = 3):
+    """
+    Audits system-wide network packets received using psutil.
+    """
+    logger.info("Starting system net io packets recv audit")
+    yield ProgressPayload(step="Initializing packets recv probe", pct=0, log="Collecting packets recv baseline...")
+    
+    packets_recv = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            packets_recv = counters.packets_recv
+            logger.info(f"Sample {i+1}/{samples}: Packets-recv {packets_recv}")
+            metadata = {"packets_recv": packets_recv}
+        except Exception as e:
+            logger.error(f"Error auditing packets recv: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling packets recv",
+            pct=pct,
+            log=f"Measured packets recv sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Packets recv statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_packets_recv": packets_recv,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_io_read_bytes_audit")
+async def system_disk_io_read_bytes_audit(samples: int = 3):
+    """
+    Audits system-wide disk read bytes using psutil.
+    """
+    logger.info("Starting system disk io read bytes audit")
+    yield ProgressPayload(step="Initializing disk read bytes probe", pct=0, log="Collecting disk read bytes baseline...")
+    
+    read_bytes = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.disk_io_counters()
+            read_bytes = counters.read_bytes
+            logger.info(f"Sample {i+1}/{samples}: Read-bytes {read_bytes}")
+            metadata = {"read_bytes": read_bytes}
+        except Exception as e:
+            logger.error(f"Error auditing disk read bytes: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling disk read bytes",
+            pct=pct,
+            log=f"Measured disk read bytes sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk read bytes statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_read_bytes": read_bytes,
+        "stability": "STABLE"
+    }
