@@ -5991,3 +5991,76 @@ async def system_net_if_addrs_ipv6_count_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface ipv6 count statistics are stable.")
     yield {"status": "audit_complete", "final_net_if_addrs_ipv6_count_total": ipv6_count, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_mac_count_audit")
+async def system_net_if_addrs_mac_count_audit(samples: int = 3):
+    logger.info("Starting total network interface mac count audit")
+    yield ProgressPayload(step="Initializing network interface mac total probe", pct=0, log="Collecting system-wide network interface mac count...")
+    mac_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            mac_count = 0
+            for interface_addrs in addrs.values():
+                for addr in interface_addrs:
+                    # AF_LINK is 18 on Darwin, AF_PACKET is 17 on Linux
+                    if addr.family in (18, 17):
+                        mac_count += 1
+            logger.info(f"Sample {i+1}/{samples}: Total MAC Addresses {mac_count}")
+            metadata = {"net_if_addrs_mac_count_total": mac_count}
+        except Exception as e:
+            logger.error(f"Error auditing total network interface mac count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total network interface mac count", pct=pct, log=f"Measured total network interface mac count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface mac count statistics are stable.")
+    yield {"status": "audit_complete", "final_net_if_addrs_mac_count_total": mac_count, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_broadcast_count_audit")
+async def system_net_if_addrs_broadcast_count_audit(samples: int = 3):
+    logger.info("Starting total network interface broadcast count audit")
+    yield ProgressPayload(step="Initializing network interface broadcast total probe", pct=0, log="Collecting system-wide network interface broadcast count...")
+    broadcast_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            broadcast_count = 0
+            for interface_addrs in addrs.values():
+                for addr in interface_addrs:
+                    if addr.broadcast:
+                        broadcast_count += 1
+            logger.info(f"Sample {i+1}/{samples}: Total Broadcast Addresses {broadcast_count}")
+            metadata = {"net_if_addrs_broadcast_count_total": broadcast_count}
+        except Exception as e:
+            logger.error(f"Error auditing total network interface broadcast count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total network interface broadcast count", pct=pct, log=f"Measured total network interface broadcast count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface broadcast count statistics are stable.")
+    yield {"status": "audit_complete", "final_net_if_addrs_broadcast_count_total": broadcast_count, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ptp_count_audit")
+async def system_net_if_addrs_ptp_count_audit(samples: int = 3):
+    logger.info("Starting total network interface ptp count audit")
+    yield ProgressPayload(step="Initializing network interface ptp total probe", pct=0, log="Collecting system-wide network interface ptp count...")
+    ptp_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            ptp_count = 0
+            for interface_addrs in addrs.values():
+                for addr in interface_addrs:
+                    if addr.ptp:
+                        ptp_count += 1
+            logger.info(f"Sample {i+1}/{samples}: Total PTP Addresses {ptp_count}")
+            metadata = {"net_if_addrs_ptp_count_total": ptp_count}
+        except Exception as e:
+            logger.error(f"Error auditing total network interface ptp count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total network interface ptp count", pct=pct, log=f"Measured total network interface ptp count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface ptp count statistics are stable.")
+    yield {"status": "audit_complete", "final_net_if_addrs_ptp_count_total": ptp_count, "stability": "STABLE"}
