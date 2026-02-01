@@ -837,3 +837,39 @@ async def process_uptime_audit(samples: int = 3):
         "final_uptime_seconds": time.time() - psutil.Process().create_time(),
         "stability": "STABLE"
     }
+
+@progress_tool(name="virtual_memory_audit")
+async def virtual_memory_audit(samples: int = 3):
+    """
+    Audits virtual memory statistics using psutil.
+    """
+    logger.info(f"Starting virtual memory audit with {samples} samples")
+    yield ProgressPayload(step="Initializing memory probe", pct=0, log="Collecting virtual memory baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        vmem = psutil.virtual_memory()
+        
+        logger.info(f"Sample {i+1}/{samples}: Available {vmem.available / 1024 / 1024:.2f}MB, Percent {vmem.percent}%")
+        yield ProgressPayload(
+            step="Sampling virtual memory",
+            pct=pct,
+            log=f"Measured virtual memory sample {i+1}/{samples}: Available {vmem.available / 1024 / 1024:.2f}MB, Percent {vmem.percent}%.",
+            metadata={
+                "sample_id": i + 1,
+                "total": vmem.total,
+                "available": vmem.available,
+                "percent": vmem.percent,
+                "used": vmem.used,
+                "free": vmem.free
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory subsystem is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_available_mb": psutil.virtual_memory().available / 1024 / 1024,
+        "stability": "STABLE"
+    }
