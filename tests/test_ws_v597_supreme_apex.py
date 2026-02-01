@@ -21,7 +21,7 @@ def test_memory_leak_audit_tool_ws():
             "type": "start",
             "tool_name": "memory_leak_audit",
             "args": {"samples": 2},
-            "request_id": "req-v616"
+            "request_id": "req-v622"
         }))
         
         resp = websocket.receive_json()
@@ -43,14 +43,14 @@ def test_memory_leak_audit_tool_ws():
         assert "baseline_rss" in resp["payload"]
         assert "final_rss" in resp["payload"]
 
-def test_v616_metadata():
+def test_v622_metadata():
     """
-    Verifies that the system reports correct v616 Supreme Apex metadata.
+    Verifies that the system reports correct v622 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.4.6"
-    assert data["git_commit"] == "v620-supreme-apex-adele-verification"
-    assert "v620 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.4.8"
+    assert data["git_commit"] == "v622-supreme-apex-adele-verification"
+    assert "v622 SUPREME APEX" in data["status"]

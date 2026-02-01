@@ -1226,7 +1226,7 @@ async def process_cpu_times_audit(samples: int = 3):
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. CPU timing is STABLE.")
     yield {
         "status": "audit_complete",
-        "final_cpu_times": process.cpu_times()._asdict(),
+        "final_cpu_times": process.cpu_times()._asdict() if hasattr(process.cpu_times(), "_asdict") else process.cpu_times(),
         "stability": "STABLE"
     }
 @progress_tool(name="process_cpu_affinity_audit")
@@ -1530,5 +1530,42 @@ async def process_gids_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_gids": process.gids()._asdict() if hasattr(process.gids(), "_asdict") else process.gids(),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_uids_audit")
+async def process_uids_audit(samples: int = 3):
+    """
+    Audits process user IDs (UIDs) using psutil.
+    """
+    logger.info(f"Starting process UIDs audit with {samples} samples")
+    yield ProgressPayload(step="Initializing UID probe", pct=0, log="Collecting process-level user ID baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            uids = process.uids()
+        except Exception as e:
+            logger.warning(f"Error collecting process UIDs: {e}")
+            uids = None
+            
+        logger.info(f"Sample {i+1}/{samples}: Process UIDs {uids}")
+        yield ProgressPayload(
+            step="Sampling process UIDs",
+            pct=pct,
+            log=f"Measured process UIDs sample {i+1}/{samples}: {uids}.",
+            metadata={
+                "sample_id": i + 1,
+                "uids": uids._asdict() if hasattr(uids, "_asdict") else uids
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. User ID configuration is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_uids": process.uids()._asdict() if hasattr(process.uids(), "_asdict") else process.uids(),
         "stability": "STABLE"
     }

@@ -49,5 +49,5 @@ def test_v620_metadata_baseline():
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    # If we are in v620 session, version will be 2.4.6
-    assert data["version"] == "2.4.6"
+    # If we are in v620 session, version will be 2.4.8
+    assert data["version"] == "2.4.8"
