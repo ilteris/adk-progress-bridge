@@ -50,6 +50,26 @@ class MockWebSocket extends EventTarget {
                 request_id: parsed.request_id
             })
         }, 10)
+    } else if (parsed.type === 'stop') {
+        // Automatically respond with stop_success
+        setTimeout(() => {
+            this.triggerMessage({
+                type: 'stop_success',
+                call_id: parsed.call_id,
+                request_id: parsed.request_id,
+                payload: {}
+            })
+        }, 10)
+    } else if (parsed.type === 'input') {
+        // Automatically respond with input_success
+        setTimeout(() => {
+            this.triggerMessage({
+                type: 'input_success',
+                call_id: parsed.call_id,
+                request_id: parsed.request_id,
+                payload: {}
+            })
+        }, 10)
     }
   })
 
@@ -212,14 +232,7 @@ describe('useAgentStream', () => {
       expect(state.status).toBe('cancelled')
       expect(state.isStreaming).toBe(false)
       
-      // Should still be subscribed until stop_success
-      lastWebSocket?.triggerMessage({
-        call_id: 'ws-call-id-test_tool',
-        type: 'stop_success',
-        payload: {},
-        request_id: 'req-123'
-      })
-      
+      // Acknowledgment is already handled by MockWebSocket.send automatically now
       expect(state.logs).toContain('Stop command acknowledged by server.')
     })
 
