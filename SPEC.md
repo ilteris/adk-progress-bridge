@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.3.0
+# Specification: ADK Progress Bridge v2.3.1
 
 ## 1. System Overview
 The system consists of a Python backend (FastAPI) acting as the ADK Agent host and a Vue.js frontend client. They communicate via **Server-Sent Events (SSE)** or **WebSockets** for real-time progress updates.

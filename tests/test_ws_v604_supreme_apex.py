@@ -19,7 +19,7 @@ def test_virtual_memory_audit_tool_ws():
             "type": "start",
             "tool_name": "virtual_memory_audit",
             "args": {"samples": 2},
-            "request_id": "req-v604"
+            "request_id": "req-v605"
         }))
         
         resp = websocket.receive_json()
@@ -40,14 +40,14 @@ def test_virtual_memory_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_available_mb" in resp["payload"]
 
-def test_v604_metadata():
+def test_v605_metadata():
     """
-    Verifies that the system reports correct v604 Supreme Apex metadata.
+    Verifies that the system reports correct v605 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.3.0"
-    assert data["git_commit"] == "v604-supreme-apex-adele-verification"
-    assert "v604 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.3.1"
+    assert data["git_commit"] == "v605-supreme-apex-adele-verification"
+    assert "v605 SUPREME APEX" in data["status"]

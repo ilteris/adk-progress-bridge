@@ -873,3 +873,38 @@ async def virtual_memory_audit(samples: int = 3):
         "final_available_mb": psutil.virtual_memory().available / 1024 / 1024,
         "stability": "STABLE"
     }
+
+@progress_tool(name="disk_usage_audit")
+async def disk_usage_audit(samples: int = 3):
+    """
+    Audits disk usage statistics using psutil.
+    """
+    logger.info(f"Starting disk usage audit with {samples} samples")
+    yield ProgressPayload(step="Initializing disk probe", pct=0, log="Collecting disk usage statistics...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        usage = psutil.disk_usage('/')
+        
+        logger.info(f"Sample {i+1}/{samples}: {usage.percent}% used, {usage.free / 1024 / 1024 / 1024:.2f}GB free")
+        yield ProgressPayload(
+            step="Sampling disk usage",
+            pct=pct,
+            log=f"Measured disk usage sample {i+1}/{samples}: {usage.percent}% used, {usage.free / 1024 / 1024 / 1024:.2f}GB free.",
+            metadata={
+                "sample_id": i + 1,
+                "total": usage.total,
+                "used": usage.used,
+                "free": usage.free,
+                "percent": usage.percent
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk subsystem is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_percent": psutil.disk_usage('/').percent,
+        "stability": "STABLE"
+    }
