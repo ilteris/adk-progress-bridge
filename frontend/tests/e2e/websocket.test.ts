@@ -93,13 +93,13 @@ test('websocket dynamic tool fetching', async ({ page }) => {
   // Initially on SSE (REST fetch)
   const toolSelect = page.locator('#toolSelect');
   // Real backend has 27 tools
-  await expect(toolSelect.locator('option')).toHaveCount(27);
+  await expect(toolSelect.locator('option')).toHaveCount(28);
   
   // Toggle to WS
   await page.locator('#useWS').check();
   
   // Should still have options (re-fetched via WS)
-  await expect(toolSelect.locator('option')).toHaveCount(27);
+  await expect(toolSelect.locator('option')).toHaveCount(28);
   await expect(toolSelect).toContainText('Long Audit');
 });
 

@@ -908,3 +908,40 @@ async def disk_usage_audit(samples: int = 3):
         "final_percent": psutil.disk_usage('/').percent,
         "stability": "STABLE"
     }
+
+@progress_tool(name="swap_memory_audit")
+async def swap_memory_audit(samples: int = 3):
+    """
+    Audits swap memory statistics using psutil.
+    """
+    logger.info(f"Starting swap memory audit with {samples} samples")
+    yield ProgressPayload(step="Initializing swap probe", pct=0, log="Collecting swap memory baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        swap = psutil.swap_memory()
+        
+        logger.info(f"Sample {i+1}/{samples}: {swap.percent}% used, {swap.free / 1024 / 1024:.2f}MB free")
+        yield ProgressPayload(
+            step="Sampling swap memory",
+            pct=pct,
+            log=f"Measured swap memory sample {i+1}/{samples}: {swap.percent}% used, {swap.free / 1024 / 1024:.2f}MB free.",
+            metadata={
+                "sample_id": i + 1,
+                "total": swap.total,
+                "used": swap.used,
+                "free": swap.free,
+                "percent": swap.percent,
+                "sin": swap.sin,
+                "sout": swap.sout
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Swap subsystem is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_percent": psutil.swap_memory().percent,
+        "stability": "STABLE"
+    }
