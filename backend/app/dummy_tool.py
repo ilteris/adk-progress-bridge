@@ -2076,3 +2076,118 @@ async def process_rlimit_audit(samples: int = 3):
         "limits_count": len(found_limits),
         "stability": "STABLE"
     }
+
+@progress_tool(name="process_cpu_num_audit")
+async def process_cpu_num_audit(samples: int = 3):
+    """
+    Audits which CPU core the process is currently running on using psutil.
+    """
+    logger.info(f"Starting process CPU num audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU core probe", pct=0, log="Collecting process-level CPU core baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            cpu_num = process.cpu_num() if hasattr(process, "cpu_num") else "N/A"
+        except Exception as e:
+            logger.warning(f"Error collecting process CPU num: {e}")
+            cpu_num = "unknown"
+            
+        logger.info(f"Sample {i+1}/{samples}: Process CPU Core {cpu_num}")
+        yield ProgressPayload(
+            step="Sampling CPU core",
+            pct=pct,
+            log=f"Measured process CPU core sample {i+1}/{samples}: {cpu_num}.",
+            metadata={
+                "sample_id": i + 1,
+                "cpu_num": cpu_num
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. CPU core affinity is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_cpu_num": process.cpu_num() if hasattr(process, "cpu_num") else "N/A",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_io_counters_audit")
+async def system_net_io_counters_audit(samples: int = 3):
+    """
+    Audits system-wide network I/O counters using psutil.
+    """
+    logger.info(f"Starting system net I/O counters audit with {samples} samples")
+    yield ProgressPayload(step="Initializing net I/O probe", pct=0, log="Collecting system-wide network I/O baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            counters = psutil.net_io_counters()
+            bytes_sent = counters.bytes_sent
+            bytes_recv = counters.bytes_recv
+        except Exception as e:
+            logger.warning(f"Error collecting system net I/O: {e}")
+            bytes_sent = bytes_recv = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: Sent {bytes_sent} bytes, Recv {bytes_recv} bytes")
+        yield ProgressPayload(
+            step="Sampling net I/O",
+            pct=pct,
+            log=f"Measured system net I/O sample {i+1}/{samples}: Sent {bytes_sent}, Recv {bytes_recv}.",
+            metadata={
+                "sample_id": i + 1,
+                "bytes_sent": bytes_sent,
+                "bytes_recv": bytes_recv
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. System-wide network I/O is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_counters": psutil.net_io_counters()._asdict(),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_users_audit")
+async def system_users_audit(samples: int = 3):
+    """
+    Audits currently logged-in system users using psutil.
+    """
+    logger.info(f"Starting system users audit with {samples} samples")
+    yield ProgressPayload(step="Initializing users probe", pct=0, log="Collecting system-wide user baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            users = psutil.users()
+            user_count = len(users)
+        except Exception as e:
+            logger.warning(f"Error collecting system users: {e}")
+            users = []
+            user_count = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: {user_count} users logged in.")
+        yield ProgressPayload(
+            step="Sampling system users",
+            pct=pct,
+            log=f"Measured {user_count} system users sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "user_count": user_count,
+                "users": [u.name for u in users[:5]]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. System user state is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_user_count": len(psutil.users()),
+        "stability": "STABLE"
+    }

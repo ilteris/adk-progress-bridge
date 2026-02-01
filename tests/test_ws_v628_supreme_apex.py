@@ -4,9 +4,9 @@ import asyncio
 from fastapi.testclient import TestClient
 from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
-def test_process_terminal_audit_tool_ws():
+def test_process_cpu_num_audit_tool_ws():
     """
-    Verifies that the new process_terminal_audit tool works over WebSocket.
+    Verifies that the new process_cpu_num_audit tool works over WebSocket.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
@@ -14,12 +14,12 @@ def test_process_terminal_audit_tool_ws():
         resp = websocket.receive_json()
         assert resp["type"] == "connected"
 
-        # 2. Start process_terminal_audit
+        # 2. Start process_cpu_num_audit
         websocket.send_text(json.dumps({
             "type": "start",
-            "tool_name": "process_terminal_audit",
+            "tool_name": "process_cpu_num_audit",
             "args": {"samples": 2},
-            "request_id": "req-v628-terminal"
+            "request_id": "req-v628-cpu-num"
         }))
         
         resp = websocket.receive_json()
@@ -32,11 +32,11 @@ def test_process_terminal_audit_tool_ws():
                 break
         
         assert resp["payload"]["status"] == "audit_complete"
-        assert "final_terminal" in resp["payload"]
+        assert "final_cpu_num" in resp["payload"]
 
-def test_process_ionice_extended_audit_tool_ws():
+def test_system_net_io_counters_audit_tool_ws():
     """
-    Verifies that the new process_ionice_extended_audit tool works over WebSocket.
+    Verifies that the new system_net_io_counters_audit tool works over WebSocket.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
@@ -44,12 +44,12 @@ def test_process_ionice_extended_audit_tool_ws():
         resp = websocket.receive_json()
         assert resp["type"] == "connected"
 
-        # 2. Start process_ionice_extended_audit
+        # 2. Start system_net_io_counters_audit
         websocket.send_text(json.dumps({
             "type": "start",
-            "tool_name": "process_ionice_extended_audit",
+            "tool_name": "system_net_io_counters_audit",
             "args": {"samples": 2},
-            "request_id": "req-v628-ionice"
+            "request_id": "req-v628-net-io"
         }))
         
         resp = websocket.receive_json()
@@ -62,11 +62,11 @@ def test_process_ionice_extended_audit_tool_ws():
                 break
         
         assert resp["payload"]["status"] == "audit_complete"
-        assert "final_ionice" in resp["payload"]
+        assert "final_counters" in resp["payload"]
 
-def test_process_rlimit_audit_tool_ws():
+def test_system_users_audit_tool_ws():
     """
-    Verifies that the new process_rlimit_audit tool works over WebSocket.
+    Verifies that the new system_users_audit tool works over WebSocket.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
@@ -74,12 +74,12 @@ def test_process_rlimit_audit_tool_ws():
         resp = websocket.receive_json()
         assert resp["type"] == "connected"
 
-        # 2. Start process_rlimit_audit
+        # 2. Start system_users_audit
         websocket.send_text(json.dumps({
             "type": "start",
-            "tool_name": "process_rlimit_audit",
+            "tool_name": "system_users_audit",
             "args": {"samples": 2},
-            "request_id": "req-v628-rlimit"
+            "request_id": "req-v628-users"
         }))
         
         resp = websocket.receive_json()
@@ -92,7 +92,7 @@ def test_process_rlimit_audit_tool_ws():
                 break
         
         assert resp["payload"]["status"] == "audit_complete"
-        assert "limits_count" in resp["payload"]
+        assert "final_user_count" in resp["payload"]
 
 def test_v628_metadata():
     """
@@ -102,6 +102,6 @@ def test_v628_metadata():
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == APP_VERSION
-    assert data["git_commit"] == GIT_COMMIT
-    assert data["status"] == OPERATIONAL_APEX
+    assert data["version"] == "2.5.4"
+    assert data["git_commit"] == "v628-supreme-apex-adele-verification"
+    assert data["status"] == "v628 SUPREME APEX VERIFICATION ADELE"
