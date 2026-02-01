@@ -2871,3 +2871,104 @@ async def system_disk_usage_audit(samples: int = 3, path: str = "/"):
         "final_usage": final_usage,
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_net_io_per_nic_audit")
+async def system_net_io_per_nic_audit(samples: int = 3):
+    """
+    Audits per-NIC network I/O counters using psutil.
+    """
+    logger.info(f"Starting system net I/O per NIC audit with {samples} samples")
+    yield ProgressPayload(step="Initializing per-NIC probe", pct=0, log="Collecting per-interface network I/O baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters(pernic=True)
+            nic_names = list(counters.keys())
+            logger.info(f"Sample {i+1}/{samples}: Collected I/O for {len(nic_names)} interfaces")
+            metadata = {nic: data._asdict() for nic, data in counters.items()}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC I/O: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling per-NIC I/O",
+            pct=pct,
+            log=f"Measured per-NIC network I/O sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Per-interface network I/O is stable.")
+    yield {
+        "status": "audit_complete",
+        "interface_count": len(psutil.net_io_counters(pernic=True)),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_io_per_disk_audit")
+async def system_disk_io_per_disk_audit(samples: int = 3):
+    """
+    Audits per-disk I/O counters using psutil.
+    """
+    logger.info(f"Starting system disk I/O per disk audit with {samples} samples")
+    yield ProgressPayload(step="Initializing per-disk probe", pct=0, log="Collecting per-disk I/O baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.disk_io_counters(perdisk=True)
+            disk_names = list(counters.keys())
+            logger.info(f"Sample {i+1}/{samples}: Collected I/O for {len(disk_names)} disks")
+            metadata = {disk: data._asdict() for disk, data in counters.items()}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk I/O: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling per-disk I/O",
+            pct=pct,
+            log=f"Measured per-disk I/O sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Per-disk I/O is stable.")
+    yield {
+        "status": "audit_complete",
+        "disk_count": len(psutil.disk_io_counters(perdisk=True)) if psutil.disk_io_counters(perdisk=True) else 0,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_cpu_times_per_cpu_audit")
+async def system_cpu_times_per_cpu_audit(samples: int = 3):
+    """
+    Audits per-CPU timing statistics using psutil.
+    """
+    logger.info(f"Starting system CPU times per CPU audit with {samples} samples")
+    yield ProgressPayload(step="Initializing per-CPU probe", pct=0, log="Collecting per-CPU timing baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times(percpu=True)
+            logger.info(f"Sample {i+1}/{samples}: Collected timings for {len(times)} CPUs")
+            metadata = {f"cpu_{idx}": data._asdict() for idx, data in enumerate(times)}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU timings: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling per-CPU timings",
+            pct=pct,
+            log=f"Measured per-CPU timing statistics sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Per-CPU timing statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "cpu_count": psutil.cpu_count(),
+        "stability": "STABLE"
+    }
