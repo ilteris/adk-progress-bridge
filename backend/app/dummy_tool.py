@@ -2664,3 +2664,115 @@ async def system_net_connections_audit(samples: int = 3):
         "final_connections_count": count,
         "stability": "STABLE"
     }
+@progress_tool(name="system_pids_audit")
+async def system_pids_audit(samples: int = 3):
+    """
+    Audits the list of active PIDs on the system using psutil.
+    """
+    logger.info(f"Starting system PIDs audit with {samples} samples")
+    yield ProgressPayload(step="Initializing PID list probe", pct=0, log="Collecting system-wide PID baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            pids = psutil.pids()
+            count = len(pids)
+        except Exception as e:
+            logger.warning(f"Error collecting system PIDs: {e}")
+            pids = []
+            count = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: {count} active PIDs.")
+        yield ProgressPayload(
+            step="Sampling system PIDs",
+            pct=pct,
+            log=f"Measured {count} active system PIDs. Sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "count": count,
+                "pids": pids[:10]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. PID distribution is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_pid_count": len(psutil.pids()),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_cpu_times_audit")
+async def system_cpu_times_audit(samples: int = 3):
+    """
+    Audits absolute system-wide CPU times using psutil.
+    """
+    logger.info(f"Starting system CPU times audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU times probe", pct=0, log="Collecting system-wide absolute CPU timing baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        cpu_times = psutil.cpu_times()
+            
+        logger.info(f"Sample {i+1}/{samples}: CPU Times User {cpu_times.user}s")
+        yield ProgressPayload(
+            step="Sampling CPU times",
+            pct=pct,
+            log=f"Measured system CPU times sample {i+1}/{samples}: User {cpu_times.user}s.",
+            metadata={
+                "sample_id": i + 1,
+                "user": cpu_times.user,
+                "system": cpu_times.system,
+                "idle": cpu_times.idle,
+                "iowait": getattr(cpu_times, "iowait", 0.0)
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Absolute CPU timing is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_cpu_times": psutil.cpu_times()._asdict() if hasattr(psutil.cpu_times(), "_asdict") else None,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_io_counters_audit")
+async def system_disk_io_counters_audit(samples: int = 3):
+    """
+    Audits system-wide disk I/O counters using psutil.
+    """
+    logger.info(f"Starting system disk I/O counters audit with {samples} samples")
+    yield ProgressPayload(step="Initializing disk I/O probe", pct=0, log="Collecting system-wide disk I/O baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            counters = psutil.disk_io_counters()
+            read_bytes = counters.read_bytes
+            write_bytes = counters.write_bytes
+        except Exception as e:
+            logger.warning(f"Error collecting system disk I/O: {e}")
+            read_bytes = write_bytes = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: Read {read_bytes} bytes, Write {write_bytes} bytes")
+        yield ProgressPayload(
+            step="Sampling disk I/O",
+            pct=pct,
+            log=f"Measured system disk I/O sample {i+1}/{samples}: Read {read_bytes}, Write {write_bytes}.",
+            metadata={
+                "sample_id": i + 1,
+                "read_bytes": read_bytes,
+                "write_bytes": write_bytes
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. System-wide disk I/O is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_counters": psutil.disk_io_counters()._asdict() if psutil.disk_io_counters() else {},
+        "stability": "STABLE"
+    }
