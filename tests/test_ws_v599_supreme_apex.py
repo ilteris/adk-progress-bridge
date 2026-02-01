@@ -19,7 +19,7 @@ def test_open_files_audit_tool_ws():
             "type": "start",
             "tool_name": "open_files_audit",
             "args": {"samples": 2},
-            "request_id": "req-v605"
+            "request_id": "req-v606"
         }))
         
         resp = websocket.receive_json()
@@ -40,14 +40,14 @@ def test_open_files_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_file_count" in resp["payload"]
 
-def test_v605_metadata():
+def test_v606_metadata():
     """
-    Verifies that the system reports correct v605 Supreme Apex metadata.
+    Verifies that the system reports correct v606 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.3.1"
-    assert data["git_commit"] == "v605-supreme-apex-adele-verification"
-    assert "v605 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.3.2"
+    assert data["git_commit"] == "v606-supreme-apex-adele-verification"
+    assert "v606 SUPREME APEX" in data["status"]

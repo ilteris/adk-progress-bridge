@@ -18,7 +18,7 @@ def test_disk_io_audit_tool_ws():
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v605-disk-audit"
+            request_id = "v606-disk-audit"
             websocket.send_json({
                 "type": "start",
                 "tool_name": "disk_io_audit",
@@ -51,13 +51,13 @@ def test_disk_io_audit_tool_ws():
             assert progress_received, "Did not receive progress updates"
             assert result_received, "Did not receive final result"
 
-def test_v605_metadata_verification():
+def test_v606_metadata_verification():
     """
-    Verifies that the version and metadata are correctly updated for v605.
+    Verifies that the version and metadata are correctly updated for v606.
     """
     with TestClient(app) as client:
         response = client.get("/version")
         assert response.status_code == 200
         data = response.json()
-        assert data["version"] == "2.3.1"
-        assert "v605" in data["status"]
+        assert data["version"] == "2.3.2"
+        assert "v606" in data["status"]

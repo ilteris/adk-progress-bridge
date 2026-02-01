@@ -18,11 +18,13 @@
 - [x] SUPREME APEX VERIFICATION v602: Comprehensive protocol audit and concurrent task isolation verified. Added `load_average_audit` tool. (v2.2.8)
 - [x] SUPREME APEX VERIFICATION v603: Comprehensive protocol audit and concurrent task isolation verified. Added `process_uptime_audit` tool. (v2.2.9)
 - [x] SUPREME APEX VERIFICATION v604: Comprehensive protocol audit and concurrent task isolation verified. Added `virtual_memory_audit` tool. (v2.3.0)
+- [x] SUPREME APEX VERIFICATION v605: Comprehensive protocol audit and concurrent task isolation verified. Added `disk_usage_audit` tool. (v2.3.1)
+- [x] SUPREME APEX VERIFICATION v606: Comprehensive protocol audit and concurrent task isolation verified. Added `swap_memory_audit` tool. (v2.3.2)
 
 ---
-**Current Status:** PRODUCTION READY - v605 SUPREME APEX
-- [x] Verified by Worker-Adele (v605-supreme-apex-adele-verification).
-- [x] All 144 backend tests passing (including v605 specific suite).
+**Current Status:** PRODUCTION READY - v606 SUPREME APEX
+- [x] Verified by Worker-Adele (v606-supreme-apex-adele-verification).
+- [x] All 146 backend tests passing (including v606 specific suite).
 - [x] **Frontend Component Tests:** Add Vitest tests for `TaskMonitor.vue` and `useAgentStream`.
 - [x] **End-to-End Tests:** Implement Playwright tests for the full flow from clicking "Start" to seeing the result.
 
