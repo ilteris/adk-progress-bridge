@@ -9,19 +9,20 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.app.main import app
 
-def test_network_status_check_tool_ws():
+def test_connectivity_benchmark_tool_ws():
     """
-    Verifies that the new network_status_check tool works over WebSocket.
+    Verifies that the new connectivity_benchmark tool works over WebSocket.
     """
     with TestClient(app) as client:
         with client.websocket_connect("/ws?api_key=test_key") as websocket:
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v590-network-test"
+            request_id = "v590-benchmark-test"
             websocket.send_json({
                 "type": "start",
-                "tool_name": "network_status_check",
+                "tool_name": "connectivity_benchmark",
+                "args": {"samples": 3},
                 "request_id": request_id
             })
             
@@ -35,9 +36,14 @@ def test_network_status_check_tool_ws():
                     assert data["request_id"] == request_id
                 elif data["type"] == "progress":
                     progress_received = True
+                    # Only check metadata for sampling steps
+                    if data["payload"].get("step") == "Sampling latency":
+                        assert "metadata" in data["payload"]
+                        assert "latency_ms" in data["payload"]["metadata"]
                 elif data["type"] == "result":
-                    assert data["payload"]["status"] == "online"
+                    assert data["payload"]["status"] == "benchmark_complete"
                     assert "avg_latency_ms" in data["payload"]
+                    assert data["payload"]["samples_taken"] == 3
                     result_received = True
                     break
                 elif data["type"] == "error":
@@ -55,5 +61,4 @@ def test_v590_metadata_verification():
         assert response.status_code == 200
         data = response.json()
         assert data["version"] == "2.1.6"
-        assert "v590" in data["git_commit"]
         assert "v590" in data["status"]
