@@ -424,7 +424,7 @@ export function useAgentStream() {
         }
       }
 
-      eventSource.onerror = (err) => {
+      eventSource.onerror = () => {
         if (eventSource?.readyState === EventSource.CONNECTING) {
           state.status = 'reconnecting'
           state.isConnected = false
@@ -488,7 +488,7 @@ export function useAgentStream() {
           method: 'POST',
           headers
         })
-      } catch (err) {}
+      } catch {}
       
       if (eventSource) {
         eventSource.close()
@@ -532,7 +532,7 @@ export function useAgentStream() {
                         value: value
                     })
                 })
-            } catch (err) {}
+            } catch {}
         }
         state.status = 'connected'
         state.inputPrompt = null
