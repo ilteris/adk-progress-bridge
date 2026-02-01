@@ -100,5 +100,5 @@ The bridge provides deep visibility into the host system performance:
 
 ## 6. Versioning & Identity
 - **APP_VERSION**: 1.9.0
-- **GIT_COMMIT**: v527-supreme-absolute-worker-verification
-- **OPERATIONAL_APEX**: v527 SUPREME ABSOLUTE WORKER VERIFICATION
+- **GIT_COMMIT**: v536-supreme-absolute-worker-verification
+- **OPERATIONAL_APEX**: v536 SUPREME ABSOLUTE WORKER VERIFICATION
