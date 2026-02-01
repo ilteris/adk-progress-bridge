@@ -18,7 +18,7 @@ def test_concurrency_stress_test_tool_ws():
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v606-stress-test"
+            request_id = "v608-stress-test"
             websocket.send_json({
                 "type": "start",
                 "tool_name": "concurrency_stress_test",
@@ -50,13 +50,13 @@ def test_concurrency_stress_test_tool_ws():
             assert progress_received, "Did not receive progress updates"
             assert result_received, "Did not receive final result"
 
-def test_v606_metadata_verification():
+def test_v608_metadata_verification():
     """
-    Verifies that the version and metadata are correctly updated for v606.
+    Verifies that the version and metadata are correctly updated for v608.
     """
     with TestClient(app) as client:
         response = client.get("/version")
         assert response.status_code == 200
         data = response.json()
-        assert data["version"] == "2.3.3"
-        assert "v607" in data["status"]
+        assert data["version"] == "2.3.4"
+        assert "v608" in data["status"]

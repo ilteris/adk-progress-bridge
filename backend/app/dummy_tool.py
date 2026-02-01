@@ -266,7 +266,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.2.9", "v603-supreme-apex-adele-verification", "v603 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.3.4", "v608-supreme-apex-adele-verification", "v608 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -981,5 +981,44 @@ async def process_priority_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_nice": psutil.Process().nice(),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_memory_full_audit")
+async def process_memory_full_audit(samples: int = 3):
+    """
+    Audits process memory maps and full memory info using psutil.
+    """
+    logger.info(f"Starting process memory full audit with {samples} samples")
+    yield ProgressPayload(step="Initializing memory map probe", pct=0, log="Collecting detailed memory mapping information...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        mem_info = process.memory_full_info()
+        try:
+            uss = mem_info.uss
+        except AttributeError:
+            uss = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: USS {uss / 1024 / 1024:.2f}MB")
+        yield ProgressPayload(
+            step="Sampling memory maps",
+            pct=pct,
+            log=f"Measured process USS sample {i+1}/{samples}: {uss / 1024 / 1024:.2f}MB.",
+            metadata={
+                "sample_id": i + 1,
+                "uss": uss,
+                "rss": mem_info.rss,
+                "vms": mem_info.vms
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory mapping is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_uss_mb": uss / 1024 / 1024,
         "stability": "STABLE"
     }

@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.3.3
+# Specification: ADK Progress Bridge v2.3.4
 
 ## 1. System Overview
 The system consists of a Python backend (FastAPI) acting as the ADK Agent host and a Vue.js frontend client. They communicate via **Server-Sent Events (SSE)** or **WebSockets** for real-time progress updates.
@@ -104,7 +104,7 @@ The bridge provides deep visibility into the host system performance:
 *   **Backpressure:** SSE streams use a bounded `combined_queue` (size 1000) to ensure tool generators respect client consumption rates.
 
 ## 6. Versioning & Identity
-- **APP_VERSION**: 2.3.3
-- **GIT_COMMIT**: v607-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: v607 SUPREME APEX VERIFICATION ADELE
-- **BUILD_TIMESTAMP**: 2026-02-01T14:00:00Z
+- **APP_VERSION**: 2.3.4
+- **GIT_COMMIT**: v608-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: v608 SUPREME APEX VERIFICATION ADELE
+- **BUILD_TIMESTAMP**: 2026-02-01T15:30:00Z
