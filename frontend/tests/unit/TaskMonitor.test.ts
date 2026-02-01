@@ -11,6 +11,7 @@ describe('TaskMonitor.vue', () => {
   let mockReset: any
   let mockSendInput: any
   let mockFetchTools: any
+  let mockFetchHealth: any
 
   beforeEach(() => {
     mockState = reactive({
@@ -24,13 +25,15 @@ describe('TaskMonitor.vue', () => {
       error: null,
       isStreaming: false,
       useWS: false,
-      inputPrompt: null
+      inputPrompt: null,
+      systemMetrics: null
     })
     mockRunTool = vi.fn()
     mockStopTool = vi.fn()
     mockReset = vi.fn()
     mockSendInput = vi.fn()
     mockFetchTools = vi.fn().mockResolvedValue(['long_audit', 'interactive_task'])
+    mockFetchHealth = vi.fn()
 
     vi.spyOn(streamComposables, 'useAgentStream').mockReturnValue({
       state: mockState,
@@ -38,7 +41,8 @@ describe('TaskMonitor.vue', () => {
       stopTool: mockStopTool,
       reset: mockReset,
       sendInput: mockSendInput,
-      fetchTools: mockFetchTools
+      fetchTools: mockFetchTools,
+      fetchHealth: mockFetchHealth
     })
   })
 
@@ -101,7 +105,7 @@ describe('TaskMonitor.vue', () => {
     
     expect(wrapper.text()).toContain('Final Result:')
     expect(wrapper.text()).toContain('"summary": "Done!"')
-    expect(wrapper.find('.badge.bg-light').text()).toBe('Done')
+    expect(wrapper.find('[data-testid="status-badge"]').text()).toBe('Done')
   })
 
   it('disables inputs and shows Stop Task while streaming', async () => {
