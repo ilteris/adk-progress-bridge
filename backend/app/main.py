@@ -5,6 +5,7 @@ import uuid
 import time
 import os
 import inspect
+from datetime import datetime
 from typing import Dict, List, Optional, Any
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, WebSocket, WebSocketDisconnect, status
@@ -33,10 +34,10 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.0.3"
+APP_VERSION = "2.0.4"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v577-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v577 SUPREME APEX VERIFICATION ADELE"
+GIT_COMMIT = "v578-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v578 SUPREME APEX VERIFICATION ADELE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -168,10 +169,20 @@ async def stop_task(call_id: Optional[str] = None, cid: Optional[str] = Query(No
     return {"status": "stop signal sent"}
 
 @app.get("/health") 
-async def health_check(): return await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
+async def health_check():
+    health = await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
+    health["last_updated_str"] = datetime.now().isoformat()
+    return health
 
 @app.get("/version") 
-async def get_version(): return {"version": APP_VERSION, "git_commit": GIT_COMMIT, "status": OPERATIONAL_APEX, "timestamp": time.time()} 
+async def get_version():
+    return {
+        "version": APP_VERSION,
+        "git_commit": GIT_COMMIT,
+        "status": OPERATIONAL_APEX,
+        "timestamp": time.time(),
+        "last_updated_str": datetime.now().isoformat()
+    }
 
 @app.get("/metrics")
 async def metrics():
@@ -240,7 +251,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 if msg_type == "ping": await safe_send_json({"type": "pong", "request_id": request_id})
                 elif msg_type == "list_tools": await safe_send_json({"type": "tools_list", "tools": registry.list_tools(), "request_id": request_id})
                 elif msg_type == "list_active_tasks": await safe_send_json({"type": "active_tasks_list", "tasks": await registry.list_active_tasks(), "request_id": request_id})
-                elif msg_type == "get_health": await safe_send_json({"type": "health_data", "data": await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX), "request_id": request_id})
+                elif msg_type == "get_health":
+                    health = await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
+                    health["last_updated_str"] = datetime.now().isoformat()
+                    await safe_send_json({"type": "health_data", "data": health, "request_id": request_id})
                 elif msg_type == "start":
                     if registry.active_task_count >= MAX_CONCURRENT_TASKS: await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": "Server busy"}})
                     else:
@@ -281,7 +295,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         if task_data:
                             active_tasks[call_id] = asyncio.create_task(run_ws_generator(safe_send_json, call_id, task_data["tool_name"], task_data["gen"], active_tasks))
                             await safe_send_json({"type": "task_started", "call_id": call_id, "tool_name": task_data["tool_name"], "request_id": request_id})
-                        else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No active task found"}})
+                        else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": f"No active task found for call_id: {call_id}"}})
                     except Exception as e:
                         if call_id in active_tasks: active_tasks[call_id].cancel()
                         await registry.remove_task(call_id)

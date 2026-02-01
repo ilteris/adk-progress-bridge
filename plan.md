@@ -30,7 +30,9 @@
 - [x] Refined transport error handling in WebSocket tasks to prevent redundant sends on closed connections (v576).
 - [x] Added request_id correlation to pong responses (v576).
 - [x] Refined transport error logging level from debug to warning for improved visibility (v577).
+- [x] Added `last_updated_str` (ISO timestamp) to health and version endpoints (v578).
+- [x] Improved WebSocket `subscribe` error message to include `call_id` (v578).
 
 ---
-**Current Status:** PRODUCTION READY - v577 SUPREME APEX
-- [x] Verified by Worker-Adele (v577-supreme-apex-adele-verification).
+**Current Status:** PRODUCTION READY - v578 SUPREME APEX
+- [x] Verified by Worker-Adele (v578-supreme-apex-adele-verification).

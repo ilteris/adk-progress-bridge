@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.0.3
+# Specification: ADK Progress Bridge v2.0.4
 
 ## 1. System Overview
 The system consists of a Python backend (FastAPI) acting as the ADK Agent host and a Vue.js frontend client. They communicate via **Server-Sent Events (SSE)** or **WebSockets** for real-time progress updates.
@@ -44,6 +44,7 @@ Centralized singleton for broadcasting real-time health metrics to all active st
     *   `GET /stream/{call_id}`: SSE endpoint for progress streaming.
     *   `POST /stop_task/{call_id}`: Manual termination.
     *   `POST /provide_input`: REST fallback for providing input for SSE tasks.
+    *   `GET /version`: Returns system version, status, and `last_updated_str` (ISO timestamp).
 *   **WebSocket Flow:**
     *   `WS /ws`: Bi-directional connection for task control and streaming.
     *   Message `{"type": "list_tools", "request_id": "..."}` requests all tool names.
@@ -58,8 +59,10 @@ Centralized singleton for broadcasting real-time health metrics to all active st
         *   Response: `{"type": "input_success", "call_id": "...", "request_id": "..."}`
     *   Message `{"type": "ping"}` requests a heartbeat check.
         *   Response: `{"type": "pong"}`
-    *   Message `{"type": "get_health"}` requests the latest system health data.
+    *   Message `{"type": "get_health"}` requests the latest system health data (includes `last_updated_str`).
         *   Response: `{"type": "health_data", "data": {...}}`
+    *   Message `{"type": "subscribe", "call_id": "..."}` attempts to subscribe to an existing task.
+        *   Error detail includes `call_id` if task is not found.
     *   **Handshake Acknowledgement:** Immediately upon connection, the server sends `{"type": "connected", "status": "ready"}` to confirm the bi-directional stream is operational.
 
 ## 3. Frontend Specification (Vue.js)
@@ -101,6 +104,6 @@ The bridge provides deep visibility into the host system performance:
 *   **Backpressure:** SSE streams use a bounded `combined_queue` (size 1000) to ensure tool generators respect client consumption rates.
 
 ## 6. Versioning & Identity
-- **APP_VERSION**: 2.0.3
-- **GIT_COMMIT**: v577-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: SUPREME APEX VERIFICATION ADELE (v577)
+- **APP_VERSION**: 2.0.4
+- **GIT_COMMIT**: v578-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: SUPREME APEX VERIFICATION ADELE (v578)
