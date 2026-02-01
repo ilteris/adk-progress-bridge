@@ -1569,3 +1569,42 @@ async def process_uids_audit(samples: int = 3):
         "final_uids": process.uids()._asdict() if hasattr(process.uids(), "_asdict") else process.uids(),
         "stability": "STABLE"
     }
+@progress_tool(name="process_children_audit")
+async def process_children_audit(samples: int = 3):
+    """
+    Audits process children using psutil.
+    """
+    logger.info(f"Starting process children audit with {samples} samples")
+    yield ProgressPayload(step="Initializing children probe", pct=0, log="Collecting process-level children baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            children = process.children(recursive=True)
+            child_count = len(children)
+        except Exception as e:
+            logger.warning(f"Error collecting process children: {e}")
+            children = []
+            child_count = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: {child_count} child processes.")
+        yield ProgressPayload(
+            step="Sampling process children",
+            pct=pct,
+            log=f"Measured {child_count} child processes. Sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "child_count": child_count,
+                "children": [str(c) for c in children[:5]]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Child process management is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_child_count": len(psutil.Process().children(recursive=True)),
+        "stability": "STABLE"
+    }

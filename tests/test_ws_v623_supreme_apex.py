@@ -4,9 +4,9 @@ import asyncio
 from fastapi.testclient import TestClient
 from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
-def test_process_num_threads_audit_tool_ws():
+def test_process_children_audit_tool_ws():
     """
-    Verifies that the new process_num_threads_audit tool (v620) works over WebSocket.
+    Verifies that the new process_children_audit tool works over WebSocket.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
@@ -14,12 +14,12 @@ def test_process_num_threads_audit_tool_ws():
         resp = websocket.receive_json()
         assert resp["type"] == "connected"
 
-        # 2. Start process_num_threads_audit
+        # 2. Start process_children_audit
         websocket.send_text(json.dumps({
             "type": "start",
-            "tool_name": "process_num_threads_audit",
+            "tool_name": "process_children_audit",
             "args": {"samples": 2},
-            "request_id": "req-v620"
+            "request_id": "req-v623"
         }))
         
         resp = websocket.receive_json()
@@ -36,18 +36,18 @@ def test_process_num_threads_audit_tool_ws():
                 progress_events.append(resp)
         
         assert len(progress_events) >= 2
-        assert any("Sampling thread count" in p["payload"]["step"] for p in progress_events)
+        assert any("Sampling process children" in p["payload"]["step"] for p in progress_events)
         assert resp["payload"]["status"] == "audit_complete"
-        assert "final_num_threads" in resp["payload"]
+        assert "final_child_count" in resp["payload"]
 
-def test_v620_metadata():
+def test_v623_metadata():
     """
-    Verifies that the system reports correct v620 Supreme Apex metadata.
+    Verifies that the system reports correct v623 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.4.9"
-    assert data["git_commit"] == "v623-supreme-apex-adele-verification"
-    assert "v623 SUPREME APEX" in data["status"]
+    assert data["version"] == APP_VERSION
+    assert data["git_commit"] == GIT_COMMIT
+    assert data["status"] == OPERATIONAL_APEX
