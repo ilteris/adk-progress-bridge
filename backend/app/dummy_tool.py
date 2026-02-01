@@ -266,7 +266,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.2.8", "v602-supreme-apex-adele-verification", "v602 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.2.9", "v603-supreme-apex-adele-verification", "v603 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -799,5 +799,41 @@ async def load_average_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_load_avg": psutil.getloadavg() if hasattr(psutil, "getloadavg") else (0.0, 0.0, 0.0),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_uptime_audit")
+async def process_uptime_audit(samples: int = 3):
+    """
+    Audits process uptime and start time.
+    """
+    logger.info(f"Starting process uptime audit with {samples} samples")
+    yield ProgressPayload(step="Initializing uptime probe", pct=0, log="Checking process birth time...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        create_time = process.create_time()
+        uptime = time.time() - create_time
+        
+        logger.info(f"Sample {i+1}/{samples}: Process Uptime {uptime:.2f}s")
+        yield ProgressPayload(
+            step="Sampling uptime",
+            pct=pct,
+            log=f"Measured process uptime sample {i+1}/{samples}: {uptime:.2f}s.",
+            metadata={
+                "sample_id": i + 1,
+                "create_time": create_time,
+                "uptime_seconds": uptime,
+                "uptime_human": time.strftime("%H:%M:%S", time.gmtime(uptime))
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Process is RELIABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_uptime_seconds": time.time() - psutil.Process().create_time(),
         "stability": "STABLE"
     }
