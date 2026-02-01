@@ -16,11 +16,11 @@ def test_ws_v655_new_tools_availability():
         assert response["type"] == "tools_list"
         tools = response["tools"]
         
-        assert "system_cpu_stats_syscalls_focused_audit" in tools
-        assert "system_net_io_packets_sent_focused_audit" in tools
-        assert "system_net_io_packets_recv_focused_audit" in tools
+        assert "system_net_io_errin_focused_audit" in tools
+        assert "system_net_io_errout_focused_audit" in tools
+        assert "system_net_io_dropin_focused_audit" in tools
 
-def test_ws_v655_system_cpu_stats_syscalls_focused_audit():
+def test_ws_v655_system_net_io_errin_focused_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -28,7 +28,7 @@ def test_ws_v655_system_cpu_stats_syscalls_focused_audit():
         
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_cpu_stats_syscalls_focused_audit",
+            "tool_name": "system_net_io_errin_focused_audit",
             "args": {"samples": 1}
         })
         
@@ -46,9 +46,9 @@ def test_ws_v655_system_cpu_stats_syscalls_focused_audit():
         
         assert any(m["type"] == "progress" for m in messages)
         final_msg = messages[-1]
-        assert "final_syscalls" in final_msg["payload"]
+        assert "final_errin" in final_msg["payload"]
 
-def test_ws_v655_system_net_io_packets_sent_focused_audit():
+def test_ws_v655_system_net_io_errout_focused_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -56,7 +56,7 @@ def test_ws_v655_system_net_io_packets_sent_focused_audit():
         
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_net_io_packets_sent_focused_audit",
+            "tool_name": "system_net_io_errout_focused_audit",
             "args": {"samples": 1}
         })
         
@@ -74,9 +74,9 @@ def test_ws_v655_system_net_io_packets_sent_focused_audit():
         
         assert any(m["type"] == "progress" for m in messages)
         final_msg = messages[-1]
-        assert "final_packets_sent" in final_msg["payload"]
+        assert "final_errout" in final_msg["payload"]
 
-def test_ws_v655_system_net_io_packets_recv_focused_audit():
+def test_ws_v655_system_net_io_dropin_focused_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -84,7 +84,7 @@ def test_ws_v655_system_net_io_packets_recv_focused_audit():
         
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_net_io_packets_recv_focused_audit",
+            "tool_name": "system_net_io_dropin_focused_audit",
             "args": {"samples": 1}
         })
         
@@ -102,4 +102,4 @@ def test_ws_v655_system_net_io_packets_recv_focused_audit():
         
         assert any(m["type"] == "progress" for m in messages)
         final_msg = messages[-1]
-        assert "final_packets_recv" in final_msg["payload"]
+        assert "final_dropin" in final_msg["payload"]

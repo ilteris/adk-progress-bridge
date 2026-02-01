@@ -267,7 +267,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.7.8", "v652-supreme-apex-adele-verification", "v652 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.8.1", "v655-supreme-apex-adele-verification", "v655 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -4897,3 +4897,64 @@ async def system_net_io_packets_recv_focused_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Packets received statistics are stable.")
     yield {"status": "audit_complete", "final_packets_recv": packets_recv, "stability": "STABLE"}
+
+
+@progress_tool(name="system_net_io_errin_focused_audit")
+async def system_net_io_errin_focused_audit(samples: int = 3):
+    logger.info("Starting focused incoming network errors audit")
+    yield ProgressPayload(step="Initializing errin focused probe", pct=0, log="Collecting system-wide incoming network error counters...")
+    errin = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_io_counters()
+            errin = stats.errin
+            logger.info(f"Sample {i+1}/{samples}: Incoming-errors {errin}")
+            metadata = {"errin": errin}
+        except Exception as e:
+            logger.error(f"Error auditing focused incoming network errors: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling incoming errors", pct=pct, log=f"Measured incoming network errors sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Incoming network error statistics are stable.")
+    yield {"status": "audit_complete", "final_errin": errin, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_errout_focused_audit")
+async def system_net_io_errout_focused_audit(samples: int = 3):
+    logger.info("Starting focused outgoing network errors audit")
+    yield ProgressPayload(step="Initializing errout focused probe", pct=0, log="Collecting system-wide outgoing network error counters...")
+    errout = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_io_counters()
+            errout = stats.errout
+            logger.info(f"Sample {i+1}/{samples}: Outgoing-errors {errout}")
+            metadata = {"errout": errout}
+        except Exception as e:
+            logger.error(f"Error auditing focused outgoing network errors: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling outgoing errors", pct=pct, log=f"Measured outgoing network errors sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Outgoing network error statistics are stable.")
+    yield {"status": "audit_complete", "final_errout": errout, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_dropin_focused_audit")
+async def system_net_io_dropin_focused_audit(samples: int = 3):
+    logger.info("Starting focused incoming network drops audit")
+    yield ProgressPayload(step="Initializing dropin focused probe", pct=0, log="Collecting system-wide incoming network drop counters...")
+    dropin = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_io_counters()
+            dropin = stats.dropin
+            logger.info(f"Sample {i+1}/{samples}: Incoming-drops {dropin}")
+            metadata = {"dropin": dropin}
+        except Exception as e:
+            logger.error(f"Error auditing focused incoming network drops: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling incoming drops", pct=pct, log=f"Measured incoming network drops sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Incoming network drop statistics are stable.")
+    yield {"status": "audit_complete", "final_dropin": dropin, "stability": "STABLE"}
