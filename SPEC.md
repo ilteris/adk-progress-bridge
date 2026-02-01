@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.7.8
+# Specification: ADK Progress Bridge v2.7.9
 
 ## Overview
 The ADK Progress Bridge is a high-performance middleware designed to connect background tools/tasks with a real-time terminal user interface (TUI). It provides a standardized protocol for reporting progress, logs, and results via Server-Sent Events (SSE) and WebSockets.
@@ -168,9 +168,14 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - `system_disk_io_read_count_audit`: System-wide disk read count tracking.
 - `system_disk_io_write_count_audit`: System-wide disk write count tracking.
 - `system_disk_io_read_time_audit`: System-wide disk read time tracking.
+- `system_disk_io_write_time_audit`: System-wide disk write time tracking.
+- `system_disk_io_busy_time_audit`: System-wide disk busy time tracking.
+- `system_cpu_stats_ctx_switches_focused_audit`: System-wide context switch focused tracking.
+- `system_cpu_stats_interrupts_focused_audit`: System-wide interrupt focused tracking.
+- `system_cpu_stats_soft_interrupts_focused_audit`: System-wide soft interrupt focused tracking.
 
 ## 5. Metadata
-- **APP_VERSION**: 2.7.8
-- **BUILD_TIMESTAMP**: 2026-02-01T19:00:00Z
-- **GIT_COMMIT**: v652-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: v652 SUPREME APEX VERIFICATION ADELE
+- **APP_VERSION**: 2.7.9
+- **BUILD_TIMESTAMP**: 2026-02-01T18:00:00Z
+- **GIT_COMMIT**: v653-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: v653 SUPREME APEX VERIFICATION ADELE

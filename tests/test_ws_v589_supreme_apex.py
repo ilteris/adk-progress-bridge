@@ -18,7 +18,7 @@ def test_system_config_audit_tool_ws():
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v652-audit-test"
+            request_id = "v653-audit-test"
             websocket.send_json({
                 "type": "start",
                 "tool_name": "system_config_audit",
@@ -47,14 +47,14 @@ def test_system_config_audit_tool_ws():
             assert progress_received, "Did not receive progress updates"
             assert result_received, "Did not receive final result"
 
-def test_v652_metadata_verification():
+def test_v653_metadata_verification():
     """
-    Verifies that the version and metadata are correctly updated for v652.
+    Verifies that the version and metadata are correctly updated for v653.
     """
     with TestClient(app) as client:
         response = client.get("/version")
         assert response.status_code == 200
         data = response.json()
-        assert data["version"] == "2.7.8"
-        assert "v652" in data["git_commit"]
-        assert "v652" in data["status"]
+        assert data["version"] == "2.7.9"
+        assert "v653" in data["git_commit"]
+        assert "v653" in data["status"]

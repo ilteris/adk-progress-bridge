@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from backend.app.main import app
 import json
 
-def test_ws_v652_new_tools_availability():
+def test_ws_v653_new_tools_availability():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -16,11 +16,11 @@ def test_ws_v652_new_tools_availability():
         assert response["type"] == "tools_list"
         tools = response["tools"]
         
-        assert "system_disk_io_read_count_audit" in tools
-        assert "system_disk_io_write_count_audit" in tools
-        assert "system_disk_io_read_time_audit" in tools
+        assert "system_disk_io_write_time_audit" in tools
+        assert "system_disk_io_busy_time_audit" in tools
+        assert "system_cpu_times_percent_idle_focused_audit" in tools
 
-def test_ws_v652_system_disk_io_read_count_audit():
+def test_ws_v653_system_disk_io_write_time_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -28,7 +28,7 @@ def test_ws_v652_system_disk_io_read_count_audit():
         
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_disk_io_read_count_audit",
+            "tool_name": "system_disk_io_write_time_audit",
             "args": {"samples": 1}
         })
         
@@ -46,9 +46,9 @@ def test_ws_v652_system_disk_io_read_count_audit():
         
         assert any(m["type"] == "progress" for m in messages)
         final_msg = messages[-1]
-        assert "final_read_count" in final_msg["payload"]
+        assert "final_write_time" in final_msg["payload"]
 
-def test_ws_v652_system_disk_io_write_count_audit():
+def test_ws_v653_system_disk_io_busy_time_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -56,7 +56,7 @@ def test_ws_v652_system_disk_io_write_count_audit():
         
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_disk_io_write_count_audit",
+            "tool_name": "system_disk_io_busy_time_audit",
             "args": {"samples": 1}
         })
         
@@ -74,9 +74,9 @@ def test_ws_v652_system_disk_io_write_count_audit():
         
         assert any(m["type"] == "progress" for m in messages)
         final_msg = messages[-1]
-        assert "final_write_count" in final_msg["payload"]
+        assert "final_busy_time" in final_msg["payload"]
 
-def test_ws_v652_system_disk_io_read_time_audit():
+def test_ws_v653_system_cpu_times_percent_idle_focused_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -84,7 +84,7 @@ def test_ws_v652_system_disk_io_read_time_audit():
         
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_disk_io_read_time_audit",
+            "tool_name": "system_cpu_times_percent_idle_focused_audit",
             "args": {"samples": 1}
         })
         
@@ -102,4 +102,4 @@ def test_ws_v652_system_disk_io_read_time_audit():
         
         assert any(m["type"] == "progress" for m in messages)
         final_msg = messages[-1]
-        assert "final_read_time" in final_msg["payload"]
+        assert "final_idle_percent" in final_msg["payload"]

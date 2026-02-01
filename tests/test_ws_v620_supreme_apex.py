@@ -19,7 +19,7 @@ def test_process_create_time_audit_tool_ws():
             "type": "start",
             "tool_name": "process_create_time_audit",
             "args": {"samples": 2},
-            "request_id": "req-v652"
+            "request_id": "req-v653"
         }))
         
         resp = websocket.receive_json()
@@ -40,9 +40,9 @@ def test_process_create_time_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_create_time" in resp["payload"]
 
-def test_v652_metadata():
+def test_v653_metadata():
     """
-    Verifies that the system reports correct v652 Supreme Apex metadata.
+    Verifies that the system reports correct v653 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")

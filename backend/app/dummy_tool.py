@@ -3587,41 +3587,6 @@ async def system_disk_partitions_device_audit(samples: int = 3, device: str = "/
         "stability": "STABLE"
     }
 
-@progress_tool(name="system_cpu_times_percent_idle_focused_audit")
-async def system_cpu_times_percent_idle_focused_audit(samples: int = 3):
-    """
-    Audits system-wide idle CPU time percentage using psutil.
-    """
-    logger.info("Starting focused idle CPU time percentage audit")
-    yield ProgressPayload(step="Initializing idle CPU focused probe", pct=0, log="Collecting system-wide idle CPU timing percentages...")
-    
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            cpu_times_pct = psutil.cpu_times_percent(interval=0.1)
-            idle_pct = cpu_times_pct.idle
-            logger.info(f"Sample {i+1}/{samples}: Idle CPU Time {idle_pct}%")
-            metadata = {"idle_percent": idle_pct, "user_percent": cpu_times_pct.user, "system_percent": cpu_times_pct.system}
-        except Exception as e:
-            logger.error(f"Error auditing focused idle CPU time: {e}")
-            metadata = {"error": str(e)}
-
-        yield ProgressPayload(
-            step="Sampling idle CPU time",
-            pct=pct,
-            log=f"Measured idle CPU time percentage sample {i+1}/{samples}: {idle_pct}%.",
-            metadata=metadata
-        )
-        await asyncio.sleep(0.1)
-    
-    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Idle CPU time percentages are stable.")
-    yield {
-        "status": "audit_complete",
-        "final_idle_percent": idle_pct,
-        "metric": "idle_cpu_time",
-        "stability": "STABLE"
-    }
-
 @progress_tool(name="system_net_if_addrs_ptp_audit")
 async def system_net_if_addrs_ptp_audit(samples: int = 3):
     """
@@ -4672,76 +4637,6 @@ async def system_net_io_recv_bytes_audit(samples: int = 3):
         "stability": "STABLE"
     }
 
-@progress_tool(name="system_disk_io_read_count_audit")
-async def system_disk_io_read_count_audit(samples: int = 3):
-    """
-    Audits system-wide disk read counts using psutil.
-    """
-    logger.info("Starting system disk io read count audit")
-    yield ProgressPayload(step="Initializing disk read count probe", pct=0, log="Collecting disk read count baseline...")
-    
-    read_count = 0
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            counters = psutil.disk_io_counters()
-            read_count = counters.read_count
-            logger.info(f"Sample {i+1}/{samples}: Read-count {read_count}")
-            metadata = {"read_count": read_count}
-        except Exception as e:
-            logger.error(f"Error auditing disk read count: {e}")
-            metadata = {"error": str(e)}
-
-        yield ProgressPayload(
-            step="Sampling disk read count",
-            pct=pct,
-            log=f"Measured disk read count sample {i+1}/{samples}.",
-            metadata=metadata
-        )
-        await asyncio.sleep(0.1)
-    
-    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk read count statistics are stable.")
-    yield {
-        "status": "audit_complete",
-        "final_read_count": read_count,
-        "stability": "STABLE"
-    }
-
-@progress_tool(name="system_disk_io_write_count_audit")
-async def system_disk_io_write_count_audit(samples: int = 3):
-    """
-    Audits system-wide disk write counts using psutil.
-    """
-    logger.info("Starting system disk io write count audit")
-    yield ProgressPayload(step="Initializing disk write count probe", pct=0, log="Collecting disk write count baseline...")
-    
-    write_count = 0
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            counters = psutil.disk_io_counters()
-            write_count = counters.write_count
-            logger.info(f"Sample {i+1}/{samples}: Write-count {write_count}")
-            metadata = {"write_count": write_count}
-        except Exception as e:
-            logger.error(f"Error auditing disk write count: {e}")
-            metadata = {"error": str(e)}
-
-        yield ProgressPayload(
-            step="Sampling disk write count",
-            pct=pct,
-            log=f"Measured disk write count sample {i+1}/{samples}.",
-            metadata=metadata
-        )
-        await asyncio.sleep(0.1)
-    
-    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk write count statistics are stable.")
-    yield {
-        "status": "audit_complete",
-        "final_write_count": write_count,
-        "stability": "STABLE"
-    }
-
 @progress_tool(name="system_disk_io_read_time_audit")
 async def system_disk_io_read_time_audit(samples: int = 3):
     """
@@ -4776,3 +4671,169 @@ async def system_disk_io_read_time_audit(samples: int = 3):
         "final_read_time": read_time,
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_disk_io_write_time_audit")
+async def system_disk_io_write_time_audit(samples: int = 3):
+    """
+    Audits system-wide disk write time using psutil.
+    """
+    logger.info("Starting system disk io write time audit")
+    yield ProgressPayload(step="Initializing disk write time probe", pct=0, log="Collecting disk write time baseline...")
+    
+    write_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.disk_io_counters()
+            write_time = counters.write_time
+            logger.info(f"Sample {i+1}/{samples}: Write-time {write_time}")
+            metadata = {"write_time": write_time}
+        except Exception as e:
+            logger.error(f"Error auditing disk write time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling disk write time",
+            pct=pct,
+            log=f"Measured disk write time sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk write time statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_write_time": write_time,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_io_busy_time_audit")
+async def system_disk_io_busy_time_audit(samples: int = 3):
+    """
+    Audits system-wide disk busy time using psutil.
+    """
+    logger.info("Starting system disk io busy time audit")
+    yield ProgressPayload(step="Initializing disk busy time probe", pct=0, log="Collecting disk busy time baseline...")
+    
+    busy_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.disk_io_counters()
+            busy_time = getattr(counters, "busy_time", 0)
+            logger.info(f"Sample {i+1}/{samples}: Busy-time {busy_time}")
+            metadata = {"busy_time": busy_time}
+        except Exception as e:
+            logger.error(f"Error auditing disk busy time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling disk busy time",
+            pct=pct,
+            log=f"Measured disk busy time sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk busy time statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_busy_time": busy_time,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_cpu_times_percent_idle_focused_audit")
+async def system_cpu_times_percent_idle_focused_audit(samples: int = 3):
+    """
+    Audits system-wide idle CPU time percentage using psutil.
+    """
+    logger.info("Starting focused idle CPU time percentage audit")
+    yield ProgressPayload(step="Initializing idle CPU focused probe", pct=0, log="Collecting system-wide idle CPU timing percentages...")
+    
+    idle_pct = 0.0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_times_pct = psutil.cpu_times_percent(interval=0.1)
+            idle_pct = cpu_times_pct.idle
+            logger.info(f"Sample {i+1}/{samples}: Idle CPU Time {idle_pct}%")
+            metadata = {"idle_percent": idle_pct, "user_percent": cpu_times_pct.user, "system_percent": cpu_times_pct.system}
+        except Exception as e:
+            logger.error(f"Error auditing focused idle CPU time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling idle CPU time",
+            pct=pct,
+            log=f"Measured idle CPU time percentage sample {i+1}/{samples}: {idle_pct}%.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Idle CPU time percentages are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_idle_percent": idle_pct,
+        "metric": "idle_cpu_time",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_cpu_stats_ctx_switches_focused_audit")
+async def system_cpu_stats_ctx_switches_focused_audit(samples: int = 3):
+    logger.info("Starting focused context switches audit")
+    yield ProgressPayload(step="Initializing context switches probe", pct=0, log="Collecting system-wide context switch counters...")
+    ctx_switches = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            ctx_switches = stats.ctx_switches
+            logger.info(f"Sample {i+1}/{samples}: Context-switches {ctx_switches}")
+            metadata = {"ctx_switches": ctx_switches}
+        except Exception as e:
+            logger.error(f"Error auditing focused context switches: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling context switches", pct=pct, log=f"Measured context switches sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Context switch statistics are stable.")
+    yield {"status": "audit_complete", "final_ctx_switches": ctx_switches, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_interrupts_focused_audit")
+async def system_cpu_stats_interrupts_focused_audit(samples: int = 3):
+    logger.info("Starting focused interrupts audit")
+    yield ProgressPayload(step="Initializing interrupts probe", pct=0, log="Collecting system-wide interrupt counters...")
+    interrupts = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            interrupts = stats.interrupts
+            logger.info(f"Sample {i+1}/{samples}: Interrupts {interrupts}")
+            metadata = {"interrupts": interrupts}
+        except Exception as e:
+            logger.error(f"Error auditing focused interrupts: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling interrupts", pct=pct, log=f"Measured interrupts sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Interrupt statistics are stable.")
+    yield {"status": "audit_complete", "final_interrupts": interrupts, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_soft_interrupts_focused_audit")
+async def system_cpu_stats_soft_interrupts_focused_audit(samples: int = 3):
+    logger.info("Starting focused soft interrupts audit")
+    yield ProgressPayload(step="Initializing soft interrupts probe", pct=0, log="Collecting system-wide soft interrupt counters...")
+    soft_interrupts = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            soft_interrupts = stats.soft_interrupts
+            logger.info(f"Sample {i+1}/{samples}: Soft-interrupts {soft_interrupts}")
+            metadata = {"soft_interrupts": soft_interrupts}
+        except Exception as e:
+            logger.error(f"Error auditing focused soft interrupts: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling soft interrupts", pct=pct, log=f"Measured soft interrupts sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Soft interrupt statistics are stable.")
+    yield {"status": "audit_complete", "final_soft_interrupts": soft_interrupts, "stability": "STABLE"}
