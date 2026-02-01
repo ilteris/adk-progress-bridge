@@ -4,9 +4,9 @@ from backend.app.main import app
 import time
 
 @pytest.mark.asyncio
-async def test_ws_v664_new_tools():
+async def test_ws_v665_new_tools():
     """
-    SUPREME APEX VERIFICATION v664:
+    SUPREME APEX VERIFICATION v665:
     Verify the 3 new total audit tools are present and functional.
     """
     client = TestClient(app)
@@ -16,7 +16,7 @@ async def test_ws_v664_new_tools():
         assert data["type"] == "connected"
 
         # List tools to verify presence
-        websocket.send_json({"type": "list_tools", "request_id": "v664_list"})
+        websocket.send_json({"type": "list_tools", "request_id": "v665_list"})
         
         found_tools = False
         for _ in range(100):
@@ -31,7 +31,7 @@ async def test_ws_v664_new_tools():
         assert found_tools
 
         # Test one tool via WS
-        req_id = "v664_test_sin_total"
+        req_id = "v665_test_sin_total"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_swap_memory_sin_total_audit",

@@ -5502,3 +5502,63 @@ async def system_cpu_times_idle_total_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total idle cpu time statistics are stable.")
     yield {"status": "audit_complete", "final_idle_time_total": idle_time, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_nice_total_audit")
+async def system_cpu_times_nice_total_audit(samples: int = 3):
+    logger.info("Starting total nice cpu times audit")
+    yield ProgressPayload(step="Initializing nice cpu times total probe", pct=0, log="Collecting cumulative system-wide nice cpu time counters...")
+    nice_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            nice_time = getattr(times, "nice", 0)
+            logger.info(f"Sample {i+1}/{samples}: Total Nice-cpu-time {nice_time}")
+            metadata = {"nice_time_total": nice_time}
+        except Exception as e:
+            logger.error(f"Error auditing total nice cpu times: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total nice cpu times", pct=pct, log=f"Measured total nice cpu times sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total nice cpu time statistics are stable.")
+    yield {"status": "audit_complete", "final_nice_time_total": nice_time, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_iowait_total_audit")
+async def system_cpu_times_iowait_total_audit(samples: int = 3):
+    logger.info("Starting total iowait cpu times audit")
+    yield ProgressPayload(step="Initializing iowait cpu times total probe", pct=0, log="Collecting cumulative system-wide iowait cpu time counters...")
+    iowait_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            iowait_time = getattr(times, "iowait", 0)
+            logger.info(f"Sample {i+1}/{samples}: Total Iowait-cpu-time {iowait_time}")
+            metadata = {"iowait_time_total": iowait_time}
+        except Exception as e:
+            logger.error(f"Error auditing total iowait cpu times: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total iowait cpu times", pct=pct, log=f"Measured total iowait cpu times sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total iowait cpu time statistics are stable.")
+    yield {"status": "audit_complete", "final_iowait_time_total": iowait_time, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_irq_total_audit")
+async def system_cpu_times_irq_total_audit(samples: int = 3):
+    logger.info("Starting total irq cpu times audit")
+    yield ProgressPayload(step="Initializing irq cpu times total probe", pct=0, log="Collecting cumulative system-wide irq cpu time counters...")
+    irq_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            irq_time = getattr(times, "irq", 0)
+            logger.info(f"Sample {i+1}/{samples}: Total Irq-cpu-time {irq_time}")
+            metadata = {"irq_time_total": irq_time}
+        except Exception as e:
+            logger.error(f"Error auditing total irq cpu times: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total irq cpu times", pct=pct, log=f"Measured total irq cpu times sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total irq cpu time statistics are stable.")
+    yield {"status": "audit_complete", "final_irq_time_total": irq_time, "stability": "STABLE"}

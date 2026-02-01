@@ -21,7 +21,7 @@ def test_network_connections_audit_tool_ws():
             "type": "start",
             "tool_name": "network_connections_audit",
             "args": {"samples": 2},
-            "request_id": "req-v664"
+            "request_id": "req-v665"
         }))
         
         resp = websocket.receive_json()
@@ -42,14 +42,14 @@ def test_network_connections_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_connection_count" in resp["payload"]
 
-def test_v664_metadata():
+def test_v665_metadata():
     """
-    Verifies that the system reports correct v664 Supreme Apex metadata.
+    Verifies that the system reports correct v665 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.9.0"
-    assert data["git_commit"] == "v664-supreme-apex-adele-verification"
-    assert "v664 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.9.1"
+    assert data["git_commit"] == "v665-supreme-apex-adele-verification"
+    assert "v665 SUPREME APEX" in data["status"]
