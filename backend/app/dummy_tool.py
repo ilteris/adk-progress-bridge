@@ -6064,3 +6064,67 @@ async def system_net_if_addrs_ptp_count_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface ptp count statistics are stable.")
     yield {"status": "audit_complete", "final_net_if_addrs_ptp_count_total": ptp_count, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_duplex_count_audit")
+async def system_net_if_stats_duplex_count_audit(samples: int = 3):
+    logger.info("Starting network interface stats duplex count audit")
+    yield ProgressPayload(step="Initializing network interface stats duplex probe", pct=0, log="Collecting system-wide network interface duplex stats...")
+    duplex_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            duplex_count = sum(1 for s in stats.values() if s.duplex != 0) 
+            logger.info(f"Sample {i+1}/{samples}: Known Duplex Count {duplex_count}")
+            metadata = {"net_if_stats_duplex_count": duplex_count}
+        except Exception as e:
+            logger.error(f"Error auditing network interface stats duplex count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling network interface duplex stats", pct=pct, log=f"Measured network interface duplex stats sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface duplex stats are stable.")
+    yield {"status": "audit_complete", "final_net_if_stats_duplex_count": duplex_count, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_flags_count_audit")
+async def system_net_if_stats_flags_count_audit(samples: int = 3):
+    logger.info("Starting network interface stats flags count audit")
+    yield ProgressPayload(step="Initializing network interface stats flags probe", pct=0, log="Collecting system-wide network interface flags stats...")
+    flags_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            flags_count = sum(len(s.flags.split(",")) if isinstance(s.flags, str) else 0 for s in stats.values())
+            logger.info(f"Sample {i+1}/{samples}: Total Flags Count {flags_count}")
+            metadata = {"net_if_stats_flags_count": flags_count}
+        except Exception as e:
+            logger.error(f"Error auditing network interface stats flags count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling network interface flags stats", pct=pct, log=f"Measured network interface flags stats sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface flags stats are stable.")
+    yield {"status": "audit_complete", "final_net_if_stats_flags_count": flags_count, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_netmask_count_audit")
+async def system_net_if_addrs_netmask_count_audit(samples: int = 3):
+    logger.info("Starting total network interface netmask count audit")
+    yield ProgressPayload(step="Initializing network interface netmask total probe", pct=0, log="Collecting system-wide network interface netmask count...")
+    netmask_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            netmask_count = 0
+            for interface_addrs in addrs.values():
+                for addr in interface_addrs:
+                    if addr.netmask:
+                        netmask_count += 1
+            logger.info(f"Sample {i+1}/{samples}: Total Netmask Addresses {netmask_count}")
+            metadata = {"net_if_addrs_netmask_count_total": netmask_count}
+        except Exception as e:
+            logger.error(f"Error auditing total network interface netmask count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total network interface netmask count", pct=pct, log=f"Measured total network interface netmask count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface netmask count statistics are stable.")
+    yield {"status": "audit_complete", "final_net_if_addrs_netmask_count_total": netmask_count, "stability": "STABLE"}
