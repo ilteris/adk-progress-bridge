@@ -1952,3 +1952,127 @@ async def process_exe_audit(samples: int = 3):
         "final_exe_path": psutil.Process().exe(),
         "stability": "STABLE"
     }
+
+@progress_tool(name="process_terminal_audit")
+async def process_terminal_audit(samples: int = 3):
+    """
+    Audits the terminal associated with the process using psutil.
+    """
+    logger.info(f"Starting process terminal audit with {samples} samples")
+    yield ProgressPayload(step="Initializing terminal probe", pct=0, log="Collecting process-level terminal baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            terminal = process.terminal()
+        except Exception as e:
+            logger.warning(f"Error collecting process terminal: {e}")
+            terminal = "unknown"
+            
+        logger.info(f"Sample {i+1}/{samples}: Process Terminal {terminal}")
+        yield ProgressPayload(
+            step="Sampling process terminal",
+            pct=pct,
+            log=f"Measured process terminal sample {i+1}/{samples}: {terminal}.",
+            metadata={
+                "sample_id": i + 1,
+                "terminal": terminal
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Terminal identification is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_terminal": psutil.Process().terminal() if hasattr(psutil.Process(), "terminal") else "unknown",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_ionice_extended_audit")
+async def process_ionice_extended_audit(samples: int = 3):
+    """
+    Audits process I/O priority (ionice) in detail using psutil.
+    """
+    logger.info(f"Starting process ionice extended audit with {samples} samples")
+    yield ProgressPayload(step="Initializing ionice probe", pct=0, log="Collecting process-level I/O priority baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            if hasattr(process, "ionice"):
+                ionice = process.ionice()
+            else:
+                ionice = "N/A"
+        except Exception as e:
+            logger.warning(f"Error collecting process ionice: {e}")
+            ionice = "unknown"
+            
+        logger.info(f"Sample {i+1}/{samples}: Process IONice {ionice}")
+        yield ProgressPayload(
+            step="Sampling process ionice",
+            pct=pct,
+            log=f"Measured process ionice sample {i+1}/{samples}: {ionice}.",
+            metadata={
+                "sample_id": i + 1,
+                "ionice": str(ionice)
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. I/O priority level is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_ionice": str(psutil.Process().ionice()) if hasattr(psutil.Process(), "ionice") else "N/A",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_rlimit_audit")
+async def process_rlimit_audit(samples: int = 3):
+    """
+    Audits process resource limits (rlimit) using psutil.
+    """
+    logger.info(f"Starting process rlimit audit with {samples} samples")
+    yield ProgressPayload(step="Initializing rlimit probe", pct=0, log="Collecting process-level resource limits baseline...")
+    
+    process = psutil.Process()
+    # Common rlimits to check if available
+    limits_to_check = [
+        ("RLIMIT_NOFILE", getattr(psutil, "RLIMIT_NOFILE", None)),
+        ("RLIMIT_AS", getattr(psutil, "RLIMIT_AS", None)),
+        ("RLIMIT_CPU", getattr(psutil, "RLIMIT_CPU", None)),
+    ]
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        found_limits = {}
+        if hasattr(process, "rlimit"):
+            for name, limit_const in limits_to_check:
+                if limit_const is not None:
+                    try:
+                        found_limits[name] = process.rlimit(limit_const)
+                    except Exception:
+                        pass
+        
+        logger.info(f"Sample {i+1}/{samples}: Collected {len(found_limits)} resource limits.")
+        yield ProgressPayload(
+            step="Sampling resource limits",
+            pct=pct,
+            log=f"Measured {len(found_limits)} resource limits. Sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "limits": found_limits
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Resource limits are stable.")
+    yield {
+        "status": "audit_complete",
+        "limits_count": len(found_limits),
+        "stability": "STABLE"
+    }

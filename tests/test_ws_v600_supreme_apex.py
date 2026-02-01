@@ -19,7 +19,7 @@ def test_cpu_usage_audit_tool_ws():
             "type": "start",
             "tool_name": "cpu_usage_audit",
             "args": {"samples": 2},
-            "request_id": "req-v623"
+            "request_id": "req-v627"
         }))
         
         resp = websocket.receive_json()
@@ -41,14 +41,14 @@ def test_cpu_usage_audit_tool_ws():
         assert "final_cpu_percent" in resp["payload"]
         assert "core_count" in resp["payload"]
 
-def test_v623_metadata():
+def test_v627_metadata():
     """
-    Verifies that the system reports correct v623 Supreme Apex metadata.
+    Verifies that the system reports correct v627 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.4.9"
-    assert data["git_commit"] == "v623-supreme-apex-adele-verification"
-    assert "v623 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.5.3"
+    assert data["git_commit"] == "v627-supreme-apex-adele-verification"
+    assert "v627 SUPREME APEX" in data["status"]
