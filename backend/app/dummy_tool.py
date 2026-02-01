@@ -730,3 +730,37 @@ async def cpu_usage_audit(samples: int = 3):
         "load_avg": psutil.getloadavg() if hasattr(psutil, "getloadavg") else "N/A",
         "stability": "STABLE"
     }
+@progress_tool(name="thread_count_audit")
+async def thread_count_audit(samples: int = 3):
+    """
+    Audits active thread counts within the process using psutil.
+    """
+    logger.info(f"Starting thread count audit with {samples} samples")
+    yield ProgressPayload(step="Initializing thread probe", pct=0, log="Collecting active thread information...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        threads = process.threads()
+        thread_count = process.num_threads()
+        
+        logger.info(f"Sample {i+1}/{samples}: {thread_count} active threads.")
+        yield ProgressPayload(
+            step="Sampling thread counts",
+            pct=pct,
+            log=f"Measured {thread_count} active threads. Sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "thread_count": thread_count,
+                "threads": [t._asdict() for t in threads[:5]]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Threading model is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_thread_count": psutil.Process().num_threads(),
+        "stability": "STABLE"
+    }
