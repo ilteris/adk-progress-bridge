@@ -19,6 +19,8 @@ from .metrics import TASK_DURATION, TASKS_TOTAL, TASK_PROGRESS_STEPS_TOTAL
 # Configuration Constants for WebSocket and Task Lifecycle Management
 # WS_HEARTBEAT_TIMEOUT: Max time to wait for a client message (ping/pong) before closing connection.
 WS_HEARTBEAT_TIMEOUT = 60.0
+# WS_SEND_TIMEOUT: Max time to wait for a message to be sent to the client before timing out.
+WS_SEND_TIMEOUT = 10.0
 # CLEANUP_INTERVAL: Frequency (seconds) of the background stale task cleanup task.
 CLEANUP_INTERVAL = 60.0
 # STALE_TASK_MAX_AGE: Maximum age (seconds) of an unconsumed task before it is cleaned up.
@@ -238,7 +240,11 @@ async def websocket_endpoint(websocket: WebSocket):
     async def safe_send_json(data: dict):
         async with send_lock:
             try:
-                await websocket.send_json(data)
+                # Add a timeout for sending messages to prevent hanging on slow clients
+                await asyncio.wait_for(websocket.send_json(data), timeout=WS_SEND_TIMEOUT)
+            except asyncio.TimeoutError:
+                logger.warning("WebSocket send timeout exceeded - closing connection")
+                raise # Propagate to close connection in the outer loop
             except Exception as e:
                 # If the websocket is closed, we might get an error here
                 logger.error(f"Error sending WS message: {e}")
