@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.7.9
+# Specification: ADK Progress Bridge v2.9.1
 
 ## Overview
 The ADK Progress Bridge is a high-performance middleware designed to connect background tools/tasks with a real-time terminal user interface (TUI). It provides a standardized protocol for reporting progress, logs, and results via Server-Sent Events (SSE) and WebSockets.
@@ -173,9 +173,36 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - `system_cpu_stats_ctx_switches_focused_audit`: System-wide context switch focused tracking.
 - `system_cpu_stats_interrupts_focused_audit`: System-wide interrupt focused tracking.
 - `system_cpu_stats_soft_interrupts_focused_audit`: System-wide soft interrupt focused tracking.
+- `system_swap_memory_sin_total_audit`: System-wide swap-in total tracking.
+- `system_swap_memory_sout_total_audit`: System-wide swap-out total tracking.
+- `system_net_io_dropout_total_audit`: System-wide network dropout total tracking.
+- `system_net_io_dropin_total_audit`: System-wide network dropin total tracking.
+- `system_net_io_errout_total_audit`: System-wide network errout total tracking.
+- `system_net_io_errin_total_audit`: System-wide network errin total tracking.
+- `system_net_io_packets_sent_total_audit`: System-wide network packets sent total tracking.
+- `system_net_io_packets_recv_total_audit`: System-wide network packets received total tracking.
+- `system_disk_io_read_count_total_audit`: System-wide disk read count total tracking.
+- `system_net_io_errors_total_audit`: System-wide network errors total tracking.
+- `system_net_io_drop_total_audit`: System-wide network drop total tracking.
+- `system_disk_io_write_count_total_audit`: System-wide disk write count total tracking.
+- `system_disk_io_read_bytes_total_audit`: System-wide disk read bytes total tracking.
+- `system_disk_io_write_bytes_total_audit`: System-wide disk write bytes total tracking.
+- `system_disk_io_read_time_total_audit`: System-wide disk read time total tracking.
+- `system_disk_io_write_time_total_audit`: System-wide disk write time total tracking.
+- `system_disk_io_busy_time_total_audit`: System-wide disk busy time total tracking.
+- `system_cpu_stats_ctx_switches_total_audit`: System-wide context switches total tracking.
+- `system_cpu_stats_interrupts_total_audit`: System-wide interrupts total tracking.
+- `system_cpu_stats_soft_interrupts_total_audit`: System-wide soft interrupts total tracking.
+- `system_cpu_stats_syscalls_total_audit`: System-wide syscalls total tracking.
+- `system_cpu_times_user_total_audit`: System-wide user cpu times total tracking.
+- `system_cpu_times_system_total_audit`: System-wide system cpu times total tracking.
+- `system_cpu_times_idle_total_audit`: System-wide idle cpu times total tracking.
+- `system_cpu_times_nice_total_audit`: System-wide nice cpu times total tracking.
+- `system_cpu_times_iowait_total_audit`: System-wide iowait cpu times total tracking.
+- `system_cpu_times_irq_total_audit`: System-wide irq cpu times total tracking.
 
 ## 5. Metadata
-- **APP_VERSION**: 2.7.9
-- **BUILD_TIMESTAMP**: 2026-02-01T18:00:00Z
-- **GIT_COMMIT**: v653-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: v653 SUPREME APEX VERIFICATION ADELE
+- **APP_VERSION**: 2.9.1
+- **BUILD_TIMESTAMP**: 2026-02-01T18:55:00Z
+- **GIT_COMMIT**: v665-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: v665 SUPREME APEX VERIFICATION ADELE
