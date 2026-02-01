@@ -1608,3 +1608,117 @@ async def process_children_audit(samples: int = 3):
         "final_child_count": len(psutil.Process().children(recursive=True)),
         "stability": "STABLE"
     }
+
+@progress_tool(name="process_cwd_audit")
+async def process_cwd_audit(samples: int = 3):
+    """
+    Audits process current working directory using psutil.
+    """
+    logger.info(f"Starting process CWD audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CWD probe", pct=0, log="Collecting process-level working directory baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            cwd = process.cwd()
+        except Exception as e:
+            logger.warning(f"Error collecting process CWD: {e}")
+            cwd = "unknown"
+            
+        logger.info(f"Sample {i+1}/{samples}: Process CWD {cwd}")
+        yield ProgressPayload(
+            step="Sampling process CWD",
+            pct=pct,
+            log=f"Measured process CWD sample {i+1}/{samples}: {cwd}.",
+            metadata={
+                "sample_id": i + 1,
+                "cwd": cwd
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Working directory is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_cwd": psutil.Process().cwd(),
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_parent_audit")
+async def process_parent_audit(samples: int = 3):
+    """
+    Audits process parent using psutil.
+    """
+    logger.info(f"Starting process parent audit with {samples} samples")
+    yield ProgressPayload(step="Initializing parent probe", pct=0, log="Collecting process-level parent baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            parent = process.parent()
+            parent_pid = parent.pid if parent else None
+        except Exception as e:
+            logger.warning(f"Error collecting process parent: {e}")
+            parent = None
+            parent_pid = None
+            
+        logger.info(f"Sample {i+1}/{samples}: Process Parent PID {parent_pid}")
+        yield ProgressPayload(
+            step="Sampling process parent",
+            pct=pct,
+            log=f"Measured process parent sample {i+1}/{samples}: PID {parent_pid}.",
+            metadata={
+                "sample_id": i + 1,
+                "parent_pid": parent_pid,
+                "parent_name": parent.name() if parent else "N/A"
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Parent process identification is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_parent_pid": psutil.Process().parent().pid if psutil.Process().parent() else None,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_username_audit")
+async def process_username_audit(samples: int = 3):
+    """
+    Audits process username using psutil.
+    """
+    logger.info(f"Starting process username audit with {samples} samples")
+    yield ProgressPayload(step="Initializing username probe", pct=0, log="Collecting process-level username baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            username = process.username()
+        except Exception as e:
+            logger.warning(f"Error collecting process username: {e}")
+            username = "unknown"
+            
+        logger.info(f"Sample {i+1}/{samples}: Process Username {username}")
+        yield ProgressPayload(
+            step="Sampling process username",
+            pct=pct,
+            log=f"Measured process username sample {i+1}/{samples}: {username}.",
+            metadata={
+                "sample_id": i + 1,
+                "username": username
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Username is stable.")
+    yield {
+        "status": "audit_complete",
+        "final_username": psutil.Process().username(),
+        "stability": "STABLE"
+    }

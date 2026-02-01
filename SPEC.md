@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.4.5
+# Specification: ADK Progress Bridge v2.5.0
 
 ## Overview
 The ADK Progress Bridge is a high-performance middleware designed to connect background tools/tasks with a real-time terminal user interface (TUI). It provides a standardized protocol for reporting progress, logs, and results via Server-Sent Events (SSE) and WebSockets.
@@ -91,7 +91,9 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - `process_memory_percent_audit`: Process-level memory percentage tracking.
 - `process_num_threads_audit`: Process-level thread count tracking.
 - `process_status_audit`: Process-level status tracking.
-
+- `process_cwd_audit`: Process-level working directory tracking.
+- `process_parent_audit`: Process-level parent tracking.
+- `process_username_audit`: Process-level username tracking.
 ## 5. Metadata
 - **APP_VERSION**: 2.4.5
 - **BUILD_TIMESTAMP**: 2026-02-01T19:00:00Z

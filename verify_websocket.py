@@ -117,6 +117,40 @@ async def run_ws_interactive():
     except Exception as e:
         print(f"WS Error in test_ws_interactive: {e}")
 
+async def run_ws_new_tools():
+    api_key = os.getenv("BRIDGE_API_KEY", "")
+    url = "ws://localhost:8000/ws"
+    if api_key:
+        url += f"?api_key={api_key}"
+
+    try:
+        async with websockets.connect(url) as websocket:
+            print("\n--- Testing new audit tools (v2.5.0) ---")
+            
+            for tool in ["process_cwd_audit", "process_parent_audit", "process_username_audit"]:
+                start_msg = {
+                    "type": "start",
+                    "tool_name": tool,
+                    "request_id": f"test-{tool}"
+                }
+                await websocket.send(json.dumps(start_msg))
+                print(f"Start message sent for {tool}")
+                
+                async for message in websocket:
+                    data = json.loads(message)
+                    if data['type'] == 'result' and data.get('request_id') == f"test-{tool}":
+                        # This might not work as expected because run_ws_generator doesn't send request_id back for result
+                        pass
+                    
+                    if data['type'] == 'result':
+                         print(f"RESULT for {tool}: {data.get('payload')}")
+                         break
+                    if data['type'] == 'error':
+                         print(f"ERROR for {tool}: {data.get('payload')}")
+                         break
+    except Exception as e:
+        print(f"WS Error in run_ws_new_tools: {e}")
+
 async def run_ws_list_tools():
     api_key = os.getenv("BRIDGE_API_KEY", "")
     url = "ws://localhost:8000/ws"
@@ -141,16 +175,17 @@ async def run_ws_list_tools():
             message = await websocket.recv()
             data = json.loads(message)
             print(f"WS Event: {data['type']} | Tools count: {len(data.get('tools', []))}")
-            if data['type'] == 'tools_list' and 'long_audit' in data['tools']:
-                print("list_tools verification SUCCESS")
+            if data['type'] == 'tools_list' and 'process_cwd_audit' in data['tools']:
+                print("list_tools verification (v2.5.0 tools) SUCCESS")
             else:
-                print("list_tools verification FAILED")
+                print("list_tools verification (v2.5.0 tools) FAILED")
     except Exception as e:
         print(f"WS Error in run_ws_list_tools: {e}")
 
 async def main():
     await run_ws_full()
     await run_ws_interactive()
+    await run_ws_new_tools()
     await run_ws_list_tools()
 
 if __name__ == "__main__":
