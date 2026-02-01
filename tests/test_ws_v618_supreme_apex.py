@@ -6,7 +6,7 @@ from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
 def test_process_num_threads_audit_tool_ws():
     """
-    Verifies that the new process_num_threads_audit tool (v670) works over WebSocket.
+    Verifies that the new process_num_threads_audit tool (v671) works over WebSocket.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
@@ -19,7 +19,7 @@ def test_process_num_threads_audit_tool_ws():
             "type": "start",
             "tool_name": "process_num_threads_audit",
             "args": {"samples": 2},
-            "request_id": "req-v670"
+            "request_id": "req-v671"
         }))
         
         resp = websocket.receive_json()
@@ -40,14 +40,14 @@ def test_process_num_threads_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_num_threads" in resp["payload"]
 
-def test_v670_metadata():
+def test_v671_metadata():
     """
-    Verifies that the system reports correct v670 Supreme Apex metadata.
+    Verifies that the system reports correct v671 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.9.6"
-    assert data["git_commit"] == "v670-supreme-apex-adele-verification"
-    assert "v670 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.9.7"
+    assert data["git_commit"] == "v671-supreme-apex-adele-verification"
+    assert "v671 SUPREME APEX" in data["status"]

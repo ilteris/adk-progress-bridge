@@ -3,7 +3,7 @@ from backend.app.main import app
 import pytest
 import json
 
-def test_ws_v670_new_tools():
+def test_ws_v671_new_tools():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Handshake
@@ -11,22 +11,22 @@ def test_ws_v670_new_tools():
         assert data["type"] == "connected"
 
         # List tools
-        websocket.send_json({"type": "list_tools", "request_id": "v670_list"})
+        websocket.send_json({"type": "list_tools", "request_id": "v671_list"})
         
         while True:
             data = websocket.receive_json()
             if data["type"] == "tools_list":
                 tools = data["tools"]
-                assert "system_net_if_addrs_count_audit" in tools
-                assert "system_net_if_stats_count_audit" in tools
-                assert "system_net_if_stats_isup_count_audit" in tools
+                assert "system_net_if_stats_speed_avg_audit" in tools
+                assert "system_net_if_stats_mtu_avg_audit" in tools
+                assert "system_net_if_addrs_family_count_audit" in tools
                 break
 
         # Test tool 1
-        req_id = "v670_test_net_if_addrs"
+        req_id = "v671_test_speed_avg"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_net_if_addrs_count_audit",
+            "tool_name": "system_net_if_stats_speed_avg_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -35,14 +35,14 @@ def test_ws_v670_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_net_if_addrs_count_total" in data["payload"]
+                assert "final_net_if_stats_speed_avg_total" in data["payload"]
                 break
 
         # Test tool 2
-        req_id = "v670_test_net_if_stats"
+        req_id = "v671_test_mtu_avg"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_net_if_stats_count_audit",
+            "tool_name": "system_net_if_stats_mtu_avg_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -51,14 +51,14 @@ def test_ws_v670_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_net_if_stats_count_total" in data["payload"]
+                assert "final_net_if_stats_mtu_avg_total" in data["payload"]
                 break
 
         # Test tool 3
-        req_id = "v670_test_net_if_isup"
+        req_id = "v671_test_family_count"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_net_if_stats_isup_count_audit",
+            "tool_name": "system_net_if_addrs_family_count_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -67,5 +67,5 @@ def test_ws_v670_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_net_if_stats_isup_count_total" in data["payload"]
+                assert "final_net_if_addrs_family_count_total" in data["payload"]
                 break
