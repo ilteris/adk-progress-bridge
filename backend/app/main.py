@@ -34,12 +34,13 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.0.4"
+APP_VERSION = "2.0.5"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v578-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v578 SUPREME APEX VERIFICATION ADELE"
+BUILD_TIMESTAMP = "2026-02-01T12:00:00Z"
+GIT_COMMIT = "v579-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v579 SUPREME APEX VERIFICATION ADELE"
 
-BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
+BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT, "build_timestamp": BUILD_TIMESTAMP})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
 
 health_engine = HealthEngine(APP_START_TIME)
@@ -172,6 +173,7 @@ async def stop_task(call_id: Optional[str] = None, cid: Optional[str] = Query(No
 async def health_check():
     health = await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
     health["last_updated_str"] = datetime.now().isoformat()
+    health["build_timestamp"] = BUILD_TIMESTAMP
     return health
 
 @app.get("/version") 
@@ -180,6 +182,7 @@ async def get_version():
         "version": APP_VERSION,
         "git_commit": GIT_COMMIT,
         "status": OPERATIONAL_APEX,
+        "build_timestamp": BUILD_TIMESTAMP,
         "timestamp": time.time(),
         "last_updated_str": datetime.now().isoformat()
     }
@@ -254,6 +257,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 elif msg_type == "get_health":
                     health = await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
                     health["last_updated_str"] = datetime.now().isoformat()
+                    health["build_timestamp"] = BUILD_TIMESTAMP
                     await safe_send_json({"type": "health_data", "data": health, "request_id": request_id})
                 elif msg_type == "start":
                     if registry.active_task_count >= MAX_CONCURRENT_TASKS: await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": "Server busy"}})

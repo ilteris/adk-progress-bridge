@@ -32,7 +32,8 @@
 - [x] Refined transport error logging level from debug to warning for improved visibility (v577).
 - [x] Added `last_updated_str` (ISO timestamp) to health and version endpoints (v578).
 - [x] Improved WebSocket `subscribe` error message to include `call_id` (v578).
+- [x] Added `BUILD_TIMESTAMP` to version and health metadata for enhanced build traceability (v579).
 
 ---
-**Current Status:** PRODUCTION READY - v578 SUPREME APEX
-- [x] Verified by Worker-Adele (v578-supreme-apex-adele-verification).
+**Current Status:** PRODUCTION READY - v579 SUPREME APEX
+- [x] Verified by Worker-Adele (v579-supreme-apex-adele-verification).

@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX, BUILD_TIMESTAMP
 from backend.app import auth
 import time
 import json
@@ -27,6 +27,7 @@ async def test_v360_health_metrics():
     assert data["version"] == APP_VERSION
     assert data["operational_apex"] == OPERATIONAL_APEX
     assert data["git_commit"] == GIT_COMMIT
+    assert data["build_timestamp"] == BUILD_TIMESTAMP
     
     # Check interrupt rates
     assert "system_cpu_stats" in data
@@ -52,7 +53,7 @@ async def test_v360_prometheus_metrics():
     assert "adk_system_cpu_syscall_rate_per_sec" in content
     assert 'adk_ws_connection_errors_total{error_type="auth_failure"}' in content
     assert 'adk_ws_connection_errors_total{error_type="protocol_error"}' in content
-    assert f'adk_build_info{{git_commit="{GIT_COMMIT}",version="{APP_VERSION}"}}' in content
+    assert f'adk_build_info{{build_timestamp="{BUILD_TIMESTAMP}",git_commit="{GIT_COMMIT}",version="{APP_VERSION}"}}' in content
 
 @pytest.mark.asyncio
 async def test_ws_auth_error_metric_v360(enable_auth):
