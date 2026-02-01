@@ -3291,3 +3291,113 @@ async def system_disk_partitions_physical_audit(samples: int = 3):
         "physical_partition_count": len(psutil.disk_partitions(all=False)),
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_net_if_addrs_mac_audit")
+async def system_net_if_addrs_mac_audit(samples: int = 3):
+    """
+    Audits MAC system network interface addresses using psutil.
+    """
+    logger.info("Starting system net if addrs MAC audit")
+    yield ProgressPayload(step="Initializing MAC net if addrs probe", pct=0, log="Collecting MAC network interface address information...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            if_addrs = psutil.net_if_addrs()
+            mac_addrs = {}
+            for iface, addrs in if_addrs.items():
+                mac_list = [addr._asdict() for addr in addrs if addr.family in (17, 18)]
+                if mac_list:
+                    mac_addrs[iface] = mac_list
+            logger.info(f"Sample {i+1}/{samples}: Collected MAC addresses for {len(mac_addrs)} interfaces")
+            metadata = mac_addrs
+        except Exception as e:
+            logger.error(f"Error auditing MAC net if addrs: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling MAC net if addrs",
+            pct=pct,
+            log=f"Measured MAC network interface addresses sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. MAC network interface addresses are stable.")
+    yield {
+        "status": "audit_complete",
+        "interface_count": len(mac_addrs),
+        "family": "MAC",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_partitions_fstype_audit")
+async def system_disk_partitions_fstype_audit(samples: int = 3, fstype: str = "apfs"):
+    """
+    Audits system disk partitions filtered by filesystem type using psutil.
+    """
+    logger.info(f"Starting system disk partitions fstype audit for {fstype}")
+    yield ProgressPayload(step="Initializing fstype-partitions probe", pct=0, log=f"Collecting disk partition baseline for fstype: {fstype}...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions(all=True)
+            filtered_partitions = [p._asdict() for p in partitions if p.fstype.lower() == fstype.lower()]
+            partition_count = len(filtered_partitions)
+            logger.info(f"Sample {i+1}/{samples}: {partition_count} disk partitions found with fstype {fstype}.")
+            metadata = {f"partition_{idx}": p for idx, p in enumerate(filtered_partitions)}
+        except Exception as e:
+            logger.error(f"Error auditing fstype disk partitions: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling fstype disk partitions",
+            pct=pct,
+            log=f"Measured {partition_count} disk partitions with fstype {fstype} sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Disk partition configuration for {fstype} is stable.")
+    yield {
+        "status": "audit_complete",
+        "fstype": fstype,
+        "partition_count": partition_count,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_cpu_times_percent_system_focused_audit")
+async def system_cpu_times_percent_system_focused_audit(samples: int = 3):
+    """
+    Audits system-wide CPU system time percentage using psutil.
+    """
+    logger.info("Starting focused system CPU time percentage audit")
+    yield ProgressPayload(step="Initializing system CPU focused probe", pct=0, log="Collecting system-wide system CPU timing percentages...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_times_pct = psutil.cpu_times_percent(interval=0.1)
+            system_pct = cpu_times_pct.system
+            logger.info(f"Sample {i+1}/{samples}: System CPU Time {system_pct}%")
+            metadata = {"system_percent": system_pct, "user_percent": cpu_times_pct.user, "idle_percent": cpu_times_pct.idle}
+        except Exception as e:
+            logger.error(f"Error auditing focused system CPU time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling system CPU time",
+            pct=pct,
+            log=f"Measured system CPU time percentage sample {i+1}/{samples}: {system_pct}%.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. System CPU time percentages are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_system_percent": system_pct,
+        "metric": "system_cpu_time",
+        "stability": "STABLE"
+    }
