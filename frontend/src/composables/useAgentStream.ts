@@ -53,6 +53,13 @@ const WS_RECONNECT_MAX_DELAY = 30000
 const WS_BUFFER_SIZE = 1000
 
 /**
+ * Utility to generate a random request ID for command correlation.
+ */
+function generateRequestId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 11)
+}
+
+/**
  * Shared WebSocket Manager to support multiple concurrent tasks over a single connection.
  * Enhanced with automatic reconnection and heartbeat support.
  */
@@ -121,6 +128,7 @@ export class WebSocketManager {
             if (data.type === 'pong') return
 
             // Handle request_id correlations
+            let isHandledByCorrelation = false
             if (data.request_id && this.requestCallbacks.has(data.request_id)) {
                 const { resolve: reqResolve, reject: reqReject, timeout } = this.requestCallbacks.get(data.request_id)!
                 clearTimeout(timeout)
@@ -131,15 +139,16 @@ export class WebSocketManager {
                 } else {
                     reqResolve(data)
                 }
-                return
+                isHandledByCorrelation = true
             }
 
             // Handle task-specific events
             const callback = this.subscribers.get(data.call_id)
             if (callback) {
                 callback(data)
-            } else if (data.call_id) {
-                // Buffer message if no subscriber yet
+            } else if (data.call_id && !isHandledByCorrelation) {
+                // Buffer message if no subscriber yet and it wasn't a correlation response
+                // (Correlation responses like 'task_started' don't need buffering as they trigger the subscribe)
                 this.messageBuffer.push(data)
                 if (this.messageBuffer.length > WS_BUFFER_SIZE) {
                     this.messageBuffer.shift()
@@ -279,7 +288,7 @@ export class WebSocketManager {
 
   private async sendWithCorrelation(data: any, timeoutMs: number = WS_REQUEST_TIMEOUT): Promise<any> {
       await this.connect()
-      const requestId = Math.random().toString(36).substring(2, 11)
+      const requestId = generateRequestId()
       data.request_id = requestId
 
       return new Promise((resolve, reject) => {
@@ -307,6 +316,21 @@ export class WebSocketManager {
     
     this.subscribe(data.call_id, onEvent)
     return data.call_id
+  }
+
+  async stopTask(callId: string): Promise<void> {
+    await this.sendWithCorrelation({
+        type: 'stop',
+        call_id: callId
+    })
+  }
+
+  async sendInput(callId: string, value: any): Promise<void> {
+    await this.sendWithCorrelation({
+        type: 'input',
+        call_id: callId,
+        value: value
+    })
   }
 
   async getTools(): Promise<string[]> {
@@ -424,7 +448,7 @@ export function useAgentStream() {
         }
       }
 
-      eventSource.onerror = (err) => {
+      eventSource.onerror = () => {
         if (eventSource?.readyState === EventSource.CONNECTING) {
           state.status = 'reconnecting'
           state.isConnected = false
@@ -463,17 +487,12 @@ export function useAgentStream() {
 
   const stopTool = async () => {
     if (state.useWS && state.callId && state.isStreaming) {
-      const requestId = Math.random().toString(36).substring(2, 11)
-      const sent = wsManager.send({
-        type: 'stop',
-        call_id: state.callId,
-        request_id: requestId
-      })
-      if (sent) {
+      try {
+        await wsManager.stopTask(state.callId)
         state.status = 'cancelled'
         state.isStreaming = false
-      } else {
-          state.error = 'Failed to send stop command: WebSocket connection lost'
+      } catch (err: any) {
+          state.error = `Failed to stop task: ${err.message}`
           state.status = 'error'
           state.isStreaming = false
           reset()
@@ -488,7 +507,7 @@ export function useAgentStream() {
           method: 'POST',
           headers
         })
-      } catch (err) {}
+      } catch {}
       
       if (eventSource) {
         eventSource.close()
@@ -506,15 +525,10 @@ export function useAgentStream() {
   const sendInput = async (value: string) => {
     if (state.callId && state.status === 'waiting_for_input') {
         if (state.useWS) {
-            const requestId = Math.random().toString(36).substring(2, 11)
-            const sent = wsManager.send({
-                type: 'input',
-                call_id: state.callId,
-                value: value,
-                request_id: requestId
-            })
-            if (!sent) {
-                state.error = 'Failed to send input: WebSocket connection lost'
+            try {
+                await wsManager.sendInput(state.callId, value)
+            } catch (err: any) {
+                state.error = `Failed to send input: ${err.message}`
                 state.status = 'error'
                 return
             }
@@ -532,7 +546,7 @@ export function useAgentStream() {
                         value: value
                     })
                 })
-            } catch (err) {}
+            } catch {}
         }
         state.status = 'connected'
         state.inputPrompt = null

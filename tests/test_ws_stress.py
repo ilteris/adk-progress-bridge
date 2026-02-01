@@ -2,6 +2,12 @@ import pytest
 import asyncio
 import json
 import uuid
+import sys
+import os
+
+# Add the project root to sys.path to import backend
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi.testclient import TestClient
 from backend.app.main import app
 
@@ -10,17 +16,6 @@ async def test_ws_concurrency_stress():
     """
     Stress test to ensure the WebSocket send_lock handles many concurrent tasks sending messages.
     """
-    from fastapi.testclient import TestClient
-    from backend.app.main import app
-    from httpx import ASGITransport, AsyncClient
-
-    # We use AsyncClient with ASGITransport for true async testing of WebSockets if possible,
-    # but for simple concurrency within the same app, we can use the app's internal logic.
-    # However, testing the actual WebSocket endpoint concurrently is better.
-    
-    # Since we're in a unit test environment, we'll simulate many tasks calling the send_fn
-    # that was passed to run_ws_generator in main.py.
-    
     from backend.app.main import run_ws_generator
     from backend.app.bridge import ProgressPayload
     
