@@ -4,17 +4,17 @@ import asyncio
 from fastapi.testclient import TestClient
 from backend.app.main import app
 
-def test_v628_metadata():
+def test_v631_metadata():
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.5.4"
-    assert data["status"] == "v628 SUPREME APEX VERIFICATION ADELE"
-    assert data["git_commit"] == "v628-supreme-apex-adele-verification"
+    assert data["version"] == "2.5.7"
+    assert data["status"] == "v631 SUPREME APEX VERIFICATION ADELE"
+    assert data["git_commit"] == "v631-supreme-apex-adele-verification"
 
 @pytest.mark.asyncio
-async def test_v628_ws_health_metrics():
+async def test_v631_ws_health_metrics():
     # Verify that get_health via WS returns the correct metadata
     from backend.app.auth import BRIDGE_API_KEY
     api_key = BRIDGE_API_KEY or "test-key"
@@ -25,15 +25,15 @@ async def test_v628_ws_health_metrics():
         assert resp["type"] == "connected"
         
         # Get Health
-        websocket.send_json({"type": "get_health", "request_id": "v628-test"})
+        websocket.send_json({"type": "get_health", "request_id": "v631-test"})
         resp = websocket.receive_json()
         assert resp["type"] == "health_data"
-        assert resp["request_id"] == "v628-test"
-        assert resp["data"]["version"] == "2.5.4"
-        assert resp["data"]["operational_apex"] == "v628 SUPREME APEX VERIFICATION ADELE"
+        assert resp["request_id"] == "v631-test"
+        assert resp["data"]["version"] == "2.5.7"
+        assert resp["data"]["operational_apex"] == "v631 SUPREME APEX VERIFICATION ADELE"
 
 @pytest.mark.asyncio
-async def test_v628_resource_monitor_tool():
+async def test_v631_resource_monitor_tool():
     from backend.app.auth import BRIDGE_API_KEY
     api_key = BRIDGE_API_KEY or "test-key"
     
@@ -46,7 +46,7 @@ async def test_v628_resource_monitor_tool():
             "type": "start", 
             "tool_name": "resource_monitor", 
             "args": {"iterations": 2},
-            "request_id": "v628-resource-test"
+            "request_id": "v631-resource-test"
         })
         
         # task_started
@@ -66,11 +66,11 @@ async def test_v628_resource_monitor_tool():
         assert resp["type"] == "result"
         assert resp["payload"]["status"] == "complete"
 
-def test_v628_health_endpoint():
+def test_v631_health_endpoint():
     client = TestClient(app)
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.5.4"
+    assert data["version"] == "2.5.7"
     assert "last_updated_str" in data
     assert "build_timestamp" in data

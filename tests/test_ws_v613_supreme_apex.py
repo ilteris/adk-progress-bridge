@@ -19,7 +19,7 @@ def test_process_cpu_times_audit_tool_ws():
             "type": "start",
             "tool_name": "process_cpu_times_audit",
             "args": {"samples": 2},
-            "request_id": "req-v628"
+            "request_id": "req-v631"
         }))
         
         resp = websocket.receive_json()
@@ -40,14 +40,14 @@ def test_process_cpu_times_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_cpu_times" in resp["payload"]
 
-def test_v628_metadata():
+def test_v631_metadata():
     """
-    Verifies that the system reports correct v628 Supreme Apex metadata.
+    Verifies that the system reports correct v631 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.5.4"
-    assert data["git_commit"] == "v628-supreme-apex-adele-verification"
-    assert "v628 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.5.7"
+    assert data["git_commit"] == "v631-supreme-apex-adele-verification"
+    assert "v631 SUPREME APEX" in data["status"]
