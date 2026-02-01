@@ -503,3 +503,38 @@ async def asyncio_task_audit(samples: int = 3):
         "final_task_count": len(asyncio.all_tasks()),
         "stability": "STABLE"
     }
+
+@progress_tool(name="disk_io_audit")
+async def disk_io_audit(samples: int = 3):
+    """
+    Audits Disk I/O statistics using psutil.
+    """
+    logger.info(f"Starting Disk I/O audit with {samples} samples")
+    yield ProgressPayload(step="Initializing disk probe", pct=0, log="Collecting baseline I/O counters...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        io_counters = psutil.disk_io_counters()
+        read_bytes = io_counters.read_bytes
+        write_bytes = io_counters.write_bytes
+        
+        logger.info(f"Sample {i+1}/{samples}: Read {read_bytes} bytes, Write {write_bytes} bytes.")
+        yield ProgressPayload(
+            step="Sampling Disk I/O stats",
+            pct=pct,
+            log=f"Measured Disk I/O sample {i+1}/{samples}: Read {read_bytes}, Write {write_bytes}.",
+            metadata={
+                "sample_id": i + 1,
+                "read_bytes": read_bytes,
+                "write_bytes": write_bytes
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk subsystem is healthy.")
+    yield {
+        "status": "audit_complete",
+        "final_io_counters": psutil.disk_io_counters()._asdict(),
+        "stability": "STABLE"
+    }

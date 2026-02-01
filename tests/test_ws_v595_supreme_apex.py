@@ -9,19 +9,19 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.app.main import app
 
-def test_asyncio_task_audit_tool_ws():
+def test_disk_io_audit_tool_ws():
     """
-    Verifies that the new asyncio_task_audit tool works over WebSocket.
+    Verifies that the new disk_io_audit tool works over WebSocket.
     """
     with TestClient(app) as client:
         with client.websocket_connect("/ws?api_key=test_key") as websocket:
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v595-asyncio-audit"
+            request_id = "v595-disk-audit"
             websocket.send_json({
                 "type": "start",
-                "tool_name": "asyncio_task_audit",
+                "tool_name": "disk_io_audit",
                 "args": {"samples": 2},
                 "request_id": request_id
             })
@@ -36,13 +36,13 @@ def test_asyncio_task_audit_tool_ws():
                     assert data["request_id"] == request_id
                 elif data["type"] == "progress":
                     progress_received = True
-                    if data["payload"].get("step") == "Sampling task stats":
+                    if data["payload"].get("step") == "Sampling Disk I/O stats":
                         assert "metadata" in data["payload"]
-                        assert "task_count" in data["payload"]["metadata"]
-                        assert "task_names" in data["payload"]["metadata"]
+                        assert "read_bytes" in data["payload"]["metadata"]
+                        assert "write_bytes" in data["payload"]["metadata"]
                 elif data["type"] == "result":
                     assert data["payload"]["status"] == "audit_complete"
-                    assert "final_task_count" in data["payload"]
+                    assert "final_io_counters" in data["payload"]
                     result_received = True
                     break
                 elif data["type"] == "error":
