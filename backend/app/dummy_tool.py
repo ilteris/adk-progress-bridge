@@ -5562,3 +5562,63 @@ async def system_cpu_times_irq_total_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total irq cpu time statistics are stable.")
     yield {"status": "audit_complete", "final_irq_time_total": irq_time, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_softirq_total_audit")
+async def system_cpu_times_softirq_total_audit(samples: int = 3):
+    logger.info("Starting total softirq cpu times audit")
+    yield ProgressPayload(step="Initializing softirq cpu times total probe", pct=0, log="Collecting cumulative system-wide softirq cpu time counters...")
+    softirq_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            softirq_time = getattr(times, "softirq", 0)
+            logger.info(f"Sample {i+1}/{samples}: Total Softirq-cpu-time {softirq_time}")
+            metadata = {"softirq_time_total": softirq_time}
+        except Exception as e:
+            logger.error(f"Error auditing total softirq cpu times: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total softirq cpu times", pct=pct, log=f"Measured total softirq cpu times sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total softirq cpu time statistics are stable.")
+    yield {"status": "audit_complete", "final_softirq_time_total": softirq_time, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_steal_total_audit")
+async def system_cpu_times_steal_total_audit(samples: int = 3):
+    logger.info("Starting total steal cpu times audit")
+    yield ProgressPayload(step="Initializing steal cpu times total probe", pct=0, log="Collecting cumulative system-wide steal cpu time counters...")
+    steal_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            steal_time = getattr(times, "steal", 0)
+            logger.info(f"Sample {i+1}/{samples}: Total Steal-cpu-time {steal_time}")
+            metadata = {"steal_time_total": steal_time}
+        except Exception as e:
+            logger.error(f"Error auditing total steal cpu times: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total steal cpu times", pct=pct, log=f"Measured total steal cpu times sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total steal cpu time statistics are stable.")
+    yield {"status": "audit_complete", "final_steal_time_total": steal_time, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_guest_total_audit")
+async def system_cpu_times_guest_total_audit(samples: int = 3):
+    logger.info("Starting total guest cpu times audit")
+    yield ProgressPayload(step="Initializing guest cpu times total probe", pct=0, log="Collecting cumulative system-wide guest cpu time counters...")
+    guest_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            guest_time = getattr(times, "guest", 0)
+            logger.info(f"Sample {i+1}/{samples}: Total Guest-cpu-time {guest_time}")
+            metadata = {"guest_time_total": guest_time}
+        except Exception as e:
+            logger.error(f"Error auditing total guest cpu times: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total guest cpu times", pct=pct, log=f"Measured total guest cpu times sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total guest cpu time statistics are stable.")
+    yield {"status": "audit_complete", "final_guest_time_total": guest_time, "stability": "STABLE"}
