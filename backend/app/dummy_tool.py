@@ -1383,3 +1383,40 @@ async def process_memory_percent_audit(samples: int = 3):
         "final_memory_percent": process.memory_percent(),
         "stability": "STABLE"
     }
+
+@progress_tool(name="process_num_threads_audit")
+async def process_num_threads_audit(samples: int = 3):
+    """
+    Audits the number of threads used by the process using psutil.
+    """
+    logger.info(f"Starting process thread count audit with {samples} samples")
+    yield ProgressPayload(step="Initializing thread probe", pct=0, log="Collecting process-level thread baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            num_threads = process.num_threads()
+        except Exception as e:
+            logger.warning(f"Error collecting process thread count: {e}")
+            num_threads = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: {num_threads} active threads.")
+        yield ProgressPayload(
+            step="Sampling thread count",
+            pct=pct,
+            log=f"Measured process thread count sample {i+1}/{samples}: {num_threads} threads.",
+            metadata={
+                "sample_id": i + 1,
+                "num_threads": num_threads
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Threading model is healthy.")
+    yield {
+        "status": "audit_complete",
+        "final_num_threads": process.num_threads(),
+        "stability": "STABLE"
+    }

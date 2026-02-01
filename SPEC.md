@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.4.3
+# Specification: ADK Progress Bridge v2.4.4
 
 ## Overview
 The ADK Progress Bridge is a high-performance middleware designed to connect background tools/tasks with a real-time terminal user interface (TUI). It provides a standardized protocol for reporting progress, logs, and results via Server-Sent Events (SSE) and WebSockets.
@@ -94,4 +94,4 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - **APP_VERSION**: 2.4.3
 - **BUILD_TIMESTAMP**: 2026-02-01T18:30:00Z
 - **GIT_COMMIT**: v617-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: v617 SUPREME APEX VERIFICATION ADELE
+- **OPERATIONAL_APEX**: v618 SUPREME APEX VERIFICATION ADELE- `process_num_threads_audit`: Process-level thread count tracking.

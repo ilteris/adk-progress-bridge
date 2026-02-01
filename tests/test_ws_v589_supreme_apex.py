@@ -55,6 +55,6 @@ def test_v616_metadata_verification():
         response = client.get("/version")
         assert response.status_code == 200
         data = response.json()
-        assert data["version"] == "2.4.2"
-        assert "v616" in data["git_commit"]
-        assert "v616" in data["status"]
+        assert data["version"] == "2.4.4"
+        assert "v617" in data["git_commit"]
+        assert "v618" in data["status"]

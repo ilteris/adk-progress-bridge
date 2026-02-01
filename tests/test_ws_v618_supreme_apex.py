@@ -4,9 +4,9 @@ import asyncio
 from fastapi.testclient import TestClient
 from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
-def test_open_files_audit_tool_ws():
+def test_process_num_threads_audit_tool_ws():
     """
-    Verifies that the new open_files_audit tool works over WebSocket.
+    Verifies that the new process_num_threads_audit tool (v618) works over WebSocket.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
@@ -14,12 +14,12 @@ def test_open_files_audit_tool_ws():
         resp = websocket.receive_json()
         assert resp["type"] == "connected"
 
-        # 2. Start open_files_audit
+        # 2. Start process_num_threads_audit
         websocket.send_text(json.dumps({
             "type": "start",
-            "tool_name": "open_files_audit",
+            "tool_name": "process_num_threads_audit",
             "args": {"samples": 2},
-            "request_id": "req-v616"
+            "request_id": "req-v618"
         }))
         
         resp = websocket.receive_json()
@@ -36,13 +36,13 @@ def test_open_files_audit_tool_ws():
                 progress_events.append(resp)
         
         assert len(progress_events) >= 2
-        assert any("Sampling open files" in p["payload"]["step"] for p in progress_events)
+        assert any("Sampling thread count" in p["payload"]["step"] for p in progress_events)
         assert resp["payload"]["status"] == "audit_complete"
-        assert "final_file_count" in resp["payload"]
+        assert "final_num_threads" in resp["payload"]
 
-def test_v616_metadata():
+def test_v618_metadata():
     """
-    Verifies that the system reports correct v616 Supreme Apex metadata.
+    Verifies that the system reports correct v618 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
