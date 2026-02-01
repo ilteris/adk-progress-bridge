@@ -32,10 +32,11 @@ CLEANUP_INTERVAL = 60.0
 STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
-APP_VERSION = "2.0.0"
+MAX_QUEUE_SIZE = 1000
+APP_VERSION = "2.0.1"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v574-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v574 SUPREME APEX VERIFICATION ADELE"
+GIT_COMMIT = "v575-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v575 SUPREME APEX VERIFICATION ADELE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -106,7 +107,7 @@ async def stream_task(call_id: Optional[str] = None, cid: Optional[str] = Query(
             gen, tool_name = task_data["gen"], task_data["tool_name"]
             
             call_id_var.set(actual_call_id); tool_name_var.set(tool_name)
-            start_time, status, metrics_queue, combined_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(actual_call_id), asyncio.Queue()
+            start_time, status, metrics_queue, combined_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(actual_call_id), asyncio.Queue(maxsize=MAX_QUEUE_SIZE)
             
             async def pull_gen():
                 try:
