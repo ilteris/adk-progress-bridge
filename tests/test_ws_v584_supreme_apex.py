@@ -12,12 +12,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.app.main import app
 
 @pytest.mark.asyncio
-async def test_ws_v583_supreme_apex_comprehensive():
+async def test_ws_v584_supreme_apex_comprehensive():
     """
-    V580 SUPREME APEX VERIFICATION:
+    V584 SUPREME APEX VERIFICATION:
     1. Verify connection handshake (connected message)
     2. Verify list_tools & list_active_tasks protocol
-    3. Verify health data includes v2.0.5 and v579/v583 markers
+    3. Verify health data includes v2.1.0 and v584 markers
     4. Verify concurrent task execution and isolation
     5. Verify request_id correlation across all message types
     """
@@ -29,7 +29,7 @@ async def test_ws_v583_supreme_apex_comprehensive():
         assert data["status"] == "ready"
 
         # 2. Protocol: list_tools
-        req_id_list = "req_v583_list"
+        req_id_list = "req_v584_list"
         websocket.send_json({"type": "list_tools", "request_id": req_id_list})
         data = websocket.receive_json()
         while data["type"] != "tools_list":
@@ -39,7 +39,7 @@ async def test_ws_v583_supreme_apex_comprehensive():
         assert "long_audit" in data["tools"]
 
         # 3. Protocol: get_health & Version Check
-        req_id_health = "req_v583_health"
+        req_id_health = "req_v584_health"
         websocket.send_json({"type": "get_health", "request_id": req_id_health})
         data = websocket.receive_json()
         while data["type"] != "health_data":
@@ -55,7 +55,7 @@ async def test_ws_v583_supreme_apex_comprehensive():
         num_tasks = 5
         call_ids = []
         for i in range(num_tasks):
-            req_id = f"v583_start_{i}"
+            req_id = f"v584_start_{i}"
             websocket.send_json({
                 "type": "start",
                 "tool_name": "security_scan",
@@ -73,7 +73,7 @@ async def test_ws_v583_supreme_apex_comprehensive():
             assert found_start
 
         # 5. list_active_tasks
-        req_id_active = "req_v583_active"
+        req_id_active = "req_v584_active"
         websocket.send_json({"type": "list_active_tasks", "request_id": req_id_active})
         
         data = websocket.receive_json()
@@ -98,7 +98,7 @@ async def test_ws_v583_supreme_apex_comprehensive():
         assert results_received == num_tasks
 
 @pytest.mark.asyncio
-async def test_ws_v583_boundary_conditions():
+async def test_ws_v584_boundary_conditions():
     """
     Verify boundary conditions:
     1. Message size limit (1MB)
@@ -123,7 +123,7 @@ async def test_ws_v583_boundary_conditions():
         assert "Invalid JSON" in data["payload"]["detail"]
 
         # 3. Tool not found
-        req_id = "v583_tool_not_found"
+        req_id = "v584_tool_not_found"
         websocket.send_json({
             "type": "start",
             "tool_name": "ghost_tool",
@@ -133,3 +133,48 @@ async def test_ws_v583_boundary_conditions():
         assert data["type"] == "error"
         assert data["request_id"] == req_id
         assert "Tool not found" in data["payload"]["detail"]
+
+@pytest.mark.asyncio
+async def test_ws_v584_multi_connection_concurrency():
+    """
+    Verify that multiple concurrent WebSocket connections can each run tasks independently.
+    """
+    client = TestClient(app)
+    num_clients = 3
+    num_tasks_per_client = 2
+    
+    with client.websocket_connect("/ws?api_key=test-key") as ws1, \
+         client.websocket_connect("/ws?api_key=test-key") as ws2, \
+         client.websocket_connect("/ws?api_key=test-key") as ws3:
+        
+        websockets = [ws1, ws2, ws3]
+        for ws in websockets:
+            assert ws.receive_json()["type"] == "connected"
+            
+        # Start tasks for all clients
+        for idx, ws in enumerate(websockets):
+            for i in range(num_tasks_per_client):
+                ws.send_json({
+                    "type": "start",
+                    "tool_name": "security_scan",
+                    "request_id": f"client_{idx}_task_{i}"
+                })
+        
+        # Verify task_started for all
+        for idx, ws in enumerate(websockets):
+            for i in range(num_tasks_per_client):
+                found = False
+                for _ in range(20):
+                    d = ws.receive_json()
+                    if d["type"] == "task_started":
+                        found = True
+                        break
+                assert found
+
+        # Verify list_active_tasks from any client sees all tasks
+        websockets[0].send_json({"type": "list_active_tasks", "request_id": "multi_check"})
+        data = websockets[0].receive_json()
+        while data["type"] != "active_tasks_list":
+            data = websockets[0].receive_json()
+        
+        assert len(data["tasks"]) >= num_clients * num_tasks_per_client
