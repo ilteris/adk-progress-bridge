@@ -19,7 +19,7 @@ def test_process_terminal_audit_tool_ws():
             "type": "start",
             "tool_name": "process_terminal_audit",
             "args": {"samples": 2},
-            "request_id": "req-v634-terminal"
+            "request_id": "req-v638-terminal"
         }))
         
         resp = websocket.receive_json()
@@ -49,7 +49,7 @@ def test_process_ionice_extended_audit_tool_ws():
             "type": "start",
             "tool_name": "process_ionice_extended_audit",
             "args": {"samples": 2},
-            "request_id": "req-v634-ionice"
+            "request_id": "req-v638-ionice"
         }))
         
         resp = websocket.receive_json()
@@ -79,7 +79,7 @@ def test_process_rlimit_audit_tool_ws():
             "type": "start",
             "tool_name": "process_rlimit_audit",
             "args": {"samples": 2},
-            "request_id": "req-v634-rlimit"
+            "request_id": "req-v638-rlimit"
         }))
         
         resp = websocket.receive_json()
@@ -94,9 +94,9 @@ def test_process_rlimit_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "limits_count" in resp["payload"]
 
-def test_v634_metadata():
+def test_v638_metadata():
     """
-    Verifies that the system reports correct v634 Supreme Apex metadata.
+    Verifies that the system reports correct v638 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")

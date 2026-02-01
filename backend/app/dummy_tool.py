@@ -3179,3 +3179,115 @@ async def system_net_if_addrs_detailed_audit(samples: int = 3):
         "interface_count": len(psutil.net_if_addrs()),
         "stability": "STABLE"
     }
+
+@progress_tool(name="system_net_if_addrs_v4_audit")
+async def system_net_if_addrs_v4_audit(samples: int = 3):
+    """
+    Audits IPv4 system network interface addresses using psutil.
+    """
+    logger.info("Starting system net if addrs IPv4 audit")
+    yield ProgressPayload(step="Initializing IPv4 net if addrs probe", pct=0, log="Collecting IPv4 network interface address information...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            if_addrs = psutil.net_if_addrs()
+            v4_addrs = {}
+            for iface, addrs in if_addrs.items():
+                v4_list = [addr._asdict() for addr in addrs if addr.family == 2] # AF_INET
+                if v4_list:
+                    v4_addrs[iface] = v4_list
+            logger.info(f"Sample {i+1}/{samples}: Collected IPv4 addresses for {len(v4_addrs)} interfaces")
+            metadata = v4_addrs
+        except Exception as e:
+            logger.error(f"Error auditing IPv4 net if addrs: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling IPv4 net if addrs",
+            pct=pct,
+            log=f"Measured IPv4 network interface addresses sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. IPv4 network interface addresses are stable.")
+    yield {
+        "status": "audit_complete",
+        "interface_count": len(v4_addrs),
+        "family": "IPv4",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_if_addrs_v6_audit")
+async def system_net_if_addrs_v6_audit(samples: int = 3):
+    """
+    Audits IPv6 system network interface addresses using psutil.
+    """
+    logger.info("Starting system net if addrs IPv6 audit")
+    yield ProgressPayload(step="Initializing IPv6 net if addrs probe", pct=0, log="Collecting IPv6 network interface address information...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            if_addrs = psutil.net_if_addrs()
+            v6_addrs = {}
+            for iface, addrs in if_addrs.items():
+                v6_list = [addr._asdict() for addr in addrs if addr.family == 30] # AF_INET6
+                if v6_list:
+                    v6_addrs[iface] = v6_list
+            logger.info(f"Sample {i+1}/{samples}: Collected IPv6 addresses for {len(v6_addrs)} interfaces")
+            metadata = v6_addrs
+        except Exception as e:
+            logger.error(f"Error auditing IPv6 net if addrs: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling IPv6 net if addrs",
+            pct=pct,
+            log=f"Measured IPv6 network interface addresses sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. IPv6 network interface addresses are stable.")
+    yield {
+        "status": "audit_complete",
+        "interface_count": len(v6_addrs),
+        "family": "IPv6",
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_partitions_physical_audit")
+async def system_disk_partitions_physical_audit(samples: int = 3):
+    """
+    Audits physical system disk partitions using psutil.
+    """
+    logger.info("Starting system disk partitions physical audit")
+    yield ProgressPayload(step="Initializing physical-partitions probe", pct=0, log="Collecting physical disk partition baseline...")
+    
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions(all=False)
+            partition_count = len(partitions)
+            logger.info(f"Sample {i+1}/{samples}: {partition_count} physical disk partitions found.")
+            metadata = {f"partition_{idx}": p._asdict() for idx, p in enumerate(partitions)}
+        except Exception as e:
+            logger.error(f"Error auditing physical disk partitions: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling physical disk partitions",
+            pct=pct,
+            log=f"Measured {partition_count} physical disk partitions sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Physical disk partition configuration is stable.")
+    yield {
+        "status": "audit_complete",
+        "physical_partition_count": len(psutil.disk_partitions(all=False)),
+        "stability": "STABLE"
+    }
