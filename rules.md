@@ -60,7 +60,14 @@ The bridge supports both **Server-Sent Events (SSE)** and **WebSockets (WS)**.
 - CORS must be enabled for local development.
 - Support API Key authentication via `X-API-Key` header or `api_key` query parameter.
 
-## 5. Testing & Verification
+## 5. Robustness
+- **Message Size Limit**: WebSocket messages are limited to 1MB.
+- **Heartbeats**: Bi-directional ping/pong every 30-60 seconds.
+- **Reconnection**: Frontend must implement exponential backoff reconnection.
+- **Thread Safety**: Concurrent WebSocket writes must be protected by a lock.
+
+## 6. Testing & Verification
 - Use `verify_stream.py` for manual SSE testing.
 - Use `verify_websocket.py` for manual WebSocket testing.
 - Frontend composables should be testable in isolation using Vitest.
+- Robustness tests (concurrency, timeouts, size limits) MUST be included in the backend test suite.
