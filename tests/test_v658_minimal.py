@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 from backend.app.main import app
 import pytest
 
-def test_v663_minimal():
+def test_v664_minimal():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         websocket.receive_json() # connected

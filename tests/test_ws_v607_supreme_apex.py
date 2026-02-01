@@ -19,7 +19,7 @@ def test_process_priority_audit_tool_ws():
             "type": "start",
             "tool_name": "process_priority_audit",
             "args": {"samples": 2},
-            "request_id": "req-v663"
+            "request_id": "req-v664"
         }))
         
         resp = websocket.receive_json()
@@ -40,14 +40,14 @@ def test_process_priority_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_nice" in resp["payload"]
 
-def test_v663_metadata():
+def test_v664_metadata():
     """
-    Verifies that the system reports correct v663 Supreme Apex metadata.
+    Verifies that the system reports correct v664 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.8.9"
-    assert data["git_commit"] == "v663-supreme-apex-adele-verification"
-    assert "v663 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.9.0"
+    assert data["git_commit"] == "v664-supreme-apex-adele-verification"
+    assert "v664 SUPREME APEX" in data["status"]

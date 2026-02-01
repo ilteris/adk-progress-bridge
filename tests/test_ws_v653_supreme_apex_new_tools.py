@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from backend.app.main import app
 import json
 
-def test_ws_v663_new_tools_availability():
+def test_ws_v664_new_tools_availability():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -20,7 +20,7 @@ def test_ws_v663_new_tools_availability():
         assert "system_disk_io_busy_time_audit" in tools
         assert "system_cpu_times_percent_idle_focused_audit" in tools
 
-def test_ws_v663_system_disk_io_write_time_audit():
+def test_ws_v664_system_disk_io_write_time_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -48,7 +48,7 @@ def test_ws_v663_system_disk_io_write_time_audit():
         final_msg = messages[-1]
         assert "final_write_time" in final_msg["payload"]
 
-def test_ws_v663_system_disk_io_busy_time_audit():
+def test_ws_v664_system_disk_io_busy_time_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -76,7 +76,7 @@ def test_ws_v663_system_disk_io_busy_time_audit():
         final_msg = messages[-1]
         assert "final_busy_time" in final_msg["payload"]
 
-def test_ws_v663_system_cpu_times_percent_idle_focused_audit():
+def test_ws_v664_system_cpu_times_percent_idle_focused_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message

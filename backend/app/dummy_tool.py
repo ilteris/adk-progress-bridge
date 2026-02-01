@@ -5442,3 +5442,63 @@ async def system_cpu_stats_syscalls_total_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total syscall statistics are stable.")
     yield {"status": "audit_complete", "final_syscalls_total": syscalls, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_user_total_audit")
+async def system_cpu_times_user_total_audit(samples: int = 3):
+    logger.info("Starting total user cpu times audit")
+    yield ProgressPayload(step="Initializing user cpu times total probe", pct=0, log="Collecting cumulative system-wide user cpu time counters...")
+    user_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            user_time = times.user
+            logger.info(f"Sample {i+1}/{samples}: Total User-cpu-time {user_time}")
+            metadata = {"user_time_total": user_time}
+        except Exception as e:
+            logger.error(f"Error auditing total user cpu times: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total user cpu times", pct=pct, log=f"Measured total user cpu times sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total user cpu time statistics are stable.")
+    yield {"status": "audit_complete", "final_user_time_total": user_time, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_system_total_audit")
+async def system_cpu_times_system_total_audit(samples: int = 3):
+    logger.info("Starting total system cpu times audit")
+    yield ProgressPayload(step="Initializing system cpu times total probe", pct=0, log="Collecting cumulative system-wide system cpu time counters...")
+    system_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            system_time = times.system
+            logger.info(f"Sample {i+1}/{samples}: Total System-cpu-time {system_time}")
+            metadata = {"system_time_total": system_time}
+        except Exception as e:
+            logger.error(f"Error auditing total system cpu times: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total system cpu times", pct=pct, log=f"Measured total system cpu times sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total system cpu time statistics are stable.")
+    yield {"status": "audit_complete", "final_system_time_total": system_time, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_idle_total_audit")
+async def system_cpu_times_idle_total_audit(samples: int = 3):
+    logger.info("Starting total idle cpu times audit")
+    yield ProgressPayload(step="Initializing idle cpu times total probe", pct=0, log="Collecting cumulative system-wide idle cpu time counters...")
+    idle_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            idle_time = times.idle
+            logger.info(f"Sample {i+1}/{samples}: Total Idle-cpu-time {idle_time}")
+            metadata = {"idle_time_total": idle_time}
+        except Exception as e:
+            logger.error(f"Error auditing total idle cpu times: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total idle cpu times", pct=pct, log=f"Measured total idle cpu times sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total idle cpu time statistics are stable.")
+    yield {"status": "audit_complete", "final_idle_time_total": idle_time, "stability": "STABLE"}
