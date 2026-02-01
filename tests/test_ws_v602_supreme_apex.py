@@ -19,7 +19,7 @@ def test_load_average_audit_tool_ws():
             "type": "start",
             "tool_name": "load_average_audit",
             "args": {"samples": 2},
-            "request_id": "req-v648"
+            "request_id": "req-v649"
         }))
         
         resp = websocket.receive_json()
@@ -40,14 +40,14 @@ def test_load_average_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_load_avg" in resp["payload"]
 
-def test_v648_metadata():
+def test_v649_metadata():
     """
-    Verifies that the system reports correct v648 Supreme Apex metadata.
+    Verifies that the system reports correct v649 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.7.4"
-    assert data["git_commit"] == "v648-supreme-apex-adele-verification"
-    assert "v648 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.7.5"
+    assert data["git_commit"] == "v649-supreme-apex-adele-verification"
+    assert "v649 SUPREME APEX" in data["status"]
