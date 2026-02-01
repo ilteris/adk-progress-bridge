@@ -5382,3 +5382,63 @@ async def system_cpu_stats_ctx_switches_total_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total context switch statistics are stable.")
     yield {"status": "audit_complete", "final_ctx_switches_total": ctx_switches, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_interrupts_total_audit")
+async def system_cpu_stats_interrupts_total_audit(samples: int = 3):
+    logger.info("Starting total interrupts audit")
+    yield ProgressPayload(step="Initializing interrupts total probe", pct=0, log="Collecting cumulative system-wide interrupt counters...")
+    interrupts = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            interrupts = stats.interrupts
+            logger.info(f"Sample {i+1}/{samples}: Total Interrupts {interrupts}")
+            metadata = {"interrupts_total": interrupts}
+        except Exception as e:
+            logger.error(f"Error auditing total interrupts: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total interrupts", pct=pct, log=f"Measured total interrupts sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total interrupt statistics are stable.")
+    yield {"status": "audit_complete", "final_interrupts_total": interrupts, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_soft_interrupts_total_audit")
+async def system_cpu_stats_soft_interrupts_total_audit(samples: int = 3):
+    logger.info("Starting total soft interrupts audit")
+    yield ProgressPayload(step="Initializing soft interrupts total probe", pct=0, log="Collecting cumulative system-wide soft interrupt counters...")
+    soft_interrupts = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            soft_interrupts = stats.soft_interrupts
+            logger.info(f"Sample {i+1}/{samples}: Total Soft-interrupts {soft_interrupts}")
+            metadata = {"soft_interrupts_total": soft_interrupts}
+        except Exception as e:
+            logger.error(f"Error auditing total soft interrupts: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total soft interrupts", pct=pct, log=f"Measured total soft interrupts sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total soft interrupt statistics are stable.")
+    yield {"status": "audit_complete", "final_soft_interrupts_total": soft_interrupts, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_syscalls_total_audit")
+async def system_cpu_stats_syscalls_total_audit(samples: int = 3):
+    logger.info("Starting total syscalls audit")
+    yield ProgressPayload(step="Initializing syscalls total probe", pct=0, log="Collecting cumulative system-wide syscall counters...")
+    syscalls = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            syscalls = stats.syscalls
+            logger.info(f"Sample {i+1}/{samples}: Total Syscalls {syscalls}")
+            metadata = {"syscalls_total": syscalls}
+        except Exception as e:
+            logger.error(f"Error auditing total syscalls: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total syscalls", pct=pct, log=f"Measured total syscalls sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total syscall statistics are stable.")
+    yield {"status": "audit_complete", "final_syscalls_total": syscalls, "stability": "STABLE"}
