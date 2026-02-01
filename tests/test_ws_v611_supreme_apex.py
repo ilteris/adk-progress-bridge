@@ -19,7 +19,7 @@ def test_process_cmdline_audit_tool_ws():
             "type": "start",
             "tool_name": "process_cmdline_audit",
             "args": {"samples": 2},
-            "request_id": "req-v653"
+            "request_id": "req-v654"
         }))
         
         resp = websocket.receive_json()
@@ -40,14 +40,14 @@ def test_process_cmdline_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_cmdline" in resp["payload"]
 
-def test_v653_metadata():
+def test_v654_metadata():
     """
-    Verifies that the system reports correct v653 Supreme Apex metadata.
+    Verifies that the system reports correct v654 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.7.9"
-    assert data["git_commit"] == "v653-supreme-apex-adele-verification"
-    assert "v653 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.8.0"
+    assert data["git_commit"] == "v654-supreme-apex-adele-verification"
+    assert "v654 SUPREME APEX" in data["status"]

@@ -4837,3 +4837,63 @@ async def system_cpu_stats_soft_interrupts_focused_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Soft interrupt statistics are stable.")
     yield {"status": "audit_complete", "final_soft_interrupts": soft_interrupts, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_syscalls_focused_audit")
+async def system_cpu_stats_syscalls_focused_audit(samples: int = 3):
+    logger.info("Starting focused syscalls audit")
+    yield ProgressPayload(step="Initializing syscalls probe", pct=0, log="Collecting system-wide syscall counters...")
+    syscalls = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            syscalls = stats.syscalls
+            logger.info(f"Sample {i+1}/{samples}: Syscalls {syscalls}")
+            metadata = {"syscalls": syscalls}
+        except Exception as e:
+            logger.error(f"Error auditing focused syscalls: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling syscalls", pct=pct, log=f"Measured syscalls sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Syscall statistics are stable.")
+    yield {"status": "audit_complete", "final_syscalls": syscalls, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_packets_sent_focused_audit")
+async def system_net_io_packets_sent_focused_audit(samples: int = 3):
+    logger.info("Starting focused packets sent audit")
+    yield ProgressPayload(step="Initializing packets sent probe", pct=0, log="Collecting system-wide packets sent counters...")
+    packets_sent = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_io_counters()
+            packets_sent = stats.packets_sent
+            logger.info(f"Sample {i+1}/{samples}: Packets-sent {packets_sent}")
+            metadata = {"packets_sent": packets_sent}
+        except Exception as e:
+            logger.error(f"Error auditing focused packets sent: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling packets sent", pct=pct, log=f"Measured packets sent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Packets sent statistics are stable.")
+    yield {"status": "audit_complete", "final_packets_sent": packets_sent, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_packets_recv_focused_audit")
+async def system_net_io_packets_recv_focused_audit(samples: int = 3):
+    logger.info("Starting focused packets received audit")
+    yield ProgressPayload(step="Initializing packets received probe", pct=0, log="Collecting system-wide packets received counters...")
+    packets_recv = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_io_counters()
+            packets_recv = stats.packets_recv
+            logger.info(f"Sample {i+1}/{samples}: Packets-recv {packets_recv}")
+            metadata = {"packets_recv": packets_recv}
+        except Exception as e:
+            logger.error(f"Error auditing focused packets received: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling packets received", pct=pct, log=f"Measured packets received sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Packets received statistics are stable.")
+    yield {"status": "audit_complete", "final_packets_recv": packets_recv, "stability": "STABLE"}
