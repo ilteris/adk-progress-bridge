@@ -14,10 +14,10 @@ from backend.app.main import app
 @pytest.mark.asyncio
 async def test_ws_v583_supreme_apex_comprehensive():
     """
-    V580 SUPREME APEX VERIFICATION:
+    V583 SUPREME APEX VERIFICATION:
     1. Verify connection handshake (connected message)
     2. Verify list_tools & list_active_tasks protocol
-    3. Verify health data includes v2.0.5 and v579/v583 markers
+    3. Verify health data includes v2.0.9 and v583 markers
     4. Verify concurrent task execution and isolation
     5. Verify request_id correlation across all message types
     """
