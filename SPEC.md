@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.5.6
+# Specification: ADK Progress Bridge v2.7.4
 
 ## Overview
 The ADK Progress Bridge is a high-performance middleware designed to connect background tools/tasks with a real-time terminal user interface (TUI). It provides a standardized protocol for reporting progress, logs, and results via Server-Sent Events (SSE) and WebSockets.
@@ -113,9 +113,63 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - `system_sensors_temperatures_audit`: System-wide thermal sensor tracking.
 - `system_sensors_fans_audit`: System-wide fan speed tracking.
 - `system_sensors_battery_audit`: System-wide battery status tracking.
+- `system_boot_time_audit`: System boot time tracking.
+- `system_cpu_freq_audit`: System CPU frequency tracking.
+- `system_cpu_stats_audit`: System CPU stats tracking.
+- `system_cpu_count_audit`: System CPU count tracking.
+- `system_cpu_times_percent_audit`: System CPU times percentage tracking.
+- `system_net_connections_audit`: System network connections tracking.
+- `system_pids_audit`: System PIDs tracking.
+- `system_cpu_times_audit`: System CPU times tracking.
+- `system_disk_io_counters_audit`: System disk I/O counters tracking.
+- `system_virtual_memory_audit`: System virtual memory tracking.
+- `system_swap_memory_audit`: System swap memory tracking.
+- `system_disk_usage_audit`: System disk usage tracking.
+- `system_net_io_per_nic_audit`: System network I/O per NIC tracking.
+- `system_disk_io_per_disk_audit`: System disk I/O per disk tracking.
+- `system_cpu_times_per_cpu_audit`: System CPU times per CPU tracking.
+- `system_cpu_times_percent_per_cpu_audit`: System CPU times percentage per CPU tracking.
+- `system_net_if_stats_extended_audit`: Extended system network interface stats tracking.
+- `system_disk_partitions_usage_audit`: System disk partition usage tracking.
+- `system_cpu_freq_per_cpu_audit`: System CPU frequency per CPU tracking.
+- `system_disk_partitions_all_audit`: All system disk partitions tracking.
+- `system_net_if_addrs_detailed_audit`: Detailed system network interface addresses tracking.
+- `system_net_if_addrs_v4_audit`: IPv4 network interface addresses tracking.
+- `system_net_if_addrs_v6_audit`: IPv6 network interface addresses tracking.
+- `system_disk_partitions_physical_audit`: Physical disk partitions tracking.
+- `system_net_if_addrs_mac_audit`: MAC addresses for network interfaces tracking.
+- `system_disk_partitions_fstype_audit`: File system types for disk partitions tracking.
+- `system_cpu_times_percent_system_focused_audit`: System-focused CPU times percentage tracking.
+- `system_net_if_addrs_netmask_audit`: Netmasks for network interfaces tracking.
+- `system_disk_partitions_mountpoint_audit`: Mount points for disk partitions tracking.
+- `system_cpu_times_percent_user_focused_audit`: User-focused CPU times percentage tracking.
+- `system_net_if_addrs_broadcast_audit`: Broadcast addresses for network interfaces tracking.
+- `system_disk_partitions_device_audit`: Devices for disk partitions tracking.
+- `system_cpu_times_percent_idle_focused_audit`: Idle-focused CPU times percentage tracking.
+- `system_net_if_addrs_ptp_audit`: PTP addresses for network interfaces tracking.
+- `system_disk_partitions_opts_audit`: Options for disk partitions tracking.
+- `system_cpu_times_percent_iowait_focused_audit`: I/O wait focused CPU times percentage tracking.
+- `system_cpu_times_percent_irq_focused_audit`: IRQ focused CPU times percentage tracking.
+- `system_cpu_times_percent_softirq_focused_audit`: Soft IRQ focused CPU times percentage tracking.
+- `system_net_io_errors_audit`: System network I/O error tracking.
+- `system_cpu_times_percent_steal_focused_audit`: Steal focused CPU times percentage tracking.
+- `system_cpu_times_percent_guest_focused_audit`: Guest focused CPU times percentage tracking.
+- `system_disk_partitions_limits_audit`: Disk partition limits tracking.
+- `system_cpu_times_percent_guest_nice_focused_audit`: Guest nice focused CPU times percentage tracking.
+- `system_net_io_packets_audit`: System network I/O packet tracking.
+- `system_disk_io_time_audit`: System disk I/O time tracking.
+- `system_cpu_times_percent_nice_focused_audit`: Nice focused CPU times percentage tracking.
+- `system_disk_io_read_count_audit`: System disk I/O read count tracking.
+- `system_disk_io_write_count_audit`: System disk I/O write count tracking.
+- `system_net_io_merged_audit`: Merged system network I/O tracking.
+- `system_cpu_stats_ctx_switches_audit`: System CPU context switch tracking.
+- `system_cpu_stats_interrupts_audit`: System CPU interrupt tracking.
+- `system_cpu_stats_soft_interrupts_audit`: System CPU soft interrupt tracking.
+- `system_cpu_stats_syscalls_audit`: System CPU syscall tracking.
+- `system_net_io_dropin_audit`: System network I/O drop-in packet tracking.
 
 ## 5. Metadata
-- **APP_VERSION**: 2.5.6
-- **BUILD_TIMESTAMP**: 2026-02-01T23:59:00Z
-- **GIT_COMMIT**: v630-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: v630 SUPREME APEX VERIFICATION ADELE
+- **APP_VERSION**: 2.7.4
+- **BUILD_TIMESTAMP**: 2026-02-01T17:00:00Z
+- **GIT_COMMIT**: v648-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: v648 SUPREME APEX VERIFICATION ADELE
