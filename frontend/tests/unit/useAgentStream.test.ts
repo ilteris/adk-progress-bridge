@@ -236,5 +236,29 @@ describe('useAgentStream', () => {
         expect(unsubscribeSpy).toHaveBeenCalledWith('ws-call-id-test_tool')
         expect(state.callId).toBeNull()
     })
+
+    it('replays buffered messages when subscribing late', async () => {
+        // Connect WS first
+        await wsManager.connect()
+        await vi.waitFor(() => expect(lastWebSocket).not.toBeNull())
+
+        // Trigger message BEFORE subscribe
+        const callId = 'late-sub-call-id'
+        lastWebSocket?.triggerMessage({
+            call_id: callId,
+            type: 'progress',
+            payload: { step: 'Buffered', pct: 50 }
+        })
+
+        // Now subscribe
+        const callback = vi.fn()
+        wsManager.subscribe(callId, callback)
+
+        expect(callback).toHaveBeenCalledWith(expect.objectContaining({
+            call_id: callId,
+            type: 'progress',
+            payload: expect.objectContaining({ step: 'Buffered' })
+        }))
+    })
   })
 })
