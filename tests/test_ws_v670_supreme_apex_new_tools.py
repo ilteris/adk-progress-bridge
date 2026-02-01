@@ -17,16 +17,16 @@ def test_ws_v670_new_tools():
             data = websocket.receive_json()
             if data["type"] == "tools_list":
                 tools = data["tools"]
-                assert "system_cpu_times_user_total_audit" in tools
-                assert "system_cpu_times_system_total_audit" in tools
-                assert "system_cpu_times_idle_total_audit" in tools
+                assert "system_net_if_addrs_count_audit" in tools
+                assert "system_net_if_stats_count_audit" in tools
+                assert "system_net_if_stats_isup_count_audit" in tools
                 break
 
         # Test tool 1
-        req_id = "v670_test_user_total"
+        req_id = "v670_test_net_if_addrs"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_cpu_times_user_total_audit",
+            "tool_name": "system_net_if_addrs_count_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -35,14 +35,14 @@ def test_ws_v670_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_user_time_total" in data["payload"]
+                assert "final_net_if_addrs_count_total" in data["payload"]
                 break
 
         # Test tool 2
-        req_id = "v670_test_system_total"
+        req_id = "v670_test_net_if_stats"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_cpu_times_system_total_audit",
+            "tool_name": "system_net_if_stats_count_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -51,14 +51,14 @@ def test_ws_v670_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_system_time_total" in data["payload"]
+                assert "final_net_if_stats_count_total" in data["payload"]
                 break
 
         # Test tool 3
-        req_id = "v670_test_idle_total"
+        req_id = "v670_test_net_if_isup"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_cpu_times_idle_total_audit",
+            "tool_name": "system_net_if_stats_isup_count_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -67,5 +67,5 @@ def test_ws_v670_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_idle_time_total" in data["payload"]
+                assert "final_net_if_stats_isup_count_total" in data["payload"]
                 break

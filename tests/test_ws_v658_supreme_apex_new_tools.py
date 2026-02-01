@@ -3,7 +3,7 @@ from backend.app.main import app
 import pytest
 import json
 
-def test_ws_v669_new_tools():
+def test_ws_v670_new_tools():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         print("\n[CLIENT] Connected to WS")
@@ -14,7 +14,7 @@ def test_ws_v669_new_tools():
 
         # List tools
         print("[CLIENT] Sending list_tools")
-        websocket.send_json({"type": "list_tools", "request_id": "v669_list"})
+        websocket.send_json({"type": "list_tools", "request_id": "v670_list"})
         
         while True:
             data = websocket.receive_json()
@@ -25,7 +25,7 @@ def test_ws_v669_new_tools():
                 break
 
         # Test tool
-        req_id = "v669_test_dropin_total"
+        req_id = "v670_test_dropin_total"
         print(f"[CLIENT] Starting tool {req_id}")
         websocket.send_json({
             "type": "start",

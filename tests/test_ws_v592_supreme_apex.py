@@ -18,7 +18,7 @@ def test_event_loop_latency_audit_tool_ws():
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v669-latency-audit"
+            request_id = "v670-latency-audit"
             websocket.send_json({
                 "type": "start",
                 "tool_name": "event_loop_latency_audit",
@@ -50,13 +50,13 @@ def test_event_loop_latency_audit_tool_ws():
             assert progress_received, "Did not receive progress updates"
             assert result_received, "Did not receive final result"
 
-def test_v669_metadata_verification():
+def test_v670_metadata_verification():
     """
-    Verifies that the version and metadata are correctly updated for v669.
+    Verifies that the version and metadata are correctly updated for v670.
     """
     with TestClient(app) as client:
         response = client.get("/version")
         assert response.status_code == 200
         data = response.json()
-        assert data["version"] == "2.9.5"
-        assert "v669" in data["status"]
+        assert data["version"] == "2.9.6"
+        assert "v670" in data["status"]

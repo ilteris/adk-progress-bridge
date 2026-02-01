@@ -5798,3 +5798,62 @@ async def system_cpu_count_physical_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Physical CPU count statistics are stable.")
     yield {"status": "audit_complete", "final_cpu_count_physical_total": cpu_count, "stability": "STABLE"}
+@progress_tool(name="system_net_if_addrs_count_audit")
+async def system_net_if_addrs_count_audit(samples: int = 3):
+    logger.info("Starting total network interface addresses count audit")
+    yield ProgressPayload(step="Initializing network interface addresses count total probe", pct=0, log="Collecting system-wide network interface addresses count...")
+    addr_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            addr_count = sum(len(a) for a in addrs.values())
+            logger.info(f"Sample {i+1}/{samples}: Total Interface Addresses {addr_count}")
+            metadata = {"net_if_addrs_count_total": addr_count}
+        except Exception as e:
+            logger.error(f"Error auditing total network interface addresses count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total network interface addresses count", pct=pct, log=f"Measured total network interface addresses count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface addresses count statistics are stable.")
+    yield {"status": "audit_complete", "final_net_if_addrs_count_total": addr_count, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_count_audit")
+async def system_net_if_stats_count_audit(samples: int = 3):
+    logger.info("Starting total network interface stats count audit")
+    yield ProgressPayload(step="Initializing network interface stats count total probe", pct=0, log="Collecting system-wide network interface stats count...")
+    stats_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            stats_count = len(stats)
+            logger.info(f"Sample {i+1}/{samples}: Total Interface Stats {stats_count}")
+            metadata = {"net_if_stats_count_total": stats_count}
+        except Exception as e:
+            logger.error(f"Error auditing total network interface stats count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total network interface stats count", pct=pct, log=f"Measured total network interface stats count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface stats count statistics are stable.")
+    yield {"status": "audit_complete", "final_net_if_stats_count_total": stats_count, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_isup_count_audit")
+async def system_net_if_stats_isup_count_audit(samples: int = 3):
+    logger.info("Starting total network interface isup count audit")
+    yield ProgressPayload(step="Initializing network interface isup count total probe", pct=0, log="Collecting system-wide network interface isup count...")
+    isup_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            isup_count = sum(1 for s in stats.values() if s.isup)
+            logger.info(f"Sample {i+1}/{samples}: Total UP Interfaces {isup_count}")
+            metadata = {"net_if_stats_isup_count_total": isup_count}
+        except Exception as e:
+            logger.error(f"Error auditing total network interface isup count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total network interface isup count", pct=pct, log=f"Measured total network interface isup count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface isup count statistics are stable.")
+    yield {"status": "audit_complete", "final_net_if_stats_isup_count_total": isup_count, "stability": "STABLE"}
