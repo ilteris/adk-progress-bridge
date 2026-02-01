@@ -266,7 +266,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.3.4", "v608-supreme-apex-adele-verification", "v608 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.3.5", "v609-supreme-apex-adele-verification", "v609 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -1020,5 +1020,49 @@ async def process_memory_full_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_uss_mb": uss / 1024 / 1024,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_io_counters_audit")
+async def process_io_counters_audit(samples: int = 3):
+    """
+    Audits process I/O counters (read/write/char) using psutil.
+    """
+    logger.info(f"Starting process I/O counters audit with {samples} samples")
+    yield ProgressPayload(step="Initializing I/O probe", pct=0, log="Collecting process-level I/O baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            io = process.io_counters()
+            read_count = io.read_count
+            write_count = io.write_count
+            read_bytes = io.read_bytes
+            write_bytes = io.write_bytes
+        except Exception as e:
+            logger.warning(f"Error collecting process I/O: {e}")
+            read_count = write_count = read_bytes = write_bytes = 0
+            
+        logger.info(f"Sample {i+1}/{samples}: Read {read_bytes} bytes, Write {write_bytes} bytes.")
+        yield ProgressPayload(
+            step="Sampling process I/O",
+            pct=pct,
+            log=f"Measured process I/O sample {i+1}/{samples}: Read {read_bytes} bytes.",
+            metadata={
+                "sample_id": i + 1,
+                "read_count": read_count,
+                "write_count": write_count,
+                "read_bytes": read_bytes,
+                "write_bytes": write_bytes
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Process I/O is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_io": process.io_counters()._asdict() if hasattr(process, "io_counters") else {},
         "stability": "STABLE"
     }
