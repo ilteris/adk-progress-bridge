@@ -33,10 +33,10 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.0.1"
+APP_VERSION = "2.0.2"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v575-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v575 SUPREME APEX VERIFICATION ADELE"
+GIT_COMMIT = "v576-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v576 SUPREME APEX VERIFICATION ADELE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -237,7 +237,7 @@ async def websocket_endpoint(websocket: WebSocket):
             except Exception: WS_CONNECTION_ERRORS_TOTAL.labels(error_type="protocol_error").inc(); break
             
             try:
-                if msg_type == "ping": await safe_send_json({"type": "pong"})
+                if msg_type == "ping": await safe_send_json({"type": "pong", "request_id": request_id})
                 elif msg_type == "list_tools": await safe_send_json({"type": "tools_list", "tools": registry.list_tools(), "request_id": request_id})
                 elif msg_type == "list_active_tasks": await safe_send_json({"type": "active_tasks_list", "tasks": await registry.list_active_tasks(), "request_id": request_id})
                 elif msg_type == "get_health": await safe_send_json({"type": "health_data", "data": await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX), "request_id": request_id})
@@ -308,18 +308,32 @@ async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
         start_time, status, metrics_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(call_id)
         async def metrics_pusher():
             try:
-                while True: await send_func({"call_id": call_id, "type": "system_metrics", "payload": await metrics_queue.get()})
+                while True:
+                    metrics_data = await metrics_queue.get()
+                    try:
+                        await send_func({"call_id": call_id, "type": "system_metrics", "payload": metrics_data})
+                    except: break
             except asyncio.CancelledError: pass
         metrics_task = asyncio.create_task(metrics_pusher())
         try:
-            async for item in gen:
-                if isinstance(item, ProgressPayload):
-                    TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                    await send_func({"call_id": call_id, "type": "progress", "payload": item.model_dump()})
-                elif isinstance(item, dict) and item.get("type") == "input_request": await send_func({"call_id": call_id, "type": "input_request", "payload": item["payload"]})
-                else: await send_func({"call_id": call_id, "type": "result", "payload": item})
+            try:
+                async for item in gen:
+                    if isinstance(item, ProgressPayload):
+                        TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
+                        msg = {"call_id": call_id, "type": "progress", "payload": item.model_dump()}
+                    elif isinstance(item, dict) and item.get("type") == "input_request":
+                        msg = {"call_id": call_id, "type": "input_request", "payload": item["payload"]}
+                    else:
+                        msg = {"call_id": call_id, "type": "result", "payload": item}
+                    try: await send_func(msg)
+                    except Exception as transport_err:
+                        logger.debug(f"Transport error during task {call_id}: {transport_err}")
+                        status = "error"; return
+            except Exception as tool_err:
+                status = "error"
+                try: await send_func({"call_id": call_id, "type": "error", "payload": {"detail": str(tool_err)}})
+                except: pass
         except asyncio.CancelledError: status = "cancelled"; await gen.aclose()
-        except Exception as e: status = "error"; await send_func({"call_id": call_id, "type": "error", "payload": {"detail": str(e)}})
         finally:
             metrics_broadcaster.unsubscribe(call_id); metrics_task.cancel()
             TASK_DURATION.labels(tool_name=tool_name).observe(time.perf_counter() - start_time); TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()

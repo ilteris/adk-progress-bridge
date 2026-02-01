@@ -27,7 +27,9 @@
 - [x] Strengthen handshake with `connected` status.
 - [x] Comprehensive audit and verification.
 - [x] Added backpressure management to SSE streams via bounded queues (v575).
+- [x] Refined transport error handling in WebSocket tasks to prevent redundant sends on closed connections (v576).
+- [x] Added request_id correlation to pong responses (v576).
 
 ---
-**Current Status:** PRODUCTION READY - v575 SUPREME APEX
-- [x] Verified by Worker-Adele (v575-supreme-apex-adele-verification).
+**Current Status:** PRODUCTION READY - v576 SUPREME APEX
+- [x] Verified by Worker-Adele (v576-supreme-apex-adele-verification).
