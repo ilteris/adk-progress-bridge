@@ -16,6 +16,7 @@ async def test_websocket_start_error_correlation():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         req_id = "error_test_req_123"
         websocket.send_json({
             "type": "start",
@@ -35,6 +36,7 @@ async def test_websocket_malformed_json():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Send invalid JSON
         websocket.send_text("not a json")
         
@@ -55,6 +57,7 @@ async def test_websocket_stop_error_correlation():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         req_id = "stop_error_req_456"
         c_id = "non_existent_call_id"
         websocket.send_json({
@@ -76,6 +79,7 @@ async def test_websocket_input_error_correlation():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         req_id = "input_error_req_789"
         c_id = "non_existent_call_id"
         websocket.send_json({

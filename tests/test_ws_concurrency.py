@@ -16,6 +16,7 @@ def test_websocket_ping_pong():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         websocket.send_json({"type": "ping"})
         data = websocket.receive_json()
         assert data["type"] == "pong"
@@ -26,6 +27,7 @@ def test_websocket_concurrency():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         num_tasks = 5
         call_ids = []
         
@@ -74,6 +76,7 @@ def test_websocket_interleaved_stop():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Start Task A
         websocket.send_json({
             "type": "start",
@@ -127,6 +130,7 @@ def test_websocket_concurrent_input():
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
+        websocket.receive_json() # Consume connected message
         # Start 2 interactive tasks
         call_ids = []
         for i in range(2):

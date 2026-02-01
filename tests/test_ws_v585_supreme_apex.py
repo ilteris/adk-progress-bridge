@@ -1,0 +1,44 @@
+import pytest
+import json
+import asyncio
+from fastapi.testclient import TestClient
+from backend.app.main import app
+
+def test_v606_metadata():
+    client = TestClient(app)
+    response = client.get("/version")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["version"] == "2.3.2"
+    assert data["status"] == "v606 SUPREME APEX VERIFICATION ADELE"
+    assert data["git_commit"] == "v606-supreme-apex-adele-verification"
+
+@pytest.mark.asyncio
+async def test_v606_ws_health_metrics():
+    # Verify that get_health via WS returns the correct metadata
+    from backend.app.auth import BRIDGE_API_KEY
+    
+    # Use BRIDGE_API_KEY if it's set, otherwise use "test-key" or similar if the app defaults to something
+    api_key = BRIDGE_API_KEY or "test-key"
+    
+    with TestClient(app).websocket_connect(f"/ws?api_key={api_key}") as websocket:
+        # Handshake
+        resp = websocket.receive_json()
+        assert resp["type"] == "connected"
+        
+        # Get Health
+        websocket.send_json({"type": "get_health", "request_id": "v606-test"})
+        resp = websocket.receive_json()
+        assert resp["type"] == "health_data"
+        assert resp["request_id"] == "v606-test"
+        assert resp["data"]["version"] == "2.3.2"
+        assert resp["data"]["operational_apex"] == "v606 SUPREME APEX VERIFICATION ADELE"
+
+def test_v606_health_endpoint():
+    client = TestClient(app)
+    response = client.get("/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["version"] == "2.3.2"
+    assert "last_updated_str" in data
+    assert "build_timestamp" in data

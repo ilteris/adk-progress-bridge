@@ -22,13 +22,13 @@ test('websocket audit flow', async ({ page }) => {
   await startBtn.click();
 
   // Verify running state and WS badge
-  await expect(page.locator('.badge')).toContainText('WS');
+  await expect(page.getByTestId('status-badge')).toContainText('WS');
   const stopBtn = page.getByRole('button', { name: 'Stop Task' });
   await expect(stopBtn).toBeVisible();
 
   // Wait for completion
   await expect(page.locator('.alert-success')).toBeVisible({ timeout: 15000 });
-  await expect(page.locator('.badge')).toContainText('Done');
+  await expect(page.getByTestId('status-badge')).toContainText('Done');
 
   // Verify final result
   await expect(page.locator('pre')).toContainText('"status": "complete"');
@@ -48,7 +48,7 @@ test('websocket interactive flow', async ({ page }) => {
   
   // Wait for input request
   await expect(page.getByText('Agent Input Request')).toBeVisible({ timeout: 15000 });
-  await expect(page.locator('.badge')).toContainText('Awaiting Input');
+  await expect(page.getByTestId('status-badge')).toContainText('Awaiting Input');
   
   // Provide input "yes"
   const inputField = page.locator('input[placeholder="Type your response..."]');
@@ -57,7 +57,7 @@ test('websocket interactive flow', async ({ page }) => {
   
   // Wait for completion
   await expect(page.locator('.alert-success')).toBeVisible({ timeout: 15000 });
-  await expect(page.locator('.badge')).toContainText('Done');
+  await expect(page.getByTestId('status-badge')).toContainText('Done');
   await expect(page.locator('pre')).toContainText('"status": "complete"');
   await expect(page.locator('pre')).toContainText('user approval');
 });
@@ -75,7 +75,7 @@ test('websocket stop flow', async ({ page }) => {
   await page.getByRole('button', { name: 'Start Task' }).click();
   
   // Verify running state
-  await expect(page.locator('.badge')).toContainText('WS');
+  await expect(page.getByTestId('status-badge')).toContainText('WS');
   const stopBtn = page.getByRole('button', { name: 'Stop Task' });
   await expect(stopBtn).toBeVisible();
   
@@ -83,7 +83,7 @@ test('websocket stop flow', async ({ page }) => {
   await stopBtn.click();
   
   // Verify cancelled state
-  await expect(page.locator('.badge')).toContainText('Cancelled');
+  await expect(page.getByTestId('status-badge')).toContainText('Cancelled');
   await expect(page.locator('.progress-bar')).toHaveCSS('background-color', 'rgb(108, 117, 125)'); // #6c757d
 });
 
@@ -92,13 +92,63 @@ test('websocket dynamic tool fetching', async ({ page }) => {
   
   // Initially on SSE (REST fetch)
   const toolSelect = page.locator('#toolSelect');
-  // Real backend has 6 tools
-  await expect(toolSelect.locator('option')).toHaveCount(7);
+  // Real backend has 27 tools
+  await expect(toolSelect.locator('option')).toHaveCount(28);
   
   // Toggle to WS
   await page.locator('#useWS').check();
   
   // Should still have options (re-fetched via WS)
-  await expect(toolSelect.locator('option')).toHaveCount(7);
+  await expect(toolSelect.locator('option')).toHaveCount(28);
   await expect(toolSelect).toContainText('Long Audit');
+});
+
+test('websocket clear console flow', async ({ page }) => {
+  await page.goto('http://localhost:5173');
+  
+  // Enable WebSockets
+  await page.locator('#useWS').check();
+  
+  // Start a task to generate some logs
+  await page.locator('#duration').fill('1');
+  await page.getByRole('button', { name: 'Start Task' }).click();
+  
+  // Wait for completion
+  await expect(page.getByTestId('status-badge')).toContainText('Done', { timeout: 15000 });
+  
+  // Verify logs exist
+  const consoleDiv = page.locator('.bg-dark.text-light');
+  const logEntries = consoleDiv.locator('div');
+  const logCount = await logEntries.count();
+  expect(logCount).toBeGreaterThan(1);
+  
+  // Click Clear
+  await page.getByRole('button', { name: 'Clear' }).click();
+  
+  // Verify logs are cleared (back to "No logs yet...")
+  await expect(logEntries).toHaveCount(1);
+  await expect(consoleDiv).toContainText('No logs yet...');
+});
+
+test('websocket deep health check tool', async ({ page }) => {
+  await page.goto('http://localhost:5173');
+  
+  // Enable WebSockets
+  await page.locator('#useWS').check();
+  
+  // Select Deep Health Check
+  await page.locator('#toolSelect').selectOption('deep_health_check');
+  
+  // Start task
+  await page.getByRole('button', { name: 'Start Task' }).click();
+  
+  // Wait for completion
+  await expect(page.locator('.alert-success')).toBeVisible({ timeout: 15000 });
+  await expect(page.getByTestId('status-badge')).toContainText('Done');
+  
+  // Verify final result contains health metrics
+  const resultPre = page.locator('pre');
+  await expect(resultPre).toContainText('"status": "healthy"');
+  await expect(resultPre).toContainText('"snapshot"');
+  await expect(resultPre).toContainText('"cpu_count"');
 });
