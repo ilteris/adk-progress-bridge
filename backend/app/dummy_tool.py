@@ -267,7 +267,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.8.1", "v655-supreme-apex-adele-verification", "v655 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.9.4", "v668-supreme-apex-adele-verification", "v668 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -5682,3 +5682,62 @@ async def system_net_io_recv_bytes_total_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Total net_io recv_bytes statistics are stable.")
     yield {"status": "audit_complete", "final_recv_bytes_total": recv_bytes, "stability": "STABLE"}
+
+@progress_tool(name="system_users_total_audit")
+async def system_users_total_audit(samples: int = 3):
+    logger.info("Starting total system users audit")
+    yield ProgressPayload(step="Initializing system users total probe", pct=0, log="Collecting system-wide active user sessions...")
+    user_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            users = psutil.users()
+            user_count = len(users)
+            logger.info(f"Sample {i+1}/{samples}: Total Users {user_count}")
+            metadata = {"user_count_total": user_count}
+        except Exception as e:
+            logger.error(f"Error auditing total system users: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total system users", pct=pct, log=f"Measured total system users sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. System user statistics are stable.")
+    yield {"status": "audit_complete", "final_user_count_total": user_count, "stability": "STABLE"}
+
+@progress_tool(name="system_boot_time_total_audit")
+async def system_boot_time_total_audit(samples: int = 3):
+    logger.info("Starting total system boot time audit")
+    yield ProgressPayload(step="Initializing system boot time total probe", pct=0, log="Collecting system-wide boot time timestamp...")
+    boot_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            boot_time = psutil.boot_time()
+            logger.info(f"Sample {i+1}/{samples}: Total Boot-time {boot_time}")
+            metadata = {"boot_time_total": boot_time}
+        except Exception as e:
+            logger.error(f"Error auditing total system boot time: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total system boot time", pct=pct, log=f"Measured total system boot time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. System boot time statistics are stable.")
+    yield {"status": "audit_complete", "final_boot_time_total": boot_time, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_count_audit")
+async def system_disk_partitions_count_audit(samples: int = 3):
+    logger.info("Starting total disk partitions count audit")
+    yield ProgressPayload(step="Initializing disk partitions count total probe", pct=0, log="Collecting system-wide disk partition count...")
+    partitions_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions()
+            partitions_count = len(partitions)
+            logger.info(f"Sample {i+1}/{samples}: Total Partitions {partitions_count}")
+            metadata = {"partitions_count_total": partitions_count}
+        except Exception as e:
+            logger.error(f"Error auditing total disk partitions count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total disk partitions count", pct=pct, log=f"Measured total disk partitions count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk partition count statistics are stable.")
+    yield {"status": "audit_complete", "final_partitions_count_total": partitions_count, "stability": "STABLE"}

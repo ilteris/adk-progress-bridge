@@ -3,7 +3,7 @@ from backend.app.main import app
 import pytest
 import json
 
-def test_ws_v666_new_tools():
+def test_ws_v668_new_tools():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Handshake
@@ -11,7 +11,7 @@ def test_ws_v666_new_tools():
         assert data["type"] == "connected"
 
         # List tools
-        websocket.send_json({"type": "list_tools", "request_id": "v666_list"})
+        websocket.send_json({"type": "list_tools", "request_id": "v668_list"})
         
         while True:
             data = websocket.receive_json()
@@ -23,7 +23,7 @@ def test_ws_v666_new_tools():
                 break
 
         # Test tool 1
-        req_id = "v666_test_write_time_total"
+        req_id = "v668_test_write_time_total"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_disk_io_write_time_total_audit",
@@ -39,7 +39,7 @@ def test_ws_v666_new_tools():
                 break
 
         # Test tool 2
-        req_id = "v666_test_busy_time_total"
+        req_id = "v668_test_busy_time_total"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_disk_io_busy_time_total_audit",
@@ -55,7 +55,7 @@ def test_ws_v666_new_tools():
                 break
 
         # Test tool 3
-        req_id = "v666_test_ctx_switches_total"
+        req_id = "v668_test_ctx_switches_total"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_cpu_stats_ctx_switches_total_audit",
