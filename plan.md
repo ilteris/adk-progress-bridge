@@ -29,7 +29,8 @@
 - [x] Added backpressure management to SSE streams via bounded queues (v575).
 - [x] Refined transport error handling in WebSocket tasks to prevent redundant sends on closed connections (v576).
 - [x] Added request_id correlation to pong responses (v576).
+- [x] Refined transport error logging level from debug to warning for improved visibility (v577).
 
 ---
-**Current Status:** PRODUCTION READY - v576 SUPREME APEX
-- [x] Verified by Worker-Adele (v576-supreme-apex-adele-verification).
+**Current Status:** PRODUCTION READY - v577 SUPREME APEX
+- [x] Verified by Worker-Adele (v577-supreme-apex-adele-verification).

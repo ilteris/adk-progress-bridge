@@ -33,10 +33,10 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.0.2"
+APP_VERSION = "2.0.3"
 APP_START_TIME = time.time()
-GIT_COMMIT = "v576-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v576 SUPREME APEX VERIFICATION ADELE"
+GIT_COMMIT = "v577-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v577 SUPREME APEX VERIFICATION ADELE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -327,7 +327,7 @@ async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks):
                         msg = {"call_id": call_id, "type": "result", "payload": item}
                     try: await send_func(msg)
                     except Exception as transport_err:
-                        logger.debug(f"Transport error during task {call_id}: {transport_err}")
+                        logger.warning(f"Transport error during task {call_id}: {transport_err}")
                         status = "error"; return
             except Exception as tool_err:
                 status = "error"
