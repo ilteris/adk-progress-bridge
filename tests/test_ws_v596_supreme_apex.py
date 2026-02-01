@@ -9,19 +9,20 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.app.main import app
 
-def test_system_config_audit_tool_ws():
+def test_context_switch_audit_tool_ws():
     """
-    Verifies that the new system_config_audit tool works over WebSocket.
+    Verifies that the new context_switch_audit tool works over WebSocket.
     """
     with TestClient(app) as client:
         with client.websocket_connect("/ws?api_key=test_key") as websocket:
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v596-audit-test"
+            request_id = "v596-context-audit"
             websocket.send_json({
                 "type": "start",
-                "tool_name": "system_config_audit",
+                "tool_name": "context_switch_audit",
+                "args": {"samples": 2},
                 "request_id": request_id
             })
             
@@ -35,10 +36,13 @@ def test_system_config_audit_tool_ws():
                     assert data["request_id"] == request_id
                 elif data["type"] == "progress":
                     progress_received = True
+                    if data["payload"].get("step") == "Sampling context switches":
+                        assert "metadata" in data["payload"]
+                        assert "voluntary" in data["payload"]["metadata"]
+                        assert "involuntary" in data["payload"]["metadata"]
                 elif data["type"] == "result":
                     assert data["payload"]["status"] == "audit_complete"
-                    assert "python_version" in data["payload"]
-                    assert "cwd" in data["payload"]
+                    assert "final_ctx_switches" in data["payload"]
                     result_received = True
                     break
                 elif data["type"] == "error":
@@ -56,5 +60,4 @@ def test_v596_metadata_verification():
         assert response.status_code == 200
         data = response.json()
         assert data["version"] == "2.2.2"
-        assert "v596" in data["git_commit"]
         assert "v596" in data["status"]
