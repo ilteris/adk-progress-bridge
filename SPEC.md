@@ -101,5 +101,5 @@ The bridge provides deep visibility into the host system performance:
 
 ## 6. Versioning & Identity
 - **APP_VERSION**: 1.9.3
-- **GIT_COMMIT**: v565-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: SUPREME APEX VERIFICATION ADELE (v565)
+- **GIT_COMMIT**: v566-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: SUPREME APEX VERIFICATION ADELE (v566)
