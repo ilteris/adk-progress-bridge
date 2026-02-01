@@ -4,9 +4,9 @@ import asyncio
 from fastapi.testclient import TestClient
 from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
-def test_swap_memory_audit_tool_ws():
+def test_process_page_faults_audit_tool_ws():
     """
-    Verifies that the new swap_memory_audit tool works over WebSocket.
+    Verifies that the new process_page_faults_audit tool works over WebSocket.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
@@ -14,10 +14,10 @@ def test_swap_memory_audit_tool_ws():
         resp = websocket.receive_json()
         assert resp["type"] == "connected"
 
-        # 2. Start swap_memory_audit
+        # 2. Start process_page_faults_audit
         websocket.send_text(json.dumps({
             "type": "start",
-            "tool_name": "swap_memory_audit",
+            "tool_name": "process_page_faults_audit",
             "args": {"samples": 2},
             "request_id": "req-v616"
         }))
@@ -36,9 +36,9 @@ def test_swap_memory_audit_tool_ws():
                 progress_events.append(resp)
         
         assert len(progress_events) >= 2
-        assert any("Sampling swap memory" in p["payload"]["step"] for p in progress_events)
+        assert any("Sampling page faults" in p["payload"]["step"] for p in progress_events)
         assert resp["payload"]["status"] == "audit_complete"
-        assert "final_percent" in resp["payload"]
+        assert "final_page_faults" in resp["payload"]
 
 def test_v616_metadata():
     """

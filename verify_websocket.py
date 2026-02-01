@@ -126,6 +126,12 @@ async def run_ws_list_tools():
     try:
         async with websockets.connect(url) as websocket:
             print("\n--- Testing list_tools flow ---")
+            
+            # Wait for connected message first
+            msg1 = await websocket.recv()
+            data1 = json.loads(msg1)
+            print(f"Initial WS Event: {data1['type']}")
+            
             list_msg = {
                 "type": "list_tools",
                 "request_id": "list-tools-test"
@@ -134,7 +140,7 @@ async def run_ws_list_tools():
             
             message = await websocket.recv()
             data = json.loads(message)
-            print(f"WS Event: {data['type']} | Tools: {data.get('tools')}")
+            print(f"WS Event: {data['type']} | Tools count: {len(data.get('tools', []))}")
             if data['type'] == 'tools_list' and 'long_audit' in data['tools']:
                 print("list_tools verification SUCCESS")
             else:
