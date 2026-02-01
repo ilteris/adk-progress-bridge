@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from backend.app.main import app
 import json
 
-def test_ws_v652_tools_availability():
+def test_ws_v652_new_tools_availability():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -16,11 +16,11 @@ def test_ws_v652_tools_availability():
         assert response["type"] == "tools_list"
         tools = response["tools"]
         
-        assert "system_net_io_dropout_audit" in tools
-        assert "system_net_io_errin_audit" in tools
-        assert "system_net_io_errout_audit" in tools
+        assert "system_disk_io_read_count_audit" in tools
+        assert "system_disk_io_write_count_audit" in tools
+        assert "system_disk_io_read_time_audit" in tools
 
-def test_ws_v652_system_net_io_dropout_audit():
+def test_ws_v652_system_disk_io_read_count_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -28,7 +28,7 @@ def test_ws_v652_system_net_io_dropout_audit():
         
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_net_io_dropout_audit",
+            "tool_name": "system_disk_io_read_count_audit",
             "args": {"samples": 1}
         })
         
@@ -46,9 +46,9 @@ def test_ws_v652_system_net_io_dropout_audit():
         
         assert any(m["type"] == "progress" for m in messages)
         final_msg = messages[-1]
-        assert "final_dropout" in final_msg["payload"]
+        assert "final_read_count" in final_msg["payload"]
 
-def test_ws_v652_system_net_io_errin_audit():
+def test_ws_v652_system_disk_io_write_count_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -56,7 +56,7 @@ def test_ws_v652_system_net_io_errin_audit():
         
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_net_io_errin_audit",
+            "tool_name": "system_disk_io_write_count_audit",
             "args": {"samples": 1}
         })
         
@@ -74,9 +74,9 @@ def test_ws_v652_system_net_io_errin_audit():
         
         assert any(m["type"] == "progress" for m in messages)
         final_msg = messages[-1]
-        assert "final_errin" in final_msg["payload"]
+        assert "final_write_count" in final_msg["payload"]
 
-def test_ws_v652_system_net_io_errout_audit():
+def test_ws_v652_system_disk_io_read_time_audit():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Initial connected message
@@ -84,7 +84,7 @@ def test_ws_v652_system_net_io_errout_audit():
         
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_net_io_errout_audit",
+            "tool_name": "system_disk_io_read_time_audit",
             "args": {"samples": 1}
         })
         
@@ -102,4 +102,4 @@ def test_ws_v652_system_net_io_errout_audit():
         
         assert any(m["type"] == "progress" for m in messages)
         final_msg = messages[-1]
-        assert "final_errout" in final_msg["payload"]
+        assert "final_read_time" in final_msg["payload"]

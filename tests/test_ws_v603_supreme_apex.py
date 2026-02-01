@@ -19,7 +19,7 @@ def test_process_uptime_audit_tool_ws():
             "type": "start",
             "tool_name": "process_uptime_audit",
             "args": {"samples": 2},
-            "request_id": "req-v651"
+            "request_id": "req-v652"
         }))
         
         resp = websocket.receive_json()
@@ -40,14 +40,14 @@ def test_process_uptime_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_uptime_seconds" in resp["payload"]
 
-def test_v651_metadata():
+def test_v652_metadata():
     """
-    Verifies that the system reports correct v651 Supreme Apex metadata.
+    Verifies that the system reports correct v652 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.7.7"
-    assert data["git_commit"] == "v651-supreme-apex-adele-verification"
-    assert "v651 SUPREME APEX" in data["status"]
+    assert data["version"] == "2.7.8"
+    assert data["git_commit"] == "v652-supreme-apex-adele-verification"
+    assert "v652 SUPREME APEX" in data["status"]

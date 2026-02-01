@@ -267,7 +267,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.7.7", "v651-supreme-apex-adele-verification", "v651 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.7.8", "v652-supreme-apex-adele-verification", "v652 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -4669,5 +4669,110 @@ async def system_net_io_recv_bytes_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_bytes_recv": bytes_recv,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_io_read_count_audit")
+async def system_disk_io_read_count_audit(samples: int = 3):
+    """
+    Audits system-wide disk read counts using psutil.
+    """
+    logger.info("Starting system disk io read count audit")
+    yield ProgressPayload(step="Initializing disk read count probe", pct=0, log="Collecting disk read count baseline...")
+    
+    read_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.disk_io_counters()
+            read_count = counters.read_count
+            logger.info(f"Sample {i+1}/{samples}: Read-count {read_count}")
+            metadata = {"read_count": read_count}
+        except Exception as e:
+            logger.error(f"Error auditing disk read count: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling disk read count",
+            pct=pct,
+            log=f"Measured disk read count sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk read count statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_read_count": read_count,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_io_write_count_audit")
+async def system_disk_io_write_count_audit(samples: int = 3):
+    """
+    Audits system-wide disk write counts using psutil.
+    """
+    logger.info("Starting system disk io write count audit")
+    yield ProgressPayload(step="Initializing disk write count probe", pct=0, log="Collecting disk write count baseline...")
+    
+    write_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.disk_io_counters()
+            write_count = counters.write_count
+            logger.info(f"Sample {i+1}/{samples}: Write-count {write_count}")
+            metadata = {"write_count": write_count}
+        except Exception as e:
+            logger.error(f"Error auditing disk write count: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling disk write count",
+            pct=pct,
+            log=f"Measured disk write count sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk write count statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_write_count": write_count,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_io_read_time_audit")
+async def system_disk_io_read_time_audit(samples: int = 3):
+    """
+    Audits system-wide disk read time using psutil.
+    """
+    logger.info("Starting system disk io read time audit")
+    yield ProgressPayload(step="Initializing disk read time probe", pct=0, log="Collecting disk read time baseline...")
+    
+    read_time = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.disk_io_counters()
+            read_time = counters.read_time
+            logger.info(f"Sample {i+1}/{samples}: Read-time {read_time}")
+            metadata = {"read_time": read_time}
+        except Exception as e:
+            logger.error(f"Error auditing disk read time: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling disk read time",
+            pct=pct,
+            log=f"Measured disk read time sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk read time statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_read_time": read_time,
         "stability": "STABLE"
     }

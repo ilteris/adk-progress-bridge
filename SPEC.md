@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.7.6
+# Specification: ADK Progress Bridge v2.7.8
 
 ## Overview
 The ADK Progress Bridge is a high-performance middleware designed to connect background tools/tasks with a real-time terminal user interface (TUI). It provides a standardized protocol for reporting progress, logs, and results via Server-Sent Events (SSE) and WebSockets.
@@ -158,26 +158,19 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - `system_cpu_times_percent_guest_nice_focused_audit`: Guest nice focused CPU times percentage tracking.
 - `system_net_io_packets_audit`: System network I/O packet tracking.
 - `system_disk_io_time_audit`: System disk I/O time tracking.
-- `system_cpu_times_percent_nice_focused_audit`: Nice focused CPU times percentage tracking.
-- `system_disk_io_read_count_audit`: System disk I/O read count tracking.
-- `system_disk_io_write_count_audit`: System disk I/O write count tracking.
-- `system_net_io_merged_audit`: Merged system network I/O tracking.
-- `system_cpu_stats_ctx_switches_audit`: System CPU context switch tracking.
-- `system_cpu_stats_interrupts_audit`: System CPU interrupt tracking.
-- `system_cpu_stats_soft_interrupts_audit`: System CPU soft interrupt tracking.
-- `system_cpu_stats_syscalls_audit`: System CPU syscall tracking.
-- `system_net_io_dropin_audit`: System network I/O drop-in packet tracking.
-- `system_net_io_dropout_audit`: System network I/O drop-out packet tracking.
-- `system_net_io_errin_audit`: System network I/O incoming error tracking.
-- `system_net_io_errout_audit.
-- system_net_io_packets_sent_audit: System-wide network packet sent tracking.
-- system_net_io_packets_recv_audit: System-wide network packet received tracking.
-- system_disk_io_read_bytes_audit: System-wide disk read byte tracking.: System network I/O outgoing error tracking.
+- `system_net_io_errout_audit`: System network I/O outgoing error tracking.
+- `system_net_io_packets_sent_audit`: System-wide network packet sent tracking.
+- `system_net_io_packets_recv_audit`: System-wide network packet received tracking.
+- `system_disk_io_read_bytes_audit`: System-wide disk read byte tracking.
+- `system_disk_io_write_bytes_audit`: System-wide disk write byte tracking.
+- `system_net_io_sent_bytes_audit`: System-wide network sent byte tracking.
+- `system_net_io_recv_bytes_audit`: System-wide network received byte tracking.
+- `system_disk_io_read_count_audit`: System-wide disk read count tracking.
+- `system_disk_io_write_count_audit`: System-wide disk write count tracking.
+- `system_disk_io_read_time_audit`: System-wide disk read time tracking.
 
 ## 5. Metadata
-- **APP_VERSION**: 2.7.5
-- **BUILD_TIMESTAMP**: 2026-02-01T17:30:00Z
-- **GIT_COMMIT**: v649-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: v649 SUPREME APEX VERIFICATION ADELE- system_disk_io_write_bytes_audit: System-wide disk write byte tracking.
-- system_net_io_sent_bytes_audit: System-wide network sent byte tracking.
-- system_net_io_recv_bytes_audit: System-wide network received byte tracking.
+- **APP_VERSION**: 2.7.8
+- **BUILD_TIMESTAMP**: 2026-02-01T19:00:00Z
+- **GIT_COMMIT**: v652-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: v652 SUPREME APEX VERIFICATION ADELE
