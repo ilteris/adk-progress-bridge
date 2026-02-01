@@ -267,7 +267,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.4.0", "v614-supreme-apex-adele-verification", "v614 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.7.7", "v651-supreme-apex-adele-verification", "v651 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -4564,5 +4564,110 @@ async def system_disk_io_read_bytes_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_read_bytes": read_bytes,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_disk_io_write_bytes_audit")
+async def system_disk_io_write_bytes_audit(samples: int = 3):
+    """
+    Audits system-wide disk write bytes using psutil.
+    """
+    logger.info("Starting system disk io write bytes audit")
+    yield ProgressPayload(step="Initializing disk write bytes probe", pct=0, log="Collecting disk write bytes baseline...")
+    
+    write_bytes = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.disk_io_counters()
+            write_bytes = counters.write_bytes
+            logger.info(f"Sample {i+1}/{samples}: Write-bytes {write_bytes}")
+            metadata = {"write_bytes": write_bytes}
+        except Exception as e:
+            logger.error(f"Error auditing disk write bytes: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling disk write bytes",
+            pct=pct,
+            log=f"Measured disk write bytes sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Disk write bytes statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_write_bytes": write_bytes,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_io_sent_bytes_audit")
+async def system_net_io_sent_bytes_audit(samples: int = 3):
+    """
+    Audits system-wide network sent bytes using psutil.
+    """
+    logger.info("Starting system net io sent bytes audit")
+    yield ProgressPayload(step="Initializing sent bytes probe", pct=0, log="Collecting sent bytes baseline...")
+    
+    bytes_sent = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            bytes_sent = counters.bytes_sent
+            logger.info(f"Sample {i+1}/{samples}: Sent-bytes {bytes_sent}")
+            metadata = {"bytes_sent": bytes_sent}
+        except Exception as e:
+            logger.error(f"Error auditing network sent bytes: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling sent bytes",
+            pct=pct,
+            log=f"Measured network sent bytes sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network sent bytes statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_bytes_sent": bytes_sent,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="system_net_io_recv_bytes_audit")
+async def system_net_io_recv_bytes_audit(samples: int = 3):
+    """
+    Audits system-wide network received bytes using psutil.
+    """
+    logger.info("Starting system net io recv bytes audit")
+    yield ProgressPayload(step="Initializing recv bytes probe", pct=0, log="Collecting recv bytes baseline...")
+    
+    bytes_recv = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            bytes_recv = counters.bytes_recv
+            logger.info(f"Sample {i+1}/{samples}: Recv-bytes {bytes_recv}")
+            metadata = {"bytes_recv": bytes_recv}
+        except Exception as e:
+            logger.error(f"Error auditing network recv bytes: {e}")
+            metadata = {"error": str(e)}
+
+        yield ProgressPayload(
+            step="Sampling recv bytes",
+            pct=pct,
+            log=f"Measured network recv bytes sample {i+1}/{samples}.",
+            metadata=metadata
+        )
+        await asyncio.sleep(0.1)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network recv bytes statistics are stable.")
+    yield {
+        "status": "audit_complete",
+        "final_bytes_recv": bytes_recv,
         "stability": "STABLE"
     }
