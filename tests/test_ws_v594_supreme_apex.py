@@ -18,7 +18,7 @@ def test_asyncio_task_audit_tool_ws():
             data = websocket.receive_json()
             assert data["type"] == "connected"
             
-            request_id = "v598-asyncio-audit"
+            request_id = "v599-asyncio-audit"
             websocket.send_json({
                 "type": "start",
                 "tool_name": "asyncio_task_audit",
@@ -51,13 +51,13 @@ def test_asyncio_task_audit_tool_ws():
             assert progress_received, "Did not receive progress updates"
             assert result_received, "Did not receive final result"
 
-def test_v598_metadata_verification():
+def test_v599_metadata_verification():
     """
-    Verifies that the version and metadata are correctly updated for v598.
+    Verifies that the version and metadata are correctly updated for v599.
     """
     with TestClient(app) as client:
         response = client.get("/version")
         assert response.status_code == 200
         data = response.json()
-        assert data["version"] == "2.2.4"
-        assert "v598" in data["status"]
+        assert data["version"] == "2.2.5"
+        assert "v599" in data["status"]

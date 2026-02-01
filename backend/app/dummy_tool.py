@@ -652,3 +652,43 @@ async def network_connections_audit(samples: int = 3):
         "final_connection_count": len(psutil.Process().net_connections(kind="all")),
         "stability": "STABLE"
     }
+
+@progress_tool(name="open_files_audit")
+async def open_files_audit(samples: int = 3):
+    """
+    Audits active open file descriptors using psutil.
+    """
+    logger.info(f"Starting open files audit with {samples} samples")
+    yield ProgressPayload(step="Initializing file probe", pct=0, log="Collecting open file handle information...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            files = process.open_files()
+            file_count = len(files)
+        except Exception as e:
+            logger.warning(f"Error collecting open files: {e}")
+            file_count = 0
+            files = []
+        
+        logger.info(f"Sample {i+1}/{samples}: {file_count} open files.")
+        yield ProgressPayload(
+            step="Sampling open files",
+            pct=pct,
+            log=f"Measured {file_count} open file handles. Sample {i+1}/{samples}.",
+            metadata={
+                "sample_id": i + 1,
+                "file_count": file_count,
+                "files": [f.path for f in files[:5]]
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. File handle management is healthy.")
+    yield {
+        "status": "audit_complete",
+        "final_file_count": len(psutil.Process().open_files()),
+        "stability": "STABLE"
+    }
