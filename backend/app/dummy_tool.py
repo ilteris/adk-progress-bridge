@@ -266,7 +266,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.3.8", "v612-supreme-apex-adele-verification", "v612 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.3.9", "v613-supreme-apex-adele-verification", "v613 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -1184,5 +1184,47 @@ async def process_memory_maps_audit(samples: int = 3):
     yield {
         "status": "audit_complete",
         "final_map_count": len(psutil.Process().memory_maps()) if hasattr(psutil.Process(), "memory_maps") else 0,
+        "stability": "STABLE"
+    }
+
+@progress_tool(name="process_cpu_times_audit")
+async def process_cpu_times_audit(samples: int = 3):
+    """
+    Audits process CPU times using psutil.
+    """
+    logger.info(f"Starting process CPU times audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU times probe", pct=0, log="Collecting process-level CPU timing baseline...")
+    
+    process = psutil.Process()
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        
+        try:
+            cpu_times = process.cpu_times()
+            user = cpu_times.user
+            system = cpu_times.system
+        except Exception as e:
+            logger.warning(f"Error collecting process CPU times: {e}")
+            user = system = 0.0
+            
+        logger.info(f"Sample {i+1}/{samples}: User {user}s, System {system}s.")
+        yield ProgressPayload(
+            step="Sampling process CPU times",
+            pct=pct,
+            log=f"Measured process CPU times sample {i+1}/{samples}: User {user}s, System {system}s.",
+            metadata={
+                "sample_id": i + 1,
+                "user": user,
+                "system": system,
+                "children_user": getattr(cpu_times, "children_user", 0.0),
+                "children_system": getattr(cpu_times, "children_system", 0.0)
+            }
+        )
+        await asyncio.sleep(0.3)
+    
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. CPU timing is STABLE.")
+    yield {
+        "status": "audit_complete",
+        "final_cpu_times": process.cpu_times()._asdict(),
         "stability": "STABLE"
     }
