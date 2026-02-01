@@ -9,7 +9,7 @@ interface ProgressPayload {
 
 interface AgentEvent {
   call_id?: string
-  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'stop_success' | 'input_success' | 'tools_list' | 'system_metrics' | 'health_data' | 'active_tasks_list' | 'pong'
+  type: 'progress' | 'result' | 'error' | 'input_request' | 'task_started' | 'reconnecting' | 'connected' | 'stop_success' | 'input_success' | 'tools_list' | 'system_metrics' | 'health_data' | 'active_tasks_list' | 'pong'
   payload?: any
   request_id?: string
   tools?: string[]
@@ -106,6 +106,7 @@ export class WebSocketManager {
         console.log('[WS] Connection established')
         this.startHeartbeat()
         this.reconnectAttempts = 0
+        this.notifyStatusToAll("connected")
         this.connectionPromise = null
         resolve()
       }
@@ -178,7 +179,7 @@ export class WebSocketManager {
     return this.connectionPromise
   }
 
-  private notifyStatusToAll(type: 'reconnecting') {
+  private notifyStatusToAll(type: 'reconnecting' | 'connected') {
     for (const [callId, callback] of this.subscribers.entries()) {
         callback({
             call_id: callId,
