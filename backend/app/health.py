@@ -66,7 +66,7 @@ from .metrics import (
     SYSTEM_NETWORK_THROUGHPUT_RECV_BPS, SYSTEM_NETWORK_THROUGHPUT_SENT_BPS, 
     SYSTEM_CPU_CTX_SWITCH_RATE_BPS, SYSTEM_CPU_INTERRUPT_RATE_BPS, 
     WS_MESSAGE_SIZE_BYTES, WS_BINARY_FRAMES_REJECTED_TOTAL,
-    SYSTEM_PAGE_FAULT_MINOR_RATE_BPS, SYSTEM_PAGE_FAULT_MAJOR_RATE_BPS,
+    SYSTEM_PAGE_FAULT_MINOR_RATE_BPS, SYSTEM_PAGE_FAULT_MAJOR_RATE_BPS, SYSTEM_CPU_USAGE_NICE, SYSTEM_CPU_USAGE_IOWAIT, SYSTEM_CPU_USAGE_IRQ,
     WS_CONNECTION_ERRORS_TOTAL,
     SYSTEM_CPU_SOFT_INTERRUPT_RATE_BPS, SYSTEM_CPU_SYSCALL_RATE_BPS
 )
@@ -108,7 +108,7 @@ class HealthEngine:
             })
             cpu_times = psutil.cpu_times_percent(interval=None)
             raw.update({
-                'sys_cpu_user': cpu_times.user, 'sys_cpu_system': cpu_times.system, 'sys_cpu_idle': cpu_times.idle, 
+                'sys_cpu_user': cpu_times.user, 'sys_cpu_system': cpu_times.system, 'sys_cpu_idle': cpu_times.idle, 'sys_cpu_nice': getattr(cpu_times, "nice", 0.0), 
                 'sys_cpu_iowait': getattr(cpu_times, "iowait", 0.0), 'sys_cpu_irq': getattr(cpu_times, "irq", 0.0), 
                 'sys_cpu_softirq': getattr(cpu_times, "softirq", 0.0), 'sys_cpu_steal': getattr(cpu_times, "steal", 0.0), 
                 'sys_cpu_guest': getattr(cpu_times, "guest", 0.0)
@@ -264,7 +264,7 @@ class HealthEngine:
             SYSTEM_SWAP_IN_BYTES_TOTAL: raw.get('sys_swap_sin', 0), SYSTEM_SWAP_OUT_BYTES_TOTAL: raw.get('sys_swap_sout', 0),
             SYSTEM_CPU_COUNT: cpu_count, SYSTEM_CPU_PHYSICAL_COUNT: raw.get('sys_cpu_physical_count', 0),
             SYSTEM_CPU_USAGE_USER: raw.get('sys_cpu_user', 0), SYSTEM_CPU_USAGE_SYSTEM: raw.get('sys_cpu_system', 0),
-            SYSTEM_CPU_USAGE_IDLE: raw.get('sys_cpu_idle', 0), SYSTEM_CPU_IOWAIT: raw.get('sys_cpu_iowait', 0),
+            SYSTEM_CPU_USAGE_IDLE: raw.get('sys_cpu_idle', 0), SYSTEM_CPU_USAGE_NICE: raw.get('sys_cpu_nice', 0), SYSTEM_CPU_USAGE_IOWAIT: raw.get('sys_cpu_iowait', 0), SYSTEM_CPU_USAGE_IRQ: raw.get('sys_cpu_irq', 0),
             SYSTEM_CPU_IRQ: raw.get('sys_cpu_irq', 0), SYSTEM_CPU_SOFTIRQ: raw.get('sys_cpu_softirq', 0),
             SYSTEM_CPU_STEAL: raw.get('sys_cpu_steal', 0), SYSTEM_CPU_GUEST: raw.get('sys_cpu_guest', 0),
             SYSTEM_CPU_FREQUENCY: raw.get('sys_cpu_freq_current', 0), CPU_USAGE_PERCENT: raw.get('sys_cpu_percent', 0),

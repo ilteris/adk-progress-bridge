@@ -827,3 +827,18 @@ BUILD_INFO = Info("adk_build", "Application build information")
 
 def get_metrics():
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+# v665 Supreme Apex Metrics
+SYSTEM_CPU_USAGE_NICE = Gauge(
+    "adk_system_cpu_usage_nice_percent",
+    "System-wide CPU usage percentage in nice mode"
+)
+
+SYSTEM_CPU_USAGE_IOWAIT = Gauge(
+    "adk_system_cpu_usage_iowait_percent",
+    "System-wide CPU usage percentage in iowait mode"
+)
+
+SYSTEM_CPU_USAGE_IRQ = Gauge(
+    "adk_system_cpu_usage_irq_percent",
+    "System-wide CPU usage percentage in irq mode"
+)
