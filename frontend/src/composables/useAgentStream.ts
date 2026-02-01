@@ -158,7 +158,7 @@ export class WebSocketManager {
         this.connectionPromise = null
 
         if (!this.isManuallyClosed) {
-            this.notifyStatusToAll('reconnecting')
+            this.notifyStatusToAll('reconnecting', { attempt: this.reconnectAttempts + 1 })
             this.scheduleReconnect()
         } else {
             this.notifyErrorToAll('WebSocket connection closed')
@@ -177,12 +177,12 @@ export class WebSocketManager {
     return this.connectionPromise
   }
 
-  private notifyStatusToAll(type: 'reconnecting' | 'connected') {
+  private notifyStatusToAll(type: 'reconnecting' | 'connected', payload: any = {}) {
     for (const [callId, callback] of this.subscribers.entries()) {
         callback({
             call_id: callId,
             type: type,
-            payload: {}
+            payload: payload
         })
     }
   }
@@ -602,7 +602,7 @@ export function useAgentStream() {
     } else if (data.type === 'reconnecting') {
         state.status = 'reconnecting'
         state.isConnected = false
-        state.logs.push('WebSocket connection lost. Reconnecting...')
+        const attempt = data.payload?.attempt; state.logs.push(`WebSocket connection lost. Reconnecting${attempt ? ` (Attempt ${attempt})` : ''}...`)
     } else if (data.type === 'stop_success') {
         state.logs.push('Stop command acknowledged by server.')
         closeFn()

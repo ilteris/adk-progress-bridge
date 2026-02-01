@@ -210,6 +210,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     json_str = json.dumps(data)
                     WS_BYTES_SENT_TOTAL.inc(len(json_str)); WS_MESSAGE_SIZE_BYTES.observe(len(json_str))
                     await websocket.send_text(json_str)
+                except WebSocketDisconnect: logger.info("WebSocket disconnected while sending message"); raise
                 except Exception as e: logger.error(f"Error sending WS message: {e}"); raise
         
         try: await safe_send_json({"type": "connected", "status": "ready"})
