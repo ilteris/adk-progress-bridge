@@ -3,7 +3,7 @@ from backend.app.main import app
 import pytest
 import json
 
-def test_ws_v671_new_tools():
+def test_ws_v672_new_tools():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Handshake
@@ -11,7 +11,7 @@ def test_ws_v671_new_tools():
         assert data["type"] == "connected"
 
         # List tools
-        websocket.send_json({"type": "list_tools", "request_id": "v671_list"})
+        websocket.send_json({"type": "list_tools", "request_id": "v672_list"})
         
         while True:
             data = websocket.receive_json()
@@ -23,7 +23,7 @@ def test_ws_v671_new_tools():
                 break
 
         # Test tool 1
-        req_id = "v671_test_softirq_total"
+        req_id = "v672_test_softirq_total"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_cpu_times_softirq_total_audit",
@@ -39,7 +39,7 @@ def test_ws_v671_new_tools():
                 break
 
         # Test tool 2
-        req_id = "v671_test_steal_total"
+        req_id = "v672_test_steal_total"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_cpu_times_steal_total_audit",
@@ -55,7 +55,7 @@ def test_ws_v671_new_tools():
                 break
 
         # Test tool 3
-        req_id = "v671_test_guest_total"
+        req_id = "v672_test_guest_total"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_cpu_times_guest_total_audit",

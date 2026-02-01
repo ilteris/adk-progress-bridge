@@ -5923,3 +5923,71 @@ async def system_net_if_addrs_family_count_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface address families count statistics are stable.")
     yield {"status": "audit_complete", "final_net_if_addrs_family_count_total": family_count, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_total_count_audit")
+async def system_net_if_addrs_total_count_audit(samples: int = 3):
+    logger.info("Starting total network interface addresses total count audit")
+    yield ProgressPayload(step="Initializing network interface addresses total count total probe", pct=0, log="Collecting system-wide network interface addresses total count...")
+    addr_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            addr_count = sum(len(interface_addrs) for interface_addrs in addrs.values())
+            logger.info(f"Sample {i+1}/{samples}: Total Interface Addresses {addr_count}")
+            metadata = {"net_if_addrs_total_count_total": addr_count}
+        except Exception as e:
+            logger.error(f"Error auditing total network interface addresses total count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total network interface addresses total count", pct=pct, log=f"Measured total network interface addresses total count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface addresses total count statistics are stable.")
+    yield {"status": "audit_complete", "final_net_if_addrs_total_count_total": addr_count, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ipv4_count_audit")
+async def system_net_if_addrs_ipv4_count_audit(samples: int = 3):
+    logger.info("Starting total network interface ipv4 count audit")
+    yield ProgressPayload(step="Initializing network interface ipv4 total probe", pct=0, log="Collecting system-wide network interface ipv4 count...")
+    ipv4_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            ipv4_count = 0
+            for interface_addrs in addrs.values():
+                for addr in interface_addrs:
+                    if addr.family == 2: # AF_INET
+                        ipv4_count += 1
+            logger.info(f"Sample {i+1}/{samples}: Total IPv4 Addresses {ipv4_count}")
+            metadata = {"net_if_addrs_ipv4_count_total": ipv4_count}
+        except Exception as e:
+            logger.error(f"Error auditing total network interface ipv4 count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total network interface ipv4 count", pct=pct, log=f"Measured total network interface ipv4 count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface ipv4 count statistics are stable.")
+    yield {"status": "audit_complete", "final_net_if_addrs_ipv4_count_total": ipv4_count, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ipv6_count_audit")
+async def system_net_if_addrs_ipv6_count_audit(samples: int = 3):
+    logger.info("Starting total network interface ipv6 count audit")
+    yield ProgressPayload(step="Initializing network interface ipv6 total probe", pct=0, log="Collecting system-wide network interface ipv6 count...")
+    ipv6_count = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            ipv6_count = 0
+            for interface_addrs in addrs.values():
+                for addr in interface_addrs:
+                    if addr.family == 30: # AF_INET6
+                        ipv6_count += 1
+            logger.info(f"Sample {i+1}/{samples}: Total IPv6 Addresses {ipv6_count}")
+            metadata = {"net_if_addrs_ipv6_count_total": ipv6_count}
+        except Exception as e:
+            logger.error(f"Error auditing total network interface ipv6 count: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling total network interface ipv6 count", pct=pct, log=f"Measured total network interface ipv6 count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Network interface ipv6 count statistics are stable.")
+    yield {"status": "audit_complete", "final_net_if_addrs_ipv6_count_total": ipv6_count, "stability": "STABLE"}

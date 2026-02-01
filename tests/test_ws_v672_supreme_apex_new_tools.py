@@ -17,16 +17,16 @@ def test_ws_v672_new_tools():
             data = websocket.receive_json()
             if data["type"] == "tools_list":
                 tools = data["tools"]
-                assert "system_net_connections_count_audit" in tools
-                assert "system_cpu_count_logical_audit" in tools
-                assert "system_cpu_count_physical_audit" in tools
+                assert "system_net_if_addrs_total_count_audit" in tools
+                assert "system_net_if_addrs_ipv4_count_audit" in tools
+                assert "system_net_if_addrs_ipv6_count_audit" in tools
                 break
 
         # Test tool 1
-        req_id = "v672_test_net_conns"
+        req_id = "v672_test_total_count"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_net_connections_count_audit",
+            "tool_name": "system_net_if_addrs_total_count_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -35,14 +35,14 @@ def test_ws_v672_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_net_connections_count_total" in data["payload"]
+                assert "final_net_if_addrs_total_count_total" in data["payload"]
                 break
 
         # Test tool 2
-        req_id = "v672_test_cpu_logical"
+        req_id = "v672_test_ipv4_count"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_cpu_count_logical_audit",
+            "tool_name": "system_net_if_addrs_ipv4_count_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -51,14 +51,14 @@ def test_ws_v672_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_cpu_count_logical_total" in data["payload"]
+                assert "final_net_if_addrs_ipv4_count_total" in data["payload"]
                 break
 
         # Test tool 3
-        req_id = "v672_test_cpu_physical"
+        req_id = "v672_test_ipv6_count"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_cpu_count_physical_audit",
+            "tool_name": "system_net_if_addrs_ipv6_count_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -67,5 +67,5 @@ def test_ws_v672_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_cpu_count_physical_total" in data["payload"]
+                assert "final_net_if_addrs_ipv6_count_total" in data["payload"]
                 break
