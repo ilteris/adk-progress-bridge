@@ -100,6 +100,6 @@ The bridge provides deep visibility into the host system performance:
 *   **Thread Safety:** `asyncio.Lock` ensures frame integrity during concurrent streaming.
 
 ## 6. Versioning & Identity
-- **APP_VERSION**: 1.9.7
-- **GIT_COMMIT**: v571-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: SUPREME APEX VERIFICATION ADELE (v571)
+- **APP_VERSION**: 1.9.8
+- **GIT_COMMIT**: v572-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: SUPREME APEX VERIFICATION ADELE (v572)
