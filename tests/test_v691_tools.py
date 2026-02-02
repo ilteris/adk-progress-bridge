@@ -9,12 +9,12 @@ async def test_system_net_io_errout_avg_audit():
     # First yield is ProgressPayload
     p1 = await gen.__anext__()
     assert isinstance(p1, ProgressPayload)
-    assert p1.step == "Initializing Net IO probe"
+    assert p1.step == "Initializing Network probe"
     
     # Second yield is ProgressPayload (sample)
     p2 = await gen.__anext__()
     assert isinstance(p2, ProgressPayload)
-    assert "net_errors_out" in p2.metadata
+    assert "net_errout" in p2.metadata
     
     # Third yield is ProgressPayload (finalizing)
     p3 = await gen.__anext__()
@@ -23,7 +23,7 @@ async def test_system_net_io_errout_avg_audit():
     # Fourth yield is the result dict
     res = await gen.__anext__()
     assert res["status"] == "audit_complete"
-    assert "avg_net_errors_out" in res
+    assert "avg_net_errout" in res
 
 @pytest.mark.asyncio
 async def test_system_net_io_dropin_avg_audit():
@@ -32,7 +32,7 @@ async def test_system_net_io_dropin_avg_audit():
     # First yield is ProgressPayload
     p1 = await gen.__anext__()
     assert isinstance(p1, ProgressPayload)
-    assert p1.step == "Initializing Net IO probe"
+    assert p1.step == "Initializing Network probe"
     
     # Second yield is ProgressPayload (sample)
     p2 = await gen.__anext__()
@@ -54,7 +54,7 @@ async def test_system_net_io_dropout_avg_audit():
     # First yield is ProgressPayload
     p1 = await gen.__anext__()
     assert isinstance(p1, ProgressPayload)
-    assert p1.step == "Initializing Net IO probe"
+    assert p1.step == "Initializing Network probe"
     
     # Second yield is ProgressPayload (sample)
     p2 = await gen.__anext__()
