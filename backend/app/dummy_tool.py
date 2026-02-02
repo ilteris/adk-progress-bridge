@@ -34226,3 +34226,1329 @@ async def system_virtual_memory_wired_sum_v13(samples: int = 1):
         yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
         await asyncio.sleep(0.01)
     yield {"status": "audit_complete", "sum": sum(vals)}
+
+# --- v824 SUPREME APEX 2040 TOOLS ---
+
+@progress_tool(name="system_virtual_memory_buffers_avg_v14")
+async def system_virtual_memory_buffers_avg_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "buffers", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_virtual_memory_buffers_max_v14")
+async def system_virtual_memory_buffers_max_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "buffers", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_virtual_memory_buffers_min_v14")
+async def system_virtual_memory_buffers_min_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "buffers", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_virtual_memory_buffers_sum_v14")
+async def system_virtual_memory_buffers_sum_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "buffers", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_virtual_memory_cached_avg_v14")
+async def system_virtual_memory_cached_avg_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "cached", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_virtual_memory_cached_max_v14")
+async def system_virtual_memory_cached_max_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "cached", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_virtual_memory_cached_min_v14")
+async def system_virtual_memory_cached_min_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "cached", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_virtual_memory_cached_sum_v14")
+async def system_virtual_memory_cached_sum_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "cached", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_virtual_memory_slab_avg_v14")
+async def system_virtual_memory_slab_avg_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "slab", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_virtual_memory_slab_max_v14")
+async def system_virtual_memory_slab_max_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "slab", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_virtual_memory_slab_min_v14")
+async def system_virtual_memory_slab_min_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "slab", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_virtual_memory_slab_sum_v14")
+async def system_virtual_memory_slab_sum_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.virtual_memory(), "slab", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_swap_memory_sin_avg_v14")
+async def system_swap_memory_sin_avg_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.swap_memory(), "sin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_swap_memory_sin_max_v14")
+async def system_swap_memory_sin_max_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.swap_memory(), "sin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_swap_memory_sin_min_v14")
+async def system_swap_memory_sin_min_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.swap_memory(), "sin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_swap_memory_sin_sum_v14")
+async def system_swap_memory_sin_sum_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.swap_memory(), "sin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_swap_memory_sout_avg_v14")
+async def system_swap_memory_sout_avg_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.swap_memory(), "sout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_swap_memory_sout_max_v14")
+async def system_swap_memory_sout_max_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.swap_memory(), "sout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_swap_memory_sout_min_v14")
+async def system_swap_memory_sout_min_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.swap_memory(), "sout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_swap_memory_sout_sum_v14")
+async def system_swap_memory_sout_sum_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.swap_memory(), "sout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_read_merged_avg_v14")
+async def system_disk_io_counters_read_merged_avg_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_merged_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_merged_max_v14")
+async def system_disk_io_counters_read_merged_max_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_merged_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_merged_min_v14")
+async def system_disk_io_counters_read_merged_min_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_merged_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_merged_sum_v14")
+async def system_disk_io_counters_read_merged_sum_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_merged_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_write_merged_avg_v14")
+async def system_disk_io_counters_write_merged_avg_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_merged_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_merged_max_v14")
+async def system_disk_io_counters_write_merged_max_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_merged_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_merged_min_v14")
+async def system_disk_io_counters_write_merged_min_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_merged_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_merged_sum_v14")
+async def system_disk_io_counters_write_merged_sum_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_merged_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_busy_time_avg_v14")
+async def system_disk_io_counters_busy_time_avg_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "busy_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_busy_time_max_v14")
+async def system_disk_io_counters_busy_time_max_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "busy_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_busy_time_min_v14")
+async def system_disk_io_counters_busy_time_min_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "busy_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_busy_time_sum_v14")
+async def system_disk_io_counters_busy_time_sum_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "busy_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_cpu_times_percent_guest_avg_v14")
+async def system_cpu_times_percent_guest_avg_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_times_percent(), "guest", 0.0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_times_percent_guest_max_v14")
+async def system_cpu_times_percent_guest_max_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_times_percent(), "guest", 0.0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_times_percent_guest_min_v14")
+async def system_cpu_times_percent_guest_min_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_times_percent(), "guest", 0.0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_times_percent_guest_sum_v14")
+async def system_cpu_times_percent_guest_sum_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_times_percent(), "guest", 0.0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_process_count_avg_v14")
+async def system_process_count_avg_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(len(psutil.pids()))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_process_count_max_v14")
+async def system_process_count_max_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(len(psutil.pids()))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_process_count_min_v14")
+async def system_process_count_min_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(len(psutil.pids()))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_process_count_sum_v14")
+async def system_process_count_sum_v14(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(len(psutil.pids()))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+# --- v825 SUPREME APEX 2112 TOOLS ---
+
+@progress_tool(name="system_net_io_counters_errin_avg_v15")
+async def system_net_io_counters_errin_avg_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_errin_max_v15")
+async def system_net_io_counters_errin_max_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_errin_min_v15")
+async def system_net_io_counters_errin_min_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_errin_sum_v15")
+async def system_net_io_counters_errin_sum_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_net_io_counters_errout_avg_v15")
+async def system_net_io_counters_errout_avg_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_errout_max_v15")
+async def system_net_io_counters_errout_max_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_errout_min_v15")
+async def system_net_io_counters_errout_min_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_errout_sum_v15")
+async def system_net_io_counters_errout_sum_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_net_io_counters_dropin_avg_v15")
+async def system_net_io_counters_dropin_avg_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "dropin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_dropin_max_v15")
+async def system_net_io_counters_dropin_max_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "dropin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_dropin_min_v15")
+async def system_net_io_counters_dropin_min_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "dropin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_dropin_sum_v15")
+async def system_net_io_counters_dropin_sum_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "dropin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_net_io_counters_dropout_avg_v15")
+async def system_net_io_counters_dropout_avg_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "dropout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_dropout_max_v15")
+async def system_net_io_counters_dropout_max_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "dropout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_dropout_min_v15")
+async def system_net_io_counters_dropout_min_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "dropout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_dropout_sum_v15")
+async def system_net_io_counters_dropout_sum_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "dropout", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_net_io_counters_packets_recv_avg_v15")
+async def system_net_io_counters_packets_recv_avg_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_packets_recv_max_v15")
+async def system_net_io_counters_packets_recv_max_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_packets_recv_min_v15")
+async def system_net_io_counters_packets_recv_min_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_packets_recv_sum_v15")
+async def system_net_io_counters_packets_recv_sum_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_read_time_avg_v15")
+async def system_disk_io_counters_read_time_avg_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_time_max_v15")
+async def system_disk_io_counters_read_time_max_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_time_min_v15")
+async def system_disk_io_counters_read_time_min_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_time_sum_v15")
+async def system_disk_io_counters_read_time_sum_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_write_time_avg_v15")
+async def system_disk_io_counters_write_time_avg_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_time_max_v15")
+async def system_disk_io_counters_write_time_max_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_time_min_v15")
+async def system_disk_io_counters_write_time_min_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_time_sum_v15")
+async def system_disk_io_counters_write_time_sum_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_read_bytes_avg_v15")
+async def system_disk_io_counters_read_bytes_avg_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_bytes_max_v15")
+async def system_disk_io_counters_read_bytes_max_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_bytes_min_v15")
+async def system_disk_io_counters_read_bytes_min_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_bytes_sum_v15")
+async def system_disk_io_counters_read_bytes_sum_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_write_bytes_avg_v15")
+async def system_disk_io_counters_write_bytes_avg_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_bytes_max_v15")
+async def system_disk_io_counters_write_bytes_max_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_bytes_min_v15")
+async def system_disk_io_counters_write_bytes_min_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_bytes_sum_v15")
+async def system_disk_io_counters_write_bytes_sum_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_cpu_stats_ctx_switches_avg_v15")
+async def system_cpu_stats_ctx_switches_avg_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "ctx_switches", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_ctx_switches_max_v15")
+async def system_cpu_stats_ctx_switches_max_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "ctx_switches", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_ctx_switches_min_v15")
+async def system_cpu_stats_ctx_switches_min_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "ctx_switches", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_ctx_switches_sum_v15")
+async def system_cpu_stats_ctx_switches_sum_v15(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "ctx_switches", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+# --- v826 SUPREME APEX 2152 TOOLS ---
+
+@progress_tool(name="system_cpu_stats_interrupts_avg_v16")
+async def system_cpu_stats_interrupts_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "interrupts", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_interrupts_max_v16")
+async def system_cpu_stats_interrupts_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "interrupts", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_interrupts_min_v16")
+async def system_cpu_stats_interrupts_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "interrupts", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_interrupts_sum_v16")
+async def system_cpu_stats_interrupts_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "interrupts", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_cpu_stats_soft_interrupts_avg_v16")
+async def system_cpu_stats_soft_interrupts_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "soft_interrupts", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_soft_interrupts_max_v16")
+async def system_cpu_stats_soft_interrupts_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "soft_interrupts", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_soft_interrupts_min_v16")
+async def system_cpu_stats_soft_interrupts_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "soft_interrupts", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_soft_interrupts_sum_v16")
+async def system_cpu_stats_soft_interrupts_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "soft_interrupts", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_cpu_stats_syscalls_avg_v16")
+async def system_cpu_stats_syscalls_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "syscalls", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_syscalls_max_v16")
+async def system_cpu_stats_syscalls_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "syscalls", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_syscalls_min_v16")
+async def system_cpu_stats_syscalls_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "syscalls", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_syscalls_sum_v16")
+async def system_cpu_stats_syscalls_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.cpu_stats(), "syscalls", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_net_io_counters_bytes_sent_avg_v16")
+async def system_net_io_counters_bytes_sent_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "bytes_sent", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_bytes_sent_max_v16")
+async def system_net_io_counters_bytes_sent_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "bytes_sent", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_bytes_sent_min_v16")
+async def system_net_io_counters_bytes_sent_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "bytes_sent", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_bytes_sent_sum_v16")
+async def system_net_io_counters_bytes_sent_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "bytes_sent", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_net_io_counters_bytes_recv_avg_v16")
+async def system_net_io_counters_bytes_recv_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "bytes_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_bytes_recv_max_v16")
+async def system_net_io_counters_bytes_recv_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "bytes_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_bytes_recv_min_v16")
+async def system_net_io_counters_bytes_recv_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "bytes_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_bytes_recv_sum_v16")
+async def system_net_io_counters_bytes_recv_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "bytes_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_net_io_counters_packets_sent_avg_v16")
+async def system_net_io_counters_packets_sent_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_sent", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_packets_sent_max_v16")
+async def system_net_io_counters_packets_sent_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_sent", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_packets_sent_min_v16")
+async def system_net_io_counters_packets_sent_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_sent", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_packets_sent_sum_v16")
+async def system_net_io_counters_packets_sent_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_sent", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_net_io_counters_packets_recv_avg_v16")
+async def system_net_io_counters_packets_recv_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_packets_recv_max_v16")
+async def system_net_io_counters_packets_recv_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_packets_recv_min_v16")
+async def system_net_io_counters_packets_recv_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_packets_recv_sum_v16")
+async def system_net_io_counters_packets_recv_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "packets_recv", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_read_count_avg_v16")
+async def system_disk_io_counters_read_count_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_count_max_v16")
+async def system_disk_io_counters_read_count_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_count_min_v16")
+async def system_disk_io_counters_read_count_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_count_sum_v16")
+async def system_disk_io_counters_read_count_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_write_count_avg_v16")
+async def system_disk_io_counters_write_count_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_count_max_v16")
+async def system_disk_io_counters_write_count_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_count_min_v16")
+async def system_disk_io_counters_write_count_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_count_sum_v16")
+async def system_disk_io_counters_write_count_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_count", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_busy_time_avg_v16")
+async def system_disk_io_counters_busy_time_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "busy_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_busy_time_max_v16")
+async def system_disk_io_counters_busy_time_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "busy_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_busy_time_min_v16")
+async def system_disk_io_counters_busy_time_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "busy_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_busy_time_sum_v16")
+async def system_disk_io_counters_busy_time_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "busy_time", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_read_bytes_avg_v16")
+async def system_disk_io_counters_read_bytes_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_bytes_max_v16")
+async def system_disk_io_counters_read_bytes_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_bytes_min_v16")
+async def system_disk_io_counters_read_bytes_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_read_bytes_sum_v16")
+async def system_disk_io_counters_read_bytes_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "read_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_disk_io_counters_write_bytes_avg_v16")
+async def system_disk_io_counters_write_bytes_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_bytes_max_v16")
+async def system_disk_io_counters_write_bytes_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_bytes_min_v16")
+async def system_disk_io_counters_write_bytes_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_disk_io_counters_write_bytes_sum_v16")
+async def system_disk_io_counters_write_bytes_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.disk_io_counters(), "write_bytes", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
+
+@progress_tool(name="system_net_io_counters_errin_avg_v16")
+async def system_net_io_counters_errin_avg_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "avg": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_errin_max_v16")
+async def system_net_io_counters_errin_max_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "max": max(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_errin_min_v16")
+async def system_net_io_counters_errin_min_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "min": min(vals) if vals else 0}
+
+@progress_tool(name="system_net_io_counters_errin_sum_v16")
+async def system_net_io_counters_errin_sum_v16(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(getattr(psutil.net_io_counters(), "errin", 0))
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "sum": sum(vals)}
