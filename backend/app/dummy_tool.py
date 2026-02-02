@@ -16156,3 +16156,203 @@ async def system_uptime_min_ultimate_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     min_val = min(samples_list) if samples_list else 0.0
     yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_pids_max_ultimate_audit")
+async def system_pids_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system pids max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing PID Probe", pct=0, log="Collecting PID count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.pids())
+            samples_list.append(val)
+            metadata = {"pid_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing pids max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling PIDs", pct=pct, log=f"Measured PID count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    max_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": max_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_pids_min_ultimate_audit")
+async def system_pids_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system pids min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing PID Probe", pct=0, log="Collecting PID count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.pids())
+            samples_list.append(val)
+            metadata = {"pid_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing pids min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling PIDs", pct=pct, log=f"Measured PID count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_partitions_count_max_ultimate_audit")
+async def system_disk_partitions_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting disk partitions count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Partition Probe", pct=0, log="Collecting partition count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.disk_partitions(all=True))
+            samples_list.append(val)
+            metadata = {"partition_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Partitions", pct=pct, log=f"Measured partition count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    max_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": max_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_partitions_count_min_ultimate_audit")
+async def system_disk_partitions_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting disk partitions count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Partition Probe", pct=0, log="Collecting partition count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.disk_partitions(all=True))
+            samples_list.append(val)
+            metadata = {"partition_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Partitions", pct=pct, log=f"Measured partition count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_if_addrs_count_max_ultimate_audit")
+async def system_net_if_addrs_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting net if addrs count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Network Probe", pct=0, log="Collecting network address count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.net_if_addrs())
+            samples_list.append(val)
+            metadata = {"if_addrs_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling addresses", pct=pct, log=f"Measured network address count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    max_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": max_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_if_addrs_count_min_ultimate_audit")
+async def system_net_if_addrs_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting net if addrs count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Network Probe", pct=0, log="Collecting network address count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.net_if_addrs())
+            samples_list.append(val)
+            metadata = {"if_addrs_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling addresses", pct=pct, log=f"Measured network address count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_users_count_max_ultimate_audit")
+async def system_users_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system users count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing User Probe", pct=0, log="Collecting user count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.users())
+            samples_list.append(val)
+            metadata = {"user_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing users count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Users", pct=pct, log=f"Measured user count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    max_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": max_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_users_count_min_ultimate_audit")
+async def system_users_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system users count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing User Probe", pct=0, log="Collecting user count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.users())
+            samples_list.append(val)
+            metadata = {"user_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing users count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Users", pct=pct, log=f"Measured user count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_boot_time_max_ultimate_audit")
+async def system_boot_time_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system boot time max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Boot Probe", pct=0, log="Collecting boot time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.boot_time()
+            samples_list.append(val)
+            metadata = {"boot_time": val}
+        except Exception as e:
+            logger.error(f"Error auditing boot time max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Boot Time", pct=pct, log=f"Measured boot time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    max_val = max(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_max": max_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_boot_time_min_ultimate_audit")
+async def system_boot_time_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system boot time min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Boot Probe", pct=0, log="Collecting boot time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.boot_time()
+            samples_list.append(val)
+            metadata = {"boot_time": val}
+        except Exception as e:
+            logger.error(f"Error auditing boot time min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Boot Time", pct=pct, log=f"Measured boot time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
