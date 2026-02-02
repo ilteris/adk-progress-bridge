@@ -19,7 +19,7 @@ def test_process_uids_audit_tool_ws():
             "type": "start",
             "tool_name": "process_uids_audit",
             "args": {"samples": 2},
-            "request_id": "req-v676"
+            "request_id": "req-v677"
         }))
         
         resp = websocket.receive_json()
@@ -40,9 +40,9 @@ def test_process_uids_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_uids" in resp["payload"]
 
-def test_v676_metadata():
+def test_v677_metadata():
     """
-    Verifies that the system reports correct v676 Supreme Apex metadata.
+    Verifies that the system reports correct v677 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")

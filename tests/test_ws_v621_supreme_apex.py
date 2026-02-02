@@ -19,7 +19,7 @@ def test_process_gids_audit_tool_ws():
             "type": "start",
             "tool_name": "process_gids_audit",
             "args": {"samples": 2},
-            "request_id": "req-v676"
+            "request_id": "req-v677"
         }))
         
         resp = websocket.receive_json()

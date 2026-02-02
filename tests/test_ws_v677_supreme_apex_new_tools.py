@@ -17,16 +17,16 @@ def test_ws_v677_new_tools():
             data = websocket.receive_json()
             if data["type"] == "tools_list":
                 tools = data["tools"]
-                assert "system_cpu_times_softirq_total_audit" in tools
-                assert "system_cpu_times_steal_total_audit" in tools
-                assert "system_cpu_times_guest_total_audit" in tools
+                assert "system_memory_active_audit" in tools
+                assert "system_memory_inactive_audit" in tools
+                assert "system_memory_wired_audit" in tools
                 break
 
         # Test tool 1
-        req_id = "v677_test_softirq_total"
+        req_id = "v677_test_memory_active"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_cpu_times_softirq_total_audit",
+            "tool_name": "system_memory_active_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -35,14 +35,14 @@ def test_ws_v677_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_softirq_time_total" in data["payload"]
+                assert "final_memory_active" in data["payload"]
                 break
 
         # Test tool 2
-        req_id = "v677_test_steal_total"
+        req_id = "v677_test_memory_inactive"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_cpu_times_steal_total_audit",
+            "tool_name": "system_memory_inactive_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -51,14 +51,14 @@ def test_ws_v677_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_steal_time_total" in data["payload"]
+                assert "final_memory_inactive" in data["payload"]
                 break
 
         # Test tool 3
-        req_id = "v677_test_guest_total"
+        req_id = "v677_test_memory_wired"
         websocket.send_json({
             "type": "start",
-            "tool_name": "system_cpu_times_guest_total_audit",
+            "tool_name": "system_memory_wired_audit",
             "args": {"samples": 1},
             "request_id": req_id
         })
@@ -67,5 +67,5 @@ def test_ws_v677_new_tools():
             data = websocket.receive_json()
             if data.get("type") == "result" and data.get("request_id") == req_id:
                 assert data["payload"]["status"] == "audit_complete"
-                assert "final_guest_time_total" in data["payload"]
+                assert "final_memory_wired" in data["payload"]
                 break

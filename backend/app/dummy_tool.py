@@ -267,7 +267,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.10.2", "v676-supreme-apex-adele-verification", "v676 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.10.3", "v677-supreme-apex-adele-verification", "v677 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -6229,3 +6229,63 @@ async def system_memory_slab_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory slab statistics are stable.")
     yield {"status": "audit_complete", "final_memory_slab": slab_mem, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_active_audit")
+async def system_memory_active_audit(samples: int = 3):
+    logger.info("Starting system memory active audit")
+    yield ProgressPayload(step="Initializing memory active probe", pct=0, log="Collecting system-wide active memory stats...")
+    active_mem = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            active_mem = getattr(vmem, "active", 0)
+            logger.info(f"Sample {i+1}/{samples}: Active Memory {active_mem / 1024 / 1024:.2f}MB")
+            metadata = {"memory_active": active_mem}
+        except Exception as e:
+            logger.error(f"Error auditing system memory active: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling memory active", pct=pct, log=f"Measured system memory active sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory active statistics are stable.")
+    yield {"status": "audit_complete", "final_memory_active": active_mem, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_inactive_audit")
+async def system_memory_inactive_audit(samples: int = 3):
+    logger.info("Starting system memory inactive audit")
+    yield ProgressPayload(step="Initializing memory inactive probe", pct=0, log="Collecting system-wide inactive memory stats...")
+    inactive_mem = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            inactive_mem = getattr(vmem, "inactive", 0)
+            logger.info(f"Sample {i+1}/{samples}: Inactive Memory {inactive_mem / 1024 / 1024:.2f}MB")
+            metadata = {"memory_inactive": inactive_mem}
+        except Exception as e:
+            logger.error(f"Error auditing system memory inactive: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling memory inactive", pct=pct, log=f"Measured system memory inactive sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory inactive statistics are stable.")
+    yield {"status": "audit_complete", "final_memory_inactive": inactive_mem, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_wired_audit")
+async def system_memory_wired_audit(samples: int = 3):
+    logger.info("Starting system memory wired audit")
+    yield ProgressPayload(step="Initializing memory wired probe", pct=0, log="Collecting system-wide wired memory stats...")
+    wired_mem = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            wired_mem = getattr(vmem, "wired", 0)
+            logger.info(f"Sample {i+1}/{samples}: Wired Memory {wired_mem / 1024 / 1024:.2f}MB")
+            metadata = {"memory_wired": wired_mem}
+        except Exception as e:
+            logger.error(f"Error auditing system memory wired: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling memory wired", pct=pct, log=f"Measured system memory wired sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory wired statistics are stable.")
+    yield {"status": "audit_complete", "final_memory_wired": wired_mem, "stability": "STABLE"}

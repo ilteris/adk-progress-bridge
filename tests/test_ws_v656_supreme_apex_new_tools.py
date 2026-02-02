@@ -4,9 +4,9 @@ from backend.app.main import app
 import time
 
 @pytest.mark.asyncio
-async def test_ws_v676_new_tools():
+async def test_ws_v677_new_tools():
     """
-    SUPREME APEX VERIFICATION v676:
+    SUPREME APEX VERIFICATION v677:
     Verify the 3 new focused audit tools are present and functional.
     """
     client = TestClient(app)
@@ -16,7 +16,7 @@ async def test_ws_v676_new_tools():
         assert data["type"] == "connected"
 
         # List tools to verify presence
-        websocket.send_json({"type": "list_tools", "request_id": "v676_list"})
+        websocket.send_json({"type": "list_tools", "request_id": "v677_list"})
         
         found_tools = False
         for _ in range(100):
@@ -31,7 +31,7 @@ async def test_ws_v676_new_tools():
         assert found_tools
 
         # Test one tool via WS
-        req_id = "v676_test_dropout"
+        req_id = "v677_test_dropout"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_net_io_dropout_focused_audit",

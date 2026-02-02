@@ -3,7 +3,7 @@ from backend.app.main import app
 import pytest
 import json
 
-def test_ws_v676_new_tools():
+def test_ws_v677_new_tools():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Handshake
@@ -11,7 +11,7 @@ def test_ws_v676_new_tools():
         assert data["type"] == "connected"
 
         # List tools
-        websocket.send_json({"type": "list_tools", "request_id": "v676_list"})
+        websocket.send_json({"type": "list_tools", "request_id": "v677_list"})
         
         while True:
             data = websocket.receive_json()
@@ -22,7 +22,7 @@ def test_ws_v676_new_tools():
                 break
 
         # Test tool 1
-        req_id = "v676_test_cpu_freq_current"
+        req_id = "v677_test_cpu_freq_current"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_cpu_freq_current_avg_audit",
@@ -38,7 +38,7 @@ def test_ws_v676_new_tools():
                 break
 
         # Test tool 2
-        req_id = "v676_test_cpu_freq_min"
+        req_id = "v677_test_cpu_freq_min"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_cpu_freq_min_avg_audit",
