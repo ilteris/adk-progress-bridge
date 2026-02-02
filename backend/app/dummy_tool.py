@@ -9671,3 +9671,81 @@ async def system_cpu_times_guest_nice_ultimate_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average cpu guest_nice: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_guest_nice": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_freq_current_ultimate_audit")
+async def system_cpu_freq_current_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide CPU frequency current ultimate.
+    """
+    logger.info("Starting system cpu freq current ultimate audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide cpu freq current stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            freq = psutil.cpu_freq()
+            current_val = getattr(freq, "current", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Freq Current {current_val}")
+            metadata = {"current": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu freq current ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Freq Current", pct=pct, log=f"Measured cpu freq current sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average cpu freq current: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_current": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_freq_min_ultimate_audit")
+async def system_cpu_freq_min_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide CPU frequency min ultimate.
+    """
+    logger.info("Starting system cpu freq min ultimate audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide cpu freq min stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            freq = psutil.cpu_freq()
+            current_val = getattr(freq, "min", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Freq Min {current_val}")
+            metadata = {"min": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu freq min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Freq Min", pct=pct, log=f"Measured cpu freq min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average cpu freq min: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_min": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_freq_max_ultimate_audit")
+async def system_cpu_freq_max_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide CPU frequency max ultimate.
+    """
+    logger.info("Starting system cpu freq max ultimate audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide cpu freq max stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            freq = psutil.cpu_freq()
+            current_val = getattr(freq, "max", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Freq Max {current_val}")
+            metadata = {"max": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu freq max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Freq Max", pct=pct, log=f"Measured cpu freq max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average cpu freq max: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_max": avg_val, "stability": "STABLE"}
