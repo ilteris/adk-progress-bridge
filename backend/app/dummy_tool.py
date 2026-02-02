@@ -8735,3 +8735,81 @@ async def system_net_io_errout_ultimate_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average network output errors: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_errout": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_dropin_ultimate_audit")
+async def system_net_io_dropin_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network input drops ultimate.
+    """
+    logger.info("Starting system network input drops ultimate audit")
+    yield ProgressPayload(step="Initializing Network probe", pct=0, log="Collecting system-wide network input drops stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            net_io = psutil.net_io_counters()
+            current_val = net_io.dropin
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Network Input Drops {current_val}")
+            metadata = {"dropin": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing network input drops ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Network Input Drops", pct=pct, log=f"Measured network input drops sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average network input drops: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_dropin": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_dropout_ultimate_audit")
+async def system_net_io_dropout_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network output drops ultimate.
+    """
+    logger.info("Starting system network output drops ultimate audit")
+    yield ProgressPayload(step="Initializing Network probe", pct=0, log="Collecting system-wide network output drops stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            net_io = psutil.net_io_counters()
+            current_val = net_io.dropout
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Network Output Drops {current_val}")
+            metadata = {"dropout": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing network output drops ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Network Output Drops", pct=pct, log=f"Measured network output drops sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average network output drops: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_dropout": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_read_count_ultimate_audit")
+async def system_disk_io_read_count_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide disk read count ultimate.
+    """
+    logger.info("Starting system disk read count ultimate audit")
+    yield ProgressPayload(step="Initializing Disk probe", pct=0, log="Collecting system-wide disk read count stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            disk_io = psutil.disk_io_counters()
+            current_val = disk_io.read_count
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Read Count {current_val}")
+            metadata = {"read_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk read count ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Read Count", pct=pct, log=f"Measured disk read count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk read count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_read_count": avg_val, "stability": "STABLE"}
