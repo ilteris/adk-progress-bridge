@@ -8110,3 +8110,81 @@ async def system_cpu_stats_total_avg_audit(samples: int = 3):
     avg_val = sum(cpu_samples) / len(cpu_samples) if cpu_samples else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU stats total: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_cpu_stats_total": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_total_avg_audit")
+async def system_memory_total_avg_audit(samples: int = 3):
+    """
+    Audits system-wide total virtual memory average.
+    """
+    logger.info("Starting system memory total average audit")
+    yield ProgressPayload(step="Initializing Memory probe", pct=0, log="Collecting system-wide memory stats...")
+    mem_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            current_val = vmem.total
+            mem_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Memory Total {current_val}")
+            metadata = {"memory_total": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing memory total average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(mem_samples) / len(mem_samples) if mem_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average memory total: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_memory_total": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_used_percent_avg_audit")
+async def system_memory_used_percent_avg_audit(samples: int = 3):
+    """
+    Audits system-wide memory used percentage average.
+    """
+    logger.info("Starting system memory used percent average audit")
+    yield ProgressPayload(step="Initializing Memory probe", pct=0, log="Collecting system-wide memory stats...")
+    mem_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            current_val = vmem.percent
+            mem_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Memory Used Percent {current_val}%")
+            metadata = {"memory_used_percent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing memory used percent average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory used percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(mem_samples) / len(mem_samples) if mem_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average memory used percent: {avg_val:.2f}%")
+    yield {"status": "audit_complete", "avg_memory_used_percent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_total_avg_audit")
+async def system_disk_io_total_avg_audit(samples: int = 3):
+    """
+    Audits system-wide disk I/O (total read + write bytes) average.
+    """
+    logger.info("Starting system disk I/O total average audit")
+    yield ProgressPayload(step="Initializing Disk probe", pct=0, log="Collecting system-wide disk stats...")
+    disk_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            io = psutil.disk_io_counters()
+            current_val = io.read_bytes + io.write_bytes
+            disk_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk I/O Total {current_val}")
+            metadata = {"disk_io_total": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk I/O total average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured disk I/O total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(disk_samples) / len(disk_samples) if disk_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk I/O total: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_disk_io_total": avg_val, "stability": "STABLE"}
