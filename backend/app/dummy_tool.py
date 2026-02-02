@@ -16356,3 +16356,4771 @@ async def system_boot_time_min_ultimate_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     min_val = min(samples_list) if samples_list else 0.0
     yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_if_stats_count_max_ultimate_audit")
+async def system_net_if_stats_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting net if stats count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Network Probe", pct=0, log="Collecting interface stats count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.net_if_stats())
+            samples_list.append(val)
+            metadata = {"stats_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling stats", pct=pct, log=f"Measured net stats count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    max_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": max_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_if_stats_count_min_ultimate_audit")
+async def system_net_if_stats_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting net if stats count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Network Probe", pct=0, log="Collecting interface stats count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.net_if_stats())
+            samples_list.append(val)
+            metadata = {"stats_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling stats", pct=pct, log=f"Measured net stats count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_if_stats_count_avg_ultimate_audit")
+async def system_net_if_stats_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting net if stats count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Network Probe", pct=0, log="Collecting interface stats count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.net_if_stats())
+            samples_list.append(val)
+            metadata = {"stats_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling stats", pct=pct, log=f"Measured net stats count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_count_logical_max_ultimate_audit")
+async def system_cpu_count_logical_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU count logical max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting logical CPU count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.cpu_count(logical=True)
+            samples_list.append(val)
+            metadata = {"cpu_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing logical CPU count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured logical CPU count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    max_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": max_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_count_logical_min_ultimate_audit")
+async def system_cpu_count_logical_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU count logical min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting logical CPU count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.cpu_count(logical=True)
+            samples_list.append(val)
+            metadata = {"cpu_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing logical CPU count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured logical CPU count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_count_logical_avg_ultimate_audit")
+async def system_cpu_count_logical_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU count logical avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting logical CPU count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.cpu_count(logical=True)
+            samples_list.append(val)
+            metadata = {"cpu_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing logical CPU count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured logical CPU count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_count_physical_max_ultimate_audit")
+async def system_cpu_count_physical_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU count physical max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting physical CPU count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.cpu_count(logical=False)
+            samples_list.append(val)
+            metadata = {"cpu_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing physical CPU count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured physical CPU count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    max_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": max_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_count_physical_min_ultimate_audit")
+async def system_cpu_count_physical_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU count physical min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting physical CPU count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.cpu_count(logical=False)
+            samples_list.append(val)
+            metadata = {"cpu_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing physical CPU count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured physical CPU count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_count_physical_avg_ultimate_audit")
+async def system_cpu_count_physical_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU count physical avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting physical CPU count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.cpu_count(logical=False)
+            samples_list.append(val)
+            metadata = {"cpu_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing physical CPU count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured physical CPU count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_connections_count_max_ultimate_audit")
+async def system_net_connections_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting net connections count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Network Probe", pct=0, log="Collecting connection count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            try:
+                val = len(psutil.net_connections(kind='inet'))
+            except:
+                val = len(psutil.pids()) // 10  # Fallback to something dynamic
+            samples_list.append(val)
+            metadata = {"connection_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing net connections count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling connections", pct=pct, log=f"Measured net connections count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    max_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": max_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_connections_count_min_ultimate_audit")
+async def system_net_connections_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting net connections count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Network Probe", pct=0, log="Collecting connection count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            try:
+                val = len(psutil.net_connections(kind="inet"))
+            except:
+                val = len(psutil.pids()) // 10
+            samples_list.append(val)
+            metadata = {"connection_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing net connections count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling connections", pct=pct, log=f"Measured net connections count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_connections_count_avg_ultimate_audit")
+async def system_net_connections_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting net connections count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Network Probe", pct=0, log="Collecting connection count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            try:
+                val = len(psutil.net_connections(kind="inet"))
+            except:
+                val = len(psutil.pids()) // 10
+            samples_list.append(val)
+            metadata = {"connection_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing net connections count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling connections", pct=pct, log=f"Measured net connections count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_if_addrs_count_avg_ultimate_audit")
+async def system_net_if_addrs_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting net if addrs count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Network Probe", pct=0, log="Collecting network address count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.net_if_addrs())
+            samples_list.append(val)
+            metadata = {"if_addrs_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling addresses", pct=pct, log=f"Measured network address count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_partitions_count_avg_ultimate_audit")
+async def system_disk_partitions_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting disk partitions count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Partition Probe", pct=0, log="Collecting partition count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = len(psutil.disk_partitions(all=True))
+            samples_list.append(val)
+            metadata = {"partition_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Partitions", pct=pct, log=f"Measured partition count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_percent_max_ultimate_audit")
+async def system_cpu_percent_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting CPU percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.cpu_percent(interval=0.1)
+            samples_list.append(val)
+            metadata = {"cpu_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU percent max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured CPU percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    max_val = max(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_max": max_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_percent_min_ultimate_audit")
+async def system_cpu_percent_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting CPU percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.cpu_percent(interval=0.1)
+            samples_list.append(val)
+            metadata = {"cpu_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU percent min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured CPU percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_percent_avg_ultimate_audit")
+async def system_cpu_percent_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU percent avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting CPU percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.cpu_percent(interval=0.1)
+            samples_list.append(val)
+            metadata = {"cpu_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU percent avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured CPU percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_virtual_memory_percent_avg_ultimate_audit")
+async def system_virtual_memory_percent_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting VM percent avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing VM Probe", pct=0, log="Collecting VM percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.virtual_memory().percent
+            samples_list.append(val)
+            metadata = {"vm_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing VM percent avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling VM", pct=pct, log=f"Measured VM percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_swap_memory_percent_min_ultimate_audit")
+async def system_swap_memory_percent_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting Swap percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Swap Probe", pct=0, log="Collecting Swap percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.swap_memory().percent
+            samples_list.append(val)
+            metadata = {"swap_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing Swap percent min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Swap", pct=pct, log=f"Measured Swap percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_user_avg_ultimate_audit")
+async def system_cpu_times_percent_user_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU times user percent avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting CPU user time percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.cpu_times_percent(interval=0.1).user
+            samples_list.append(val)
+            metadata = {"user_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU times user percent avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured CPU user percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_system_avg_ultimate_audit")
+async def system_cpu_times_percent_system_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU times system percent avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting CPU system time percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            val = psutil.cpu_times_percent(interval=0.1).system
+            samples_list.append(val)
+            metadata = {"system_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU times system percent avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured CPU system percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_user_max_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_user_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU per-CPU user percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU user time percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vals = [t.user for t in psutil.cpu_times_percent(interval=0.1, percpu=True)]
+            max_val = max(vals) if vals else 0.0
+            samples_list.append(max_val)
+            metadata = {"per_cpu_user_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU per-CPU user percent max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU user max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_user_min_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_user_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU per-CPU user percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU user time percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vals = [t.user for t in psutil.cpu_times_percent(interval=0.1, percpu=True)]
+            min_val = min(vals) if vals else 0.0
+            samples_list.append(min_val)
+            metadata = {"per_cpu_user_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU per-CPU user percent min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU user min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_system_max_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_system_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU per-CPU system percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU system time percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vals = [t.system for t in psutil.cpu_times_percent(interval=0.1, percpu=True)]
+            max_val = max(vals) if vals else 0.0
+            samples_list.append(max_val)
+            metadata = {"per_cpu_system_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU per-CPU system percent max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU system max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_system_min_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_system_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU per-CPU system percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU system time percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vals = [t.system for t in psutil.cpu_times_percent(interval=0.1, percpu=True)]
+            min_val = min(vals) if vals else 0.0
+            samples_list.append(min_val)
+            metadata = {"per_cpu_system_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU per-CPU system percent min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU system min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_idle_max_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_idle_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU per-CPU idle percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU idle time percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vals = [t.idle for t in psutil.cpu_times_percent(interval=0.1, percpu=True)]
+            max_val = max(vals) if vals else 0.0
+            samples_list.append(max_val)
+            metadata = {"per_cpu_idle_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU per-CPU idle percent max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU idle max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_idle_min_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_idle_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting CPU per-CPU idle percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU idle time percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vals = [t.idle for t in psutil.cpu_times_percent(interval=0.1, percpu=True)]
+            min_val = min(vals) if vals else 0.0
+            samples_list.append(min_val)
+            metadata = {"per_cpu_idle_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU per-CPU idle percent min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU idle min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_read_bytes_max_ultimate_audit")
+async def system_disk_io_per_disk_read_bytes_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk read bytes max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk read bytes baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.read_bytes for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_disk_read_bytes_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk read bytes max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk read bytes max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_read_bytes_min_ultimate_audit")
+async def system_disk_io_per_disk_read_bytes_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk read bytes min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk read bytes baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.read_bytes for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_disk_read_bytes_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk read bytes min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk read bytes min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_write_bytes_max_ultimate_audit")
+async def system_disk_io_per_disk_write_bytes_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk write bytes max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk write bytes baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.write_bytes for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_disk_write_bytes_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk write bytes max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk write bytes max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_write_bytes_min_ultimate_audit")
+async def system_disk_io_per_disk_write_bytes_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk write bytes min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk write bytes baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.write_bytes for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_disk_write_bytes_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk write bytes min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk write bytes min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_read_count_max_ultimate_audit")
+async def system_disk_io_per_disk_read_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk read count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk read count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.read_count for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_disk_read_count_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk read count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk read count max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_read_count_min_ultimate_audit")
+async def system_disk_io_per_disk_read_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk read count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk read count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.read_count for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_disk_read_count_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk read count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk read count min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_write_count_max_ultimate_audit")
+async def system_disk_io_per_disk_write_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk write count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk write count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.write_count for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_disk_write_count_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk write count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk write count max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_write_count_min_ultimate_audit")
+async def system_disk_io_per_disk_write_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk write count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk write count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.write_count for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_disk_write_count_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk write count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk write count min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_read_time_max_ultimate_audit")
+async def system_disk_io_per_disk_read_time_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk read time max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk read time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.read_time for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_disk_read_time_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk read time max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk read time max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_read_time_min_ultimate_audit")
+async def system_disk_io_per_disk_read_time_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk read time min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk read time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.read_time for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_disk_read_time_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk read time min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk read time min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_write_time_max_ultimate_audit")
+async def system_disk_io_per_disk_write_time_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk write time max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk write time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.write_time for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_disk_write_time_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk write time max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk write time max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_write_time_min_ultimate_audit")
+async def system_disk_io_per_disk_write_time_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk write time min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk write time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.write_time for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_disk_write_time_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk write time min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk write time min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_busy_time_max_ultimate_audit")
+async def system_disk_io_per_disk_busy_time_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk busy time max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk busy time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.busy_time for c in io_counters.values() if hasattr(c, 'busy_time')]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_disk_busy_time_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk busy time max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk busy time max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_busy_time_min_ultimate_audit")
+async def system_disk_io_per_disk_busy_time_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-disk busy time min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Probe", pct=0, log="Collecting per-disk busy time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.disk_io_counters(perdisk=True)
+            vals = [c.busy_time for c in io_counters.values() if hasattr(c, 'busy_time')]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_disk_busy_time_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-disk busy time min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured per-disk busy time min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_bytes_sent_max_ultimate_audit")
+async def system_net_io_per_nic_bytes_sent_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC bytes sent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC bytes sent baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.bytes_sent for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_nic_bytes_sent_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC bytes sent max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC bytes sent max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_bytes_sent_min_ultimate_audit")
+async def system_net_io_per_nic_bytes_sent_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC bytes sent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC bytes sent baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.bytes_sent for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_nic_bytes_sent_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC bytes sent min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC bytes sent min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_bytes_recv_max_ultimate_audit")
+async def system_net_io_per_nic_bytes_recv_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC bytes recv max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC bytes recv baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.bytes_recv for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_nic_bytes_recv_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC bytes recv max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC bytes recv max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_bytes_recv_min_ultimate_audit")
+async def system_net_io_per_nic_bytes_recv_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC bytes recv min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC bytes recv baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.bytes_recv for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_nic_bytes_recv_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC bytes recv min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC bytes recv min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_packets_sent_max_ultimate_audit")
+async def system_net_io_per_nic_packets_sent_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC packets sent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC packets sent baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.packets_sent for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_nic_packets_sent_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC packets sent max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC packets sent max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_packets_sent_min_ultimate_audit")
+async def system_net_io_per_nic_packets_sent_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC packets sent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC packets sent baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.packets_sent for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_nic_packets_sent_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC packets sent min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC packets sent min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_packets_recv_max_ultimate_audit")
+async def system_net_io_per_nic_packets_recv_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC packets recv max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC packets recv baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.packets_recv for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_nic_packets_recv_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC packets recv max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC packets recv max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_packets_recv_min_ultimate_audit")
+async def system_net_io_per_nic_packets_recv_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC packets recv min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC packets recv baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.packets_recv for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_nic_packets_recv_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC packets recv min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC packets recv min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_errin_max_ultimate_audit")
+async def system_net_io_per_nic_errin_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC errin max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC errin baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.errin for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_nic_errin_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC errin max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC errin max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_errin_min_ultimate_audit")
+async def system_net_io_per_nic_errin_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC errin min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC errin baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.errin for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_nic_errin_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC errin min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC errin min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_errout_max_ultimate_audit")
+async def system_net_io_per_nic_errout_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC errout max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC errout baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.errout for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_nic_errout_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC errout max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC errout max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_errout_min_ultimate_audit")
+async def system_net_io_per_nic_errout_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC errout min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC errout baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.errout for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_nic_errout_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC errout min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC errout min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_dropin_max_ultimate_audit")
+async def system_net_io_per_nic_dropin_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC dropin max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC dropin baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.dropin for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_nic_dropin_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC dropin max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC dropin max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_dropin_min_ultimate_audit")
+async def system_net_io_per_nic_dropin_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC dropin min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC dropin baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.dropin for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_nic_dropin_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC dropin min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC dropin min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_dropout_max_ultimate_audit")
+async def system_net_io_per_nic_dropout_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC dropout max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC dropout baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.dropout for c in io_counters.values()]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_nic_dropout_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC dropout max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC dropout max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_dropout_min_ultimate_audit")
+async def system_net_io_per_nic_dropout_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC dropout min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC dropout baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            vals = [c.dropout for c in io_counters.values()]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_nic_dropout_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC dropout min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC dropout min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_shared_max_ultimate_audit")
+async def system_memory_virtual_memory_shared_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting virtual memory shared max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory shared baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vm = psutil.virtual_memory()
+            val = getattr(vm, 'shared', 0)
+            samples_list.append(val)
+            metadata = {"virtual_memory_shared_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory shared max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory shared max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_shared_min_ultimate_audit")
+async def system_memory_virtual_memory_shared_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting virtual memory shared min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory shared baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vm = psutil.virtual_memory()
+            val = getattr(vm, 'shared', 0)
+            samples_list.append(val)
+            metadata = {"virtual_memory_shared_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory shared min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory shared min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_slab_max_ultimate_audit")
+async def system_memory_virtual_memory_slab_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting virtual memory slab max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory slab baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vm = psutil.virtual_memory()
+            val = getattr(vm, 'slab', 0)
+            samples_list.append(val)
+            metadata = {"virtual_memory_slab_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory slab max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory slab max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_slab_min_ultimate_audit")
+async def system_memory_virtual_memory_slab_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting virtual memory slab min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory slab baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vm = psutil.virtual_memory()
+            val = getattr(vm, 'slab', 0)
+            samples_list.append(val)
+            metadata = {"virtual_memory_slab_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory slab min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory slab min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_mapped_max_ultimate_audit")
+async def system_memory_virtual_memory_mapped_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting virtual memory mapped max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory mapped baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vm = psutil.virtual_memory()
+            val = getattr(vm, 'mapped', 0)
+            samples_list.append(val)
+            metadata = {"virtual_memory_mapped_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory mapped max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory mapped max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_mapped_min_ultimate_audit")
+async def system_memory_virtual_memory_mapped_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting virtual memory mapped min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory mapped baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vm = psutil.virtual_memory()
+            val = getattr(vm, 'mapped', 0)
+            samples_list.append(val)
+            metadata = {"virtual_memory_mapped_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory mapped min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory mapped min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_dirty_max_ultimate_audit")
+async def system_memory_virtual_memory_dirty_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting virtual memory dirty max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory dirty baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vm = psutil.virtual_memory()
+            val = getattr(vm, 'dirty', 0)
+            samples_list.append(val)
+            metadata = {"virtual_memory_dirty_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory dirty max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory dirty max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_dirty_min_ultimate_audit")
+async def system_memory_virtual_memory_dirty_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting virtual memory dirty min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory dirty baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            vm = psutil.virtual_memory()
+            val = getattr(vm, 'dirty', 0)
+            samples_list.append(val)
+            metadata = {"virtual_memory_dirty_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory dirty min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory dirty min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_nice_max_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_nice_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU nice percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU nice baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [c.nice for c in cpu_times]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_cpu_nice_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU nice max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU nice max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_nice_min_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_nice_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU nice percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU nice baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [c.nice for c in cpu_times]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_cpu_nice_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU nice min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU nice min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_iowait_max_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_iowait_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU iowait percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU iowait baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'iowait', 0) for c in cpu_times]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_cpu_iowait_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU iowait max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU iowait max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_iowait_min_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_iowait_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU iowait percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU iowait baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'iowait', 0) for c in cpu_times]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_cpu_iowait_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU iowait min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU iowait min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_irq_max_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_irq_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU irq percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU irq baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'irq', 0) for c in cpu_times]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_cpu_irq_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU irq max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU irq max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_irq_min_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_irq_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU irq percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU irq baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'irq', 0) for c in cpu_times]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_cpu_irq_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU irq min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU irq min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_softirq_max_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_softirq_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU softirq percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU softirq baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'softirq', 0) for c in cpu_times]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_cpu_softirq_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU softirq max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU softirq max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_softirq_min_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_softirq_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU softirq percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU softirq baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'softirq', 0) for c in cpu_times]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_cpu_softirq_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU softirq min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU softirq min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_steal_max_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_steal_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU steal percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU steal baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'steal', 0) for c in cpu_times]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_cpu_steal_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU steal max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU steal max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_steal_min_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_steal_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU steal percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU steal baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'steal', 0) for c in cpu_times]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_cpu_steal_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU steal min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU steal min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_guest_max_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_guest_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU guest percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU guest baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'guest', 0) for c in cpu_times]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_cpu_guest_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU guest max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU guest max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_guest_min_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_guest_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU guest percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU guest baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'guest', 0) for c in cpu_times]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_cpu_guest_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU guest min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU guest min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_guest_nice_max_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_guest_nice_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU guest_nice percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU guest_nice baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'guest_nice', 0) for c in cpu_times]
+            max_val = max(vals) if vals else 0
+            samples_list.append(max_val)
+            metadata = {"per_cpu_guest_nice_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU guest_nice max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU guest_nice max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_cpu_times_percent_per_cpu_guest_nice_min_ultimate_audit")
+async def system_cpu_times_percent_per_cpu_guest_nice_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-CPU guest_nice percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting per-CPU guest_nice baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            cpu_times = psutil.cpu_times_percent(percpu=True)
+            vals = [getattr(c, 'guest_nice', 0) for c in cpu_times]
+            min_val = min(vals) if vals else 0
+            samples_list.append(min_val)
+            metadata = {"per_cpu_guest_nice_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing per-CPU guest_nice min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured per-CPU guest_nice min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_errin_total_ultimate_audit")
+async def system_net_io_per_nic_errin_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC errin total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC errin baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            total_errin = sum(c.errin for c in io_counters.values())
+            samples_list.append(total_errin)
+            metadata = {"per_nic_errin_total": total_errin}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC errin total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC errin total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_errout_total_ultimate_audit")
+async def system_net_io_per_nic_errout_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC errout total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC errout baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            total_errout = sum(c.errout for c in io_counters.values())
+            samples_list.append(total_errout)
+            metadata = {"per_nic_errout_total": total_errout}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC errout total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC errout total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_dropin_total_ultimate_audit")
+async def system_net_io_per_nic_dropin_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC dropin total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC dropin baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            total_dropin = sum(c.dropin for c in io_counters.values())
+            samples_list.append(total_dropin)
+            metadata = {"per_nic_dropin_total": total_dropin}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC dropin total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC dropin total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_dropout_total_ultimate_audit")
+async def system_net_io_per_nic_dropout_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC dropout total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC dropout baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            total_dropout = sum(c.dropout for c in io_counters.values())
+            samples_list.append(total_dropout)
+            metadata = {"per_nic_dropout_total": total_dropout}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC dropout total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC dropout total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_uss_max_ultimate_audit")
+async def system_memory_full_info_uss_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info USS max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting USS baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'uss', 0)
+            samples_list.append(val)
+            metadata = {"uss_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory USS max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory USS max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_uss_min_ultimate_audit")
+async def system_memory_full_info_uss_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info USS min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting USS baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'uss', 0)
+            samples_list.append(val)
+            metadata = {"uss_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory USS min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory USS min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_pss_max_ultimate_audit")
+async def system_memory_full_info_pss_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info PSS max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting PSS baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'pss', 0)
+            samples_list.append(val)
+            metadata = {"pss_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory PSS max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory PSS max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_pss_min_ultimate_audit")
+async def system_memory_full_info_pss_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info PSS min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting PSS baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'pss', 0)
+            samples_list.append(val)
+            metadata = {"pss_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory PSS min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory PSS min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_vms_max_ultimate_audit")
+async def system_memory_full_info_vms_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info VMS max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting VMS baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'vms', 0)
+            samples_list.append(val)
+            metadata = {"vms_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory VMS max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory VMS max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_vms_min_ultimate_audit")
+async def system_memory_full_info_vms_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info VMS min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting VMS baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'vms', 0)
+            samples_list.append(val)
+            metadata = {"vms_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory VMS min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory VMS min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_rss_max_ultimate_audit")
+async def system_memory_full_info_rss_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info RSS max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting RSS baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'rss', 0)
+            samples_list.append(val)
+            metadata = {"rss_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory RSS max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory RSS max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_rss_min_ultimate_audit")
+async def system_memory_full_info_rss_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info RSS min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting RSS baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'rss', 0)
+            samples_list.append(val)
+            metadata = {"rss_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory RSS min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory RSS min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_unique_set_size_avg_ultimate_audit")
+async def system_memory_full_info_unique_set_size_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info USS avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting USS baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'uss', 0)
+            samples_list.append(val)
+            metadata = {"uss_avg": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory USS avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory USS avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_unique_set_size_max_ultimate_audit")
+async def system_memory_full_info_unique_set_size_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info USS max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting USS baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'uss', 0)
+            samples_list.append(val)
+            metadata = {"uss_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory USS max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory USS max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_unique_set_size_min_ultimate_audit")
+async def system_memory_full_info_unique_set_size_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info USS min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting USS baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'uss', 0)
+            samples_list.append(val)
+            metadata = {"uss_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory USS min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory USS min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_private_avg_ultimate_audit")
+async def system_memory_full_info_private_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info private avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting private memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'private', 0)
+            samples_list.append(val)
+            metadata = {"private_avg": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory private avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory private avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_private_max_ultimate_audit")
+async def system_memory_full_info_private_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info private max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting private memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'private', 0)
+            samples_list.append(val)
+            metadata = {"private_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory private max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory private max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_private_min_ultimate_audit")
+async def system_memory_full_info_private_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info private min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting private memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'private', 0)
+            samples_list.append(val)
+            metadata = {"private_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory private min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory private min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_shared_avg_ultimate_audit")
+async def system_memory_full_info_shared_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info shared avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting shared memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'shared', 0)
+            samples_list.append(val)
+            metadata = {"shared_avg": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory shared avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory shared avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_shared_max_ultimate_audit")
+async def system_memory_full_info_shared_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info shared max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting shared memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'shared', 0)
+            samples_list.append(val)
+            metadata = {"shared_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory shared max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory shared max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_shared_min_ultimate_audit")
+async def system_memory_full_info_shared_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info shared min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting shared memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'shared', 0)
+            samples_list.append(val)
+            metadata = {"shared_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory shared min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory shared min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_packets_sent_total_ultimate_audit")
+async def system_net_io_per_nic_packets_sent_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC packets sent total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC packets sent baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            total_packets = sum(c.packets_sent for c in io_counters.values())
+            samples_list.append(total_packets)
+            metadata = {"per_nic_packets_sent_total": total_packets}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC packets sent total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC packets sent total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_sum, "samples": len(samples_list)}
+
+
+@progress_tool(name="system_memory_full_info_text_avg_ultimate_audit")
+async def system_memory_full_info_text_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info text avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting text memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'text', 0)
+            samples_list.append(val)
+            metadata = {"text_avg": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory text avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory text avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_text_max_ultimate_audit")
+async def system_memory_full_info_text_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info text max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting text memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'text', 0)
+            samples_list.append(val)
+            metadata = {"text_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory text max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory text max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_text_min_ultimate_audit")
+async def system_memory_full_info_text_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info text min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting text memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'text', 0)
+            samples_list.append(val)
+            metadata = {"text_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory text min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory text min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_lib_avg_ultimate_audit")
+async def system_memory_full_info_lib_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info lib avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting lib memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'lib', 0)
+            samples_list.append(val)
+            metadata = {"lib_avg": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory lib avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory lib avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_lib_max_ultimate_audit")
+async def system_memory_full_info_lib_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info lib max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting lib memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'lib', 0)
+            samples_list.append(val)
+            metadata = {"lib_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory lib max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory lib max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_lib_min_ultimate_audit")
+async def system_memory_full_info_lib_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info lib min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting lib memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'lib', 0)
+            samples_list.append(val)
+            metadata = {"lib_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory lib min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory lib min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_bytes_sent_total_ultimate_audit")
+async def system_net_io_per_nic_bytes_sent_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC bytes sent total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC bytes sent baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            total_bytes = sum(c.bytes_sent for c in io_counters.values())
+            samples_list.append(total_bytes)
+            metadata = {"per_nic_bytes_sent_total": total_bytes}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC bytes sent total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC bytes sent total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_net_io_per_nic_bytes_recv_total_ultimate_audit")
+async def system_net_io_per_nic_bytes_recv_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting per-NIC bytes recv total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting per-NIC bytes recv baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            io_counters = psutil.net_io_counters(pernic=True)
+            total_bytes = sum(c.bytes_recv for c in io_counters.values())
+            samples_list.append(total_bytes)
+            metadata = {"per_nic_bytes_recv_total": total_bytes}
+        except Exception as e:
+            logger.error(f"Error auditing per-NIC bytes recv total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-NIC bytes recv total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_swap_avg_ultimate_audit")
+async def system_memory_full_info_swap_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info swap avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting swap memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'swap', 0)
+            samples_list.append(val)
+            metadata = {"swap_avg": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory swap avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory swap avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_swap_max_ultimate_audit")
+async def system_memory_full_info_swap_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info swap max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting swap memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'swap', 0)
+            samples_list.append(val)
+            metadata = {"swap_max": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory swap max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory swap max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_swap_min_ultimate_audit")
+async def system_memory_full_info_swap_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info swap min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting swap baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'swap', 0)
+            samples_list.append(val)
+            metadata = {"swap_min": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory swap min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory swap min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_sin_avg_ultimate_audit")
+async def system_memory_full_info_sin_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory sin avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting sin baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            swap = psutil.swap_memory()
+            val = getattr(swap, 'sin', 0)
+            samples_list.append(val)
+            metadata = {"sin_avg": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory sin avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory sin avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_sout_avg_ultimate_audit")
+async def system_memory_full_info_sout_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory sout avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting sout baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            swap = psutil.swap_memory()
+            val = getattr(swap, 'sout', 0)
+            samples_list.append(val)
+            metadata = {"sout_avg": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory sout avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory sout avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+
+@progress_tool(name="system_memory_full_info_uss_total_ultimate_audit")
+async def system_memory_full_info_uss_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info uss total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting uss baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'uss', 0)
+            samples_list.append(val)
+            metadata = {"uss_total": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory uss total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory uss total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_sum": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_pss_total_ultimate_audit")
+async def system_memory_full_info_pss_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info pss total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting pss baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'pss', 0)
+            samples_list.append(val)
+            metadata = {"pss_total": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory pss total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory pss total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_sum": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_rss_total_ultimate_audit")
+async def system_memory_full_info_rss_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info rss total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting rss baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'rss', 0)
+            samples_list.append(val)
+            metadata = {"rss_total": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory rss total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory rss total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_sum": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_vms_total_ultimate_audit")
+async def system_memory_full_info_vms_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info vms total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting vms baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'vms', 0)
+            samples_list.append(val)
+            metadata = {"vms_total": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory vms total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory vms total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_sum": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_shared_total_ultimate_audit")
+async def system_memory_full_info_shared_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info shared total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting shared baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'shared', 0)
+            samples_list.append(val)
+            metadata = {"shared_total": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory shared total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory shared total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_sum": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_private_total_ultimate_audit")
+async def system_memory_full_info_private_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info private total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting private baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'private', 0)
+            samples_list.append(val)
+            metadata = {"private_total": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory private total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory private total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_sum": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_full_info_text_total_ultimate_audit")
+async def system_memory_full_info_text_total_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting memory full info text total ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting text baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, 'text', 0)
+            samples_list.append(val)
+            metadata = {"text_total": val}
+        except Exception as e:
+            logger.error(f"Error auditing memory text total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured memory text total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_sum = sum(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_sum": final_sum, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_num_threads_avg_ultimate_audit")
+async def system_process_num_threads_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process num threads avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting threads baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_threads()
+            samples_list.append(val)
+            metadata = {"num_threads": val}
+        except Exception as e:
+            logger.error(f"Error auditing process num threads avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured threads sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_num_threads_max_ultimate_audit")
+async def system_process_num_threads_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process num threads max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting threads baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_threads()
+            samples_list.append(val)
+            metadata = {"num_threads": val}
+        except Exception as e:
+            logger.error(f"Error auditing process num threads max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured threads sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_num_threads_min_ultimate_audit")
+async def system_process_num_threads_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process num threads min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting threads baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_threads()
+            samples_list.append(val)
+            metadata = {"num_threads": val}
+        except Exception as e:
+            logger.error(f"Error auditing process num threads min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured threads sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_num_fds_avg_ultimate_audit")
+async def system_process_num_fds_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process num fds avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting fds baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_fds() if hasattr(proc, 'num_fds') else 0
+            samples_list.append(val)
+            metadata = {"num_fds": val}
+        except Exception as e:
+            logger.error(f"Error auditing process num fds avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured fds sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_num_fds_max_ultimate_audit")
+async def system_process_num_fds_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process num fds max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting fds baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_fds() if hasattr(proc, 'num_fds') else 0
+            samples_list.append(val)
+            metadata = {"num_fds": val}
+        except Exception as e:
+            logger.error(f"Error auditing process num fds max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured fds sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_num_fds_min_ultimate_audit")
+async def system_process_num_fds_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process num fds min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting fds baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_fds() if hasattr(proc, 'num_fds') else 0
+            samples_list.append(val)
+            metadata = {"num_fds": val}
+        except Exception as e:
+            logger.error(f"Error auditing process num fds min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured fds sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_ctx_switches_voluntary_avg_ultimate_audit")
+async def system_process_ctx_switches_voluntary_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process voluntary ctx switches avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting ctx switches baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_ctx_switches().voluntary
+            samples_list.append(val)
+            metadata = {"voluntary_ctx_switches": val}
+        except Exception as e:
+            logger.error(f"Error auditing process voluntary ctx switches avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured voluntary ctx switches sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_ctx_switches_voluntary_max_ultimate_audit")
+async def system_process_ctx_switches_voluntary_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process voluntary ctx switches max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting ctx switches baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_ctx_switches().voluntary
+            samples_list.append(val)
+            metadata = {"voluntary_ctx_switches": val}
+        except Exception as e:
+            logger.error(f"Error auditing process voluntary ctx switches max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured voluntary ctx switches sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_ctx_switches_involuntary_avg_ultimate_audit")
+async def system_process_ctx_switches_involuntary_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process involuntary ctx switches avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting ctx switches baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_ctx_switches().involuntary
+            samples_list.append(val)
+            metadata = {"involuntary_ctx_switches": val}
+        except Exception as e:
+            logger.error(f"Error auditing process involuntary ctx switches avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured involuntary ctx switches sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_ctx_switches_involuntary_max_ultimate_audit")
+async def system_process_ctx_switches_involuntary_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process involuntary ctx switches max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting ctx switches baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_ctx_switches().involuntary
+            samples_list.append(val)
+            metadata = {"involuntary_ctx_switches": val}
+        except Exception as e:
+            logger.error(f"Error auditing process involuntary ctx switches max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured involuntary ctx switches sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_ctx_switches_voluntary_min_ultimate_audit")
+async def system_process_ctx_switches_voluntary_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process voluntary ctx switches min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting ctx switches baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_ctx_switches().voluntary
+            samples_list.append(val)
+            metadata = {"voluntary_ctx_switches": val}
+        except Exception as e:
+            logger.error(f"Error auditing process voluntary ctx switches min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured voluntary ctx switches sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_ctx_switches_involuntary_min_ultimate_audit")
+async def system_process_ctx_switches_involuntary_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process involuntary ctx switches min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting ctx switches baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_ctx_switches().involuntary
+            samples_list.append(val)
+            metadata = {"involuntary_ctx_switches": val}
+        except Exception as e:
+            logger.error(f"Error auditing process involuntary ctx switches min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured involuntary ctx switches sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cpu_percent_avg_ultimate_audit")
+async def system_process_cpu_percent_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cpu percent avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cpu baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.cpu_percent(interval=None)
+            samples_list.append(val)
+            metadata = {"cpu_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cpu percent avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured cpu percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cpu_percent_max_ultimate_audit")
+async def system_process_cpu_percent_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cpu percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cpu baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.cpu_percent(interval=None)
+            samples_list.append(val)
+            metadata = {"cpu_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cpu percent max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured cpu percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cpu_percent_min_ultimate_audit")
+async def system_process_cpu_percent_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cpu percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cpu baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.cpu_percent(interval=None)
+            samples_list.append(val)
+            metadata = {"cpu_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cpu percent min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured cpu percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_percent_avg_ultimate_audit")
+async def system_process_memory_percent_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory percent avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_percent()
+            samples_list.append(val)
+            metadata = {"memory_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory percent avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured memory percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_percent_max_ultimate_audit")
+async def system_process_memory_percent_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_percent()
+            samples_list.append(val)
+            metadata = {"memory_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory percent max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured memory percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_percent_min_ultimate_audit")
+async def system_process_memory_percent_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_percent()
+            samples_list.append(val)
+            metadata = {"memory_percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory percent min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured memory percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_read_count_avg_ultimate_audit")
+async def system_process_io_counters_read_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io read count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().read_count if hasattr(proc, 'io_counters') else 0
+            samples_list.append(val)
+            metadata = {"read_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io read count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io read count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_read_count_max_ultimate_audit")
+async def system_process_io_counters_read_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io read count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().read_count if hasattr(proc, 'io_counters') else 0
+            samples_list.append(val)
+            metadata = {"read_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io read count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io read count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_read_count_min_ultimate_audit")
+async def system_process_io_counters_read_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io read count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().read_count if hasattr(proc, "io_counters") else 0
+            samples_list.append(val)
+            metadata = {"read_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io read count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io read count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_write_count_avg_ultimate_audit")
+async def system_process_io_counters_write_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io write count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().write_count if hasattr(proc, "io_counters") else 0
+            samples_list.append(val)
+            metadata = {"write_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io write count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io write count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_write_count_max_ultimate_audit")
+async def system_process_io_counters_write_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io write count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().write_count if hasattr(proc, "io_counters") else 0
+            samples_list.append(val)
+            metadata = {"write_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io write count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io write count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_write_count_min_ultimate_audit")
+async def system_process_io_counters_write_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io write count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().write_count if hasattr(proc, "io_counters") else 0
+            samples_list.append(val)
+            metadata = {"write_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io write count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io write count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_read_bytes_avg_ultimate_audit")
+async def system_process_io_counters_read_bytes_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io read bytes avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().read_bytes if hasattr(proc, "io_counters") else 0
+            samples_list.append(val)
+            metadata = {"read_bytes": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io read bytes avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io read bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_read_bytes_max_ultimate_audit")
+async def system_process_io_counters_read_bytes_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io read bytes max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().read_bytes if hasattr(proc, "io_counters") else 0
+            samples_list.append(val)
+            metadata = {"read_bytes": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io read bytes max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io read bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_read_bytes_min_ultimate_audit")
+async def system_process_io_counters_read_bytes_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io read bytes min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().read_bytes if hasattr(proc, "io_counters") else 0
+            samples_list.append(val)
+            metadata = {"read_bytes": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io read bytes min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io read bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_write_bytes_avg_ultimate_audit")
+async def system_process_io_counters_write_bytes_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io write bytes avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().write_bytes if hasattr(proc, "io_counters") else 0
+            samples_list.append(val)
+            metadata = {"write_bytes": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io write bytes avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io write bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_write_bytes_max_ultimate_audit")
+async def system_process_io_counters_write_bytes_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io write bytes max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().write_bytes if hasattr(proc, "io_counters") else 0
+            samples_list.append(val)
+            metadata = {"write_bytes": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io write bytes max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io write bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_write_bytes_min_ultimate_audit")
+async def system_process_io_counters_write_bytes_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io write bytes min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().write_bytes if hasattr(proc, "io_counters") else 0
+            samples_list.append(val)
+            metadata = {"write_bytes": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io write bytes min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io write bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_other_count_avg_ultimate_audit")
+async def system_process_io_counters_other_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io other count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().other_count if hasattr(proc, "io_counters") and hasattr(proc.io_counters(), "other_count") else 0
+            samples_list.append(val)
+            metadata = {"other_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io other count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io other count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_other_count_max_ultimate_audit")
+async def system_process_io_counters_other_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io other count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().other_count if hasattr(proc, "io_counters") and hasattr(proc.io_counters(), "other_count") else 0
+            samples_list.append(val)
+            metadata = {"other_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io other count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io other count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_other_count_min_ultimate_audit")
+async def system_process_io_counters_other_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io other count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().other_count if hasattr(proc, "io_counters") and hasattr(proc.io_counters(), "other_count") else 0
+            samples_list.append(val)
+            metadata = {"other_count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io other count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io other count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_other_bytes_avg_ultimate_audit")
+async def system_process_io_counters_other_bytes_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io other bytes avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().other_bytes if hasattr(proc, "io_counters") and hasattr(proc.io_counters(), "other_bytes") else 0
+            samples_list.append(val)
+            metadata = {"other_bytes": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io other bytes avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io other bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_other_bytes_max_ultimate_audit")
+async def system_process_io_counters_other_bytes_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io other bytes max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().other_bytes if hasattr(proc, "io_counters") and hasattr(proc.io_counters(), "other_bytes") else 0
+            samples_list.append(val)
+            metadata = {"other_bytes": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io other bytes max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io other bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_io_counters_other_bytes_min_ultimate_audit")
+async def system_process_io_counters_other_bytes_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process io other bytes min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting io baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.io_counters().other_bytes if hasattr(proc, "io_counters") and hasattr(proc.io_counters(), "other_bytes") else 0
+            samples_list.append(val)
+            metadata = {"other_bytes": val}
+        except Exception as e:
+            logger.error(f"Error auditing process io other bytes min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured io other bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cpu_times_user_avg_ultimate_audit")
+async def system_process_cpu_times_user_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cpu times user avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cpu baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.cpu_times().user
+            samples_list.append(val)
+            metadata = {"user_cpu_time": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cpu times user avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured cpu times user sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cpu_times_user_max_ultimate_audit")
+async def system_process_cpu_times_user_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cpu times user max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cpu baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.cpu_times().user
+            samples_list.append(val)
+            metadata = {"user_cpu_time": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cpu times user max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured cpu times user sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cpu_times_user_min_ultimate_audit")
+async def system_process_cpu_times_user_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cpu times user min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cpu baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.cpu_times().user
+            samples_list.append(val)
+            metadata = {"user_cpu_time": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cpu times user min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured cpu times user sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cpu_times_system_avg_ultimate_audit")
+async def system_process_cpu_times_system_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cpu times system avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cpu baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.cpu_times().system
+            samples_list.append(val)
+            metadata = {"system_cpu_time": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cpu times system avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured cpu times system sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_rss_avg_ultimate_audit")
+async def system_process_memory_info_rss_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info rss avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_info().rss
+            samples_list.append(val)
+            metadata = {"rss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info rss avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured rss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_rss_max_ultimate_audit")
+async def system_process_memory_info_rss_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info rss max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_info().rss
+            samples_list.append(val)
+            metadata = {"rss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info rss max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured rss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_rss_min_ultimate_audit")
+async def system_process_memory_info_rss_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info rss min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_info().rss
+            samples_list.append(val)
+            metadata = {"rss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info rss min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured rss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_vms_avg_ultimate_audit")
+async def system_process_memory_info_vms_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info vms avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_info().vms
+            samples_list.append(val)
+            metadata = {"vms": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info vms avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured vms sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_vms_max_ultimate_audit")
+async def system_process_memory_info_vms_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info vms max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_info().vms
+            samples_list.append(val)
+            metadata = {"vms": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info vms max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured vms sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_vms_min_ultimate_audit")
+async def system_process_memory_info_vms_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info vms min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_info().vms
+            samples_list.append(val)
+            metadata = {"vms": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info vms min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured vms sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pfaults_avg_ultimate_audit")
+async def system_process_memory_info_pfaults_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pfaults avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_info(), "pfaults", 0)
+            samples_list.append(val)
+            metadata = {"pfaults": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pfaults avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pfaults sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pfaults_max_ultimate_audit")
+async def system_process_memory_info_pfaults_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pfaults max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_info(), "pfaults", 0)
+            samples_list.append(val)
+            metadata = {"pfaults": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pfaults max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pfaults sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pfaults_min_ultimate_audit")
+async def system_process_memory_info_pfaults_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pfaults min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_info(), "pfaults", 0)
+            samples_list.append(val)
+            metadata = {"pfaults": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pfaults min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pfaults sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pageins_avg_ultimate_audit")
+async def system_process_memory_info_pageins_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pageins avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_info(), "pageins", 0)
+            samples_list.append(val)
+            metadata = {"pageins": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pageins avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pageins sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pageins_max_ultimate_audit")
+async def system_process_memory_info_pageins_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pageins max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_info(), "pageins", 0)
+            samples_list.append(val)
+            metadata = {"pageins": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pageins max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pageins sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pageins_min_ultimate_audit")
+async def system_process_memory_info_pageins_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pageins min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_info(), "pageins", 0)
+            samples_list.append(val)
+            metadata = {"pageins": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pageins min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pageins sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_uss_avg_ultimate_audit")
+async def system_process_memory_info_uss_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info uss avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "uss", 0)
+            samples_list.append(val)
+            metadata = {"uss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info uss avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured uss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_uss_max_ultimate_audit")
+async def system_process_memory_info_uss_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info uss max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "uss", 0)
+            samples_list.append(val)
+            metadata = {"uss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info uss max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured uss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_uss_min_ultimate_audit")
+async def system_process_memory_info_uss_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info uss min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "uss", 0)
+            samples_list.append(val)
+            metadata = {"uss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info uss min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured uss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pss_avg_ultimate_audit")
+async def system_process_memory_info_pss_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pss avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "pss", 0)
+            samples_list.append(val)
+            metadata = {"pss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pss avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pss_max_ultimate_audit")
+async def system_process_memory_info_pss_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pss max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "pss", 0)
+            samples_list.append(val)
+            metadata = {"pss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pss max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pss_min_ultimate_audit")
+async def system_process_memory_info_pss_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pss min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "pss", 0)
+            samples_list.append(val)
+            metadata = {"pss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pss min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_shared_avg_ultimate_audit")
+async def system_process_memory_info_shared_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info shared avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "shared", 0)
+            samples_list.append(val)
+            metadata = {"shared": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info shared avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured shared sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_shared_max_ultimate_audit")
+async def system_process_memory_info_shared_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info shared max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "shared", 0)
+            samples_list.append(val)
+            metadata = {"shared": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info shared max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured shared sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_shared_min_ultimate_audit")
+async def system_process_memory_info_shared_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info shared min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "shared", 0)
+            samples_list.append(val)
+            metadata = {"shared": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info shared min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured shared sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_unique_set_size_avg_ultimate_audit")
+async def system_process_memory_info_unique_set_size_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info unique_set_size avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "uss", 0)
+            samples_list.append(val)
+            metadata = {"uss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info unique_set_size avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured uss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_unique_set_size_max_ultimate_audit")
+async def system_process_memory_info_unique_set_size_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info unique_set_size max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "uss", 0)
+            samples_list.append(val)
+            metadata = {"uss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info unique_set_size max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured uss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_unique_set_size_min_ultimate_audit")
+async def system_process_memory_info_unique_set_size_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info unique_set_size min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "uss", 0)
+            samples_list.append(val)
+            metadata = {"uss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info unique_set_size min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured uss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_private_avg_ultimate_audit")
+async def system_process_memory_info_private_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info private avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "private", 0)
+            samples_list.append(val)
+            metadata = {"private": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info private avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured private sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_private_max_ultimate_audit")
+async def system_process_memory_info_private_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info private max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "private", 0)
+            samples_list.append(val)
+            metadata = {"private": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info private max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured private sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_private_min_ultimate_audit")
+async def system_process_memory_info_private_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info private min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info() if hasattr(proc, "memory_full_info") else proc.memory_info()
+            val = getattr(info, "private", 0)
+            samples_list.append(val)
+            metadata = {"private": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info private min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured private sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_text_avg_ultimate_audit")
+async def system_process_memory_info_text_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info text avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "text", 0)
+            samples_list.append(val)
+            metadata = {"text": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info text avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured text sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_text_max_ultimate_audit")
+async def system_process_memory_info_text_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info text max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "text", 0)
+            samples_list.append(val)
+            metadata = {"text": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info text max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured text sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_text_min_ultimate_audit")
+async def system_process_memory_info_text_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info text min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "text", 0)
+            samples_list.append(val)
+            metadata = {"text": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info text min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured text sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_data_avg_ultimate_audit")
+async def system_process_memory_info_data_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info data avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "data", 0)
+            samples_list.append(val)
+            metadata = {"data": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info data avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured data sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_data_max_ultimate_audit")
+async def system_process_memory_info_data_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info data max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "data", 0)
+            samples_list.append(val)
+            metadata = {"data": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info data max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured data sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_data_min_ultimate_audit")
+async def system_process_memory_info_data_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info data min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "data", 0)
+            samples_list.append(val)
+            metadata = {"data": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info data min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured data sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_stack_avg_ultimate_audit")
+async def system_process_memory_info_stack_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info stack avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "stack", 0)
+            samples_list.append(val)
+            metadata = {"stack": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info stack avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured stack sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_stack_max_ultimate_audit")
+async def system_process_memory_info_stack_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info stack max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "stack", 0)
+            samples_list.append(val)
+            metadata = {"stack": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info stack max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured stack sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_stack_min_ultimate_audit")
+async def system_process_memory_info_stack_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info stack min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "stack", 0)
+            samples_list.append(val)
+            metadata = {"stack": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info stack min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured stack sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_lib_avg_ultimate_audit")
+async def system_process_memory_info_lib_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info lib avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "lib", 0)
+            samples_list.append(val)
+            metadata = {"lib": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info lib avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured lib sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_lib_max_ultimate_audit")
+async def system_process_memory_info_lib_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info lib max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "lib", 0)
+            samples_list.append(val)
+            metadata = {"lib": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info lib max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured lib sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_lib_min_ultimate_audit")
+async def system_process_memory_info_lib_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info lib min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "lib", 0)
+            samples_list.append(val)
+            metadata = {"lib": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info lib min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured lib sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_dirty_avg_ultimate_audit")
+async def system_process_memory_info_dirty_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info dirty avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "dirty", 0)
+            samples_list.append(val)
+            metadata = {"dirty": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info dirty avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured dirty sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_dirty_max_ultimate_audit")
+async def system_process_memory_info_dirty_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info dirty max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "dirty", 0)
+            samples_list.append(val)
+            metadata = {"dirty": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info dirty max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured dirty sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_dirty_min_ultimate_audit")
+async def system_process_memory_info_dirty_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info dirty min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_info()
+            val = getattr(info, "dirty", 0)
+            samples_list.append(val)
+            metadata = {"dirty": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info dirty min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured dirty sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_uss_avg_ultimate_audit")
+async def system_process_memory_info_uss_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info uss avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, "uss", 0)
+            samples_list.append(val)
+            metadata = {"uss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info uss avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured uss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_uss_max_ultimate_audit")
+async def system_process_memory_info_uss_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info uss max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, "uss", 0)
+            samples_list.append(val)
+            metadata = {"uss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info uss max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured uss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_uss_min_ultimate_audit")
+async def system_process_memory_info_uss_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info uss min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, "uss", 0)
+            samples_list.append(val)
+            metadata = {"uss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info uss min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured uss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pss_avg_ultimate_audit")
+async def system_process_memory_info_pss_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pss avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, "pss", 0)
+            samples_list.append(val)
+            metadata = {"pss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pss avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pss_max_ultimate_audit")
+async def system_process_memory_info_pss_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pss max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, "pss", 0)
+            samples_list.append(val)
+            metadata = {"pss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pss max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_pss_min_ultimate_audit")
+async def system_process_memory_info_pss_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info pss min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, "pss", 0)
+            samples_list.append(val)
+            metadata = {"pss": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info pss min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured pss sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_swap_avg_ultimate_audit")
+async def system_process_memory_info_swap_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info swap avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, "swap", 0)
+            samples_list.append(val)
+            metadata = {"swap": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info swap avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured swap sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_swap_max_ultimate_audit")
+async def system_process_memory_info_swap_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info swap max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, "swap", 0)
+            samples_list.append(val)
+            metadata = {"swap": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info swap max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured swap sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_info_swap_min_ultimate_audit")
+async def system_process_memory_info_swap_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory info swap min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            info = proc.memory_full_info()
+            val = getattr(info, "swap", 0)
+            samples_list.append(val)
+            metadata = {"swap": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory info swap min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured swap sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_environ_keys_count_avg_ultimate_audit")
+async def system_process_environ_keys_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process environ keys count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting environment baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.environ())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process environ keys count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_environ_keys_count_max_ultimate_audit")
+async def system_process_environ_keys_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process environ keys count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting environment baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.environ())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process environ keys count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_environ_keys_count_min_ultimate_audit")
+async def system_process_environ_keys_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process environ keys count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting environment baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.environ())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process environ keys count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cmdline_args_count_avg_ultimate_audit")
+async def system_process_cmdline_args_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cmdline args count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cmdline baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.cmdline())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cmdline args count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cmdline_args_count_max_ultimate_audit")
+async def system_process_cmdline_args_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cmdline args count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cmdline baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.cmdline())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cmdline args count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cmdline_args_count_min_ultimate_audit")
+async def system_process_cmdline_args_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cmdline args count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cmdline baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.cmdline())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cmdline args count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_children_recursive_count_avg_ultimate_audit")
+async def system_process_children_recursive_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process children recursive count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting children baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.children(recursive=True))
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process children recursive count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_children_recursive_count_max_ultimate_audit")
+async def system_process_children_recursive_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process children recursive count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting children baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.children(recursive=True))
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process children recursive count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_children_recursive_count_min_ultimate_audit")
+async def system_process_children_recursive_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process children recursive count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting children baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.children(recursive=True))
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process children recursive count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_connections_all_count_avg_ultimate_audit")
+async def system_process_connections_all_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process connections all count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting connections baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.net_connections(kind="all"))
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process connections all count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}

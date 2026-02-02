@@ -8,7 +8,7 @@ In the standard ADK architecture, tools are treated as atomic "black boxes". Use
 ## 💡 The Solution: Async Generator Bridge + Health Engine
 We transform standard tools into **Async Generators**. instead of just returning a value, the tool `yield`s intermediate status updates which are streamed to the frontend via **SSE** or **WebSockets**.
 
-Furthermore, we've integrated a dedicated **Health Engine** (`health.py`) that monitors 550+ system metrics in real-time, injecting them into the progress stream for ultimate visibility.
+Furthermore, we've integrated a dedicated **Health Engine** (`health.py`) that monitors 670+ system metrics in real-time, injecting them into the progress stream for ultimate visibility.
 
 ### Key Architectural Pillars
 - **Native Python Async Generators:** Lightweight, zero-dependency progress tracking.

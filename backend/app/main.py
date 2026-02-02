@@ -34,10 +34,10 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.11.2" # Bumped for Broadcaster implementation
+APP_VERSION = "2.12.13" # Bumped for Broadcaster implementation
 BUILD_TIMESTAMP = "2026-02-02T08:00:00Z"
-GIT_COMMIT = "v768-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v768 SUPREME APEX VERIFICATION ADELE"
+GIT_COMMIT = "v790-supreme-apex-proc-mem-extended-v5"
+OPERATIONAL_APEX = "v790 SUPREME APEX VERIFICATION PROCESS MEM EXTENDED V5"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT, "build_timestamp": BUILD_TIMESTAMP})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
