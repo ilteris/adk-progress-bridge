@@ -3,7 +3,7 @@ import asyncio
 import json
 import uuid
 from fastapi.testclient import TestClient
-from backend.app.main import app
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
 @pytest.mark.asyncio
 async def test_ws_concurrency_stress():

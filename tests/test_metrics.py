@@ -2,7 +2,7 @@ import pytest
 import asyncio
 import httpx
 import re
-from backend.app.main import app
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 from httpx import ASGITransport
 
 def get_metric_value(metrics_text, metric_name, labels=None):

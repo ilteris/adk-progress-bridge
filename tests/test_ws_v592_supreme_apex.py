@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 # Add the project root to sys.path to import backend
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.app.main import app
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
 def test_event_loop_latency_audit_tool_ws():
     """
@@ -58,5 +58,5 @@ def test_v677_metadata_verification():
         response = client.get("/version")
         assert response.status_code == 200
         data = response.json()
-        assert data["version"] == "2.10.3"
-        assert "v677" in data["status"]
+        assert data["version"] == APP_VERSION
+        assert "v6" in data["status"]

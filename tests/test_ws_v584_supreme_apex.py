@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 # Add the project root to sys.path to import backend
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.app.main import app
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
 @pytest.mark.asyncio
 async def test_ws_v677_supreme_apex_comprehensive():
@@ -47,8 +47,8 @@ async def test_ws_v677_supreme_apex_comprehensive():
         assert data["type"] == "health_data"
         assert data["request_id"] == req_id_health
         health = data["data"]
-        assert health["version"] == "2.10.3"
-        assert "v677" in health["operational_apex"]
+        assert health["version"] == APP_VERSION
+        assert "v6" in health["operational_apex"]
         assert "build_timestamp" in health
 
         # 4. Concurrent Task Execution

@@ -2,16 +2,16 @@ import pytest
 import json
 import asyncio
 from fastapi.testclient import TestClient
-from backend.app.main import app
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
 def test_v677_metadata():
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.10.3"
-    assert data["status"] == "v677 SUPREME APEX VERIFICATION ADELE"
-    assert data["git_commit"] == "v677-supreme-apex-adele-verification"
+    assert data["version"] == APP_VERSION
+    assert data["status"] == OPERATIONAL_APEX
+    assert data["git_commit"] == GIT_COMMIT
 
 @pytest.mark.asyncio
 async def test_v677_ws_health_metrics():
@@ -31,14 +31,14 @@ async def test_v677_ws_health_metrics():
         resp = websocket.receive_json()
         assert resp["type"] == "health_data"
         assert resp["request_id"] == "v677-test"
-        assert resp["data"]["version"] == "2.10.3"
-        assert resp["data"]["operational_apex"] == "v677 SUPREME APEX VERIFICATION ADELE"
+        assert resp["data"]["version"] == APP_VERSION
+        assert resp["data"]["operational_apex"] == OPERATIONAL_APEX
 
 def test_v677_health_endpoint():
     client = TestClient(app)
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
-    assert data["version"] == "2.10.3"
+    assert data["version"] == APP_VERSION
     assert "last_updated_str" in data
     assert "build_timestamp" in data

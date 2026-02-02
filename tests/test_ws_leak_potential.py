@@ -9,7 +9,7 @@ from unittest.mock import patch
 # Add the project root to sys.path to import backend
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.app.main import app
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 from backend.app.bridge import registry
 
 async def wait_for_empty_registry(timeout=5):

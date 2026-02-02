@@ -1,6 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
-from backend.app.main import app
+from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 import time
 
 @pytest.mark.asyncio
