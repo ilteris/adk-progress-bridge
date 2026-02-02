@@ -38494,3 +38494,1598 @@ async def system_cpu_times_steal_v22(samples: int = 1):
         yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
         await asyncio.sleep(0.01)
     yield {"status": "audit_complete", "steal": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_ctx_switches_v23")
+async def system_cpu_stats_ctx_switches_v23(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(psutil.cpu_stats().ctx_switches)
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "ctx_switches": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_interrupts_v23")
+async def system_cpu_stats_interrupts_v23(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(psutil.cpu_stats().interrupts)
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "interrupts": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_soft_interrupts_v23")
+async def system_cpu_stats_soft_interrupts_v23(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(psutil.cpu_stats().soft_interrupts)
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "soft_interrupts": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_cpu_stats_syscalls_v23")
+async def system_cpu_stats_syscalls_v23(samples: int = 1):
+    vals = []
+    for i in range(samples):
+        import psutil
+        vals.append(psutil.cpu_stats().syscalls)
+        yield ProgressPayload(step="Sampling", pct=int(((i+1)/samples)*100))
+        await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "syscalls": sum(vals)/len(vals) if vals else 0}
+
+@progress_tool(name="system_virtual_memory_total_v23")
+async def system_virtual_memory_total_v23(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().total
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "total": val}
+
+@progress_tool(name="system_virtual_memory_available_v23")
+async def system_virtual_memory_available_v23(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().available
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "available": val}
+
+@progress_tool(name="system_virtual_memory_used_v23")
+async def system_virtual_memory_used_v23(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().used
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "used": val}
+
+@progress_tool(name="system_virtual_memory_free_v23")
+async def system_virtual_memory_free_v23(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().free
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "free": val}
+
+@progress_tool(name="system_virtual_memory_active_v23")
+async def system_virtual_memory_active_v23(samples: int = 1):
+    import psutil
+    val = getattr(psutil.virtual_memory(), 'active', 0)
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "active": val}
+
+@progress_tool(name="system_virtual_memory_inactive_v23")
+async def system_virtual_memory_inactive_v23(samples: int = 1):
+    import psutil
+    val = getattr(psutil.virtual_memory(), 'inactive', 0)
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "inactive": val}
+
+@progress_tool(name="system_virtual_memory_buffers_v23")
+async def system_virtual_memory_buffers_v23(samples: int = 1):
+    import psutil
+    val = getattr(psutil.virtual_memory(), 'buffers', 0)
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "buffers": val}
+
+@progress_tool(name="system_virtual_memory_cached_v23")
+async def system_virtual_memory_cached_v23(samples: int = 1):
+    import psutil
+    val = getattr(psutil.virtual_memory(), 'cached', 0)
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "cached": val}
+
+@progress_tool(name="system_virtual_memory_shared_v23")
+async def system_virtual_memory_shared_v23(samples: int = 1):
+    import psutil
+    val = getattr(psutil.virtual_memory(), 'shared', 0)
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "shared": val}
+
+@progress_tool(name="system_virtual_memory_slab_v23")
+async def system_virtual_memory_slab_v23(samples: int = 1):
+    import psutil
+    val = getattr(psutil.virtual_memory(), 'slab', 0)
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "slab": val}
+
+@progress_tool(name="system_disk_usage_total_v23")
+async def system_disk_usage_total_v23(path: str = "/"):
+    import psutil
+    val = psutil.disk_usage(path).total
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "total": val}
+
+@progress_tool(name="system_disk_usage_used_v23")
+async def system_disk_usage_used_v23(path: str = "/"):
+    import psutil
+    val = psutil.disk_usage(path).used
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "used": val}
+
+@progress_tool(name="system_disk_usage_free_v23")
+async def system_disk_usage_free_v23(path: str = "/"):
+    import psutil
+    val = psutil.disk_usage(path).free
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "free": val}
+
+@progress_tool(name="system_disk_usage_percent_v23")
+async def system_disk_usage_percent_v23(path: str = "/"):
+    import psutil
+    val = psutil.disk_usage(path).percent
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "percent": val}
+
+@progress_tool(name="system_net_io_bytes_sent_v23")
+async def system_net_io_bytes_sent_v23(samples: int = 1):
+    import psutil
+    val = psutil.net_io_counters().bytes_sent
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "bytes_sent": val}
+
+@progress_tool(name="system_net_io_bytes_recv_v23")
+async def system_net_io_bytes_recv_v23(samples: int = 1):
+    import psutil
+    val = psutil.net_io_counters().bytes_recv
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "bytes_recv": val}
+
+@progress_tool(name="system_net_io_packets_sent_v23")
+async def system_net_io_packets_sent_v23(samples: int = 1):
+    import psutil
+    val = psutil.net_io_counters().packets_sent
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "packets_sent": val}
+
+@progress_tool(name="system_net_io_packets_recv_v23")
+async def system_net_io_packets_recv_v23(samples: int = 1):
+    import psutil
+    val = psutil.net_io_counters().packets_recv
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "packets_recv": val}
+
+@progress_tool(name="system_net_io_errin_v23")
+async def system_net_io_errin_v23(samples: int = 1):
+    import psutil
+    val = psutil.net_io_counters().errin
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "errin": val}
+
+@progress_tool(name="system_net_io_errout_v23")
+async def system_net_io_errout_v23(samples: int = 1):
+    import psutil
+    val = psutil.net_io_counters().errout
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "errout": val}
+
+@progress_tool(name="system_net_io_dropin_v23")
+async def system_net_io_dropin_v23(samples: int = 1):
+    import psutil
+    val = psutil.net_io_counters().dropin
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "dropin": val}
+
+@progress_tool(name="system_net_io_dropout_v23")
+async def system_net_io_dropout_v23(samples: int = 1):
+    import psutil
+    val = psutil.net_io_counters().dropout
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "dropout": val}
+
+@progress_tool(name="system_sensors_battery_percent_v23")
+async def system_sensors_battery_percent_v23(samples: int = 1):
+    import psutil
+    battery = psutil.sensors_battery()
+    val = battery.percent if battery else 100
+    yield ProgressPayload(step="Sensing", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "percent": val}
+
+@progress_tool(name="system_sensors_battery_secsleft_v23")
+async def system_sensors_battery_secsleft_v23(samples: int = 1):
+    import psutil
+    battery = psutil.sensors_battery()
+    val = battery.secsleft if battery else -1
+    yield ProgressPayload(step="Sensing", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "secsleft": val}
+
+@progress_tool(name="system_sensors_battery_power_plugged_v23")
+async def system_sensors_battery_power_plugged_v23(samples: int = 1):
+    import psutil
+    battery = psutil.sensors_battery()
+    val = battery.power_plugged if battery else True
+    yield ProgressPayload(step="Sensing", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "power_plugged": val}
+
+@progress_tool(name="system_users_count_v23")
+async def system_users_count_v23(samples: int = 1):
+    import psutil
+    val = len(psutil.users())
+    yield ProgressPayload(step="Counting", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "count": val}
+
+@progress_tool(name="system_boot_time_v23")
+async def system_boot_time_v23(samples: int = 1):
+    import psutil
+    val = psutil.boot_time()
+    yield ProgressPayload(step="Retrieving", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "boot_time": val}
+
+@progress_tool(name="system_cpu_count_logical_v23")
+async def system_cpu_count_logical_v23(samples: int = 1):
+    import psutil
+    val = psutil.cpu_count(logical=True)
+    yield ProgressPayload(step="Counting", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "count": val}
+
+@progress_tool(name="system_cpu_count_physical_v23")
+async def system_cpu_count_physical_v23(samples: int = 1):
+    import psutil
+    val = psutil.cpu_count(logical=False)
+    yield ProgressPayload(step="Counting", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "count": val}
+
+@progress_tool(name="system_cpu_freq_current_v23")
+async def system_cpu_freq_current_v23(samples: int = 1):
+    import psutil
+    freq = psutil.cpu_freq()
+    val = freq.current if freq else 0
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "current": val}
+
+@progress_tool(name="system_cpu_freq_min_v23")
+async def system_cpu_freq_min_v23(samples: int = 1):
+    import psutil
+    freq = psutil.cpu_freq()
+    val = freq.min if freq else 0
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "min": val}
+
+@progress_tool(name="system_cpu_freq_max_v23")
+async def system_cpu_freq_max_v23(samples: int = 1):
+    import psutil
+    freq = psutil.cpu_freq()
+    val = freq.max if freq else 0
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "max": val}
+
+@progress_tool(name="system_loadavg_1m_v23")
+async def system_loadavg_1m_v23(samples: int = 1):
+    import psutil
+    val = psutil.getloadavg()[0]
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "load": val}
+
+@progress_tool(name="system_loadavg_5m_v23")
+async def system_loadavg_5m_v23(samples: int = 1):
+    import psutil
+    val = psutil.getloadavg()[1]
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "load": val}
+
+@progress_tool(name="system_loadavg_15m_v23")
+async def system_loadavg_15m_v23(samples: int = 1):
+    import psutil
+    val = psutil.getloadavg()[2]
+    yield ProgressPayload(step="Measuring", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "load": val}
+
+@progress_tool(name="system_pid_count_v23")
+async def system_pid_count_v23(samples: int = 1):
+    import psutil
+    val = len(psutil.pids())
+    yield ProgressPayload(step="Counting", pct=50)
+    await asyncio.sleep(0.05)
+    yield {"status": "audit_complete", "count": val}
+
+
+@progress_tool(name="system_process_cpu_times_user_v24")
+async def system_process_cpu_times_user_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.cpu_times().user
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_cpu_times_system_v24")
+async def system_process_cpu_times_system_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.cpu_times().system
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_memory_info_rss_v24")
+async def system_process_memory_info_rss_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.memory_info().rss
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_memory_info_vms_v24")
+async def system_process_memory_info_vms_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.memory_info().vms
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_memory_percent_v24")
+async def system_process_memory_percent_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.memory_percent()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_num_threads_v24")
+async def system_process_num_threads_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.num_threads()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_num_fds_v24")
+async def system_process_num_fds_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.num_fds()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_num_ctx_switches_voluntary_v24")
+async def system_process_num_ctx_switches_voluntary_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.num_ctx_switches().voluntary
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_num_ctx_switches_involuntary_v24")
+async def system_process_num_ctx_switches_involuntary_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.num_ctx_switches().involuntary
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_cpu_percent_v24")
+async def system_process_cpu_percent_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.cpu_percent()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_memory_info_uss_v24")
+async def system_process_memory_info_uss_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = getattr(proc.memory_full_info(), 'uss', 0)
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_memory_info_pss_v24")
+async def system_process_memory_info_pss_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = getattr(proc.memory_full_info(), 'pss', 0)
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_memory_info_swap_v24")
+async def system_process_memory_info_swap_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = getattr(proc.memory_full_info(), 'swap', 0)
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_environ_count_v24")
+async def system_process_environ_count_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.environ())
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_cmdline_count_v24")
+async def system_process_cmdline_count_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.cmdline())
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_children_count_v24")
+async def system_process_children_count_v24(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.children())
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_net_if_addrs_count_v24")
+async def system_net_if_addrs_count_v24(samples: int = 1):
+    import psutil
+    val = len(psutil.net_if_addrs())
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_net_if_stats_count_v24")
+async def system_net_if_stats_count_v24(samples: int = 1):
+    import psutil
+    val = len(psutil.net_if_stats())
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_stats_ctx_switches_v24")
+async def system_cpu_stats_ctx_switches_v24(samples: int = 1):
+    import psutil
+    val = psutil.cpu_stats().ctx_switches
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_stats_interrupts_v24")
+async def system_cpu_stats_interrupts_v24(samples: int = 1):
+    import psutil
+    val = psutil.cpu_stats().interrupts
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_stats_soft_interrupts_v24")
+async def system_cpu_stats_soft_interrupts_v24(samples: int = 1):
+    import psutil
+    val = psutil.cpu_stats().soft_interrupts
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_stats_syscalls_v24")
+async def system_cpu_stats_syscalls_v24(samples: int = 1):
+    import psutil
+    val = psutil.cpu_stats().syscalls
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_user_v24")
+async def system_cpu_times_user_v24(samples: int = 1):
+    import psutil
+    val = psutil.cpu_times().user
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_system_v24")
+async def system_cpu_times_system_v24(samples: int = 1):
+    import psutil
+    val = psutil.cpu_times().system
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_idle_v24")
+async def system_cpu_times_idle_v24(samples: int = 1):
+    import psutil
+    val = psutil.cpu_times().idle
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_virtual_memory_total_v24")
+async def system_virtual_memory_total_v24(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().total
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_virtual_memory_available_v24")
+async def system_virtual_memory_available_v24(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().available
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_virtual_memory_used_v24")
+async def system_virtual_memory_used_v24(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().used
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_virtual_memory_free_v24")
+async def system_virtual_memory_free_v24(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().free
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_swap_memory_total_v24")
+async def system_swap_memory_total_v24(samples: int = 1):
+    import psutil
+    val = psutil.swap_memory().total
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_swap_memory_used_v24")
+async def system_swap_memory_used_v24(samples: int = 1):
+    import psutil
+    val = psutil.swap_memory().used
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_swap_memory_free_v24")
+async def system_swap_memory_free_v24(samples: int = 1):
+    import psutil
+    val = psutil.swap_memory().free
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_disk_usage_total_v24")
+async def system_disk_usage_total_v24(path: str = "/"):
+    import psutil
+    val = psutil.disk_usage(path).total
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_disk_usage_used_v24")
+async def system_disk_usage_used_v24(path: str = "/"):
+    import psutil
+    val = psutil.disk_usage(path).used
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_disk_usage_free_v24")
+async def system_disk_usage_free_v24(path: str = "/"):
+    import psutil
+    val = psutil.disk_usage(path).free
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_disk_usage_percent_v24")
+async def system_disk_usage_percent_v24(path: str = "/"):
+    import psutil
+    val = psutil.disk_usage(path).percent
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_percent_user_v24")
+async def system_cpu_times_percent_user_v24(samples: int = 1):
+    import psutil
+    val = psutil.cpu_times_percent().user
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_percent_system_v24")
+async def system_cpu_times_percent_system_v24(samples: int = 1):
+    import psutil
+    val = psutil.cpu_times_percent().system
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_percent_idle_v24")
+async def system_cpu_times_percent_idle_v24(samples: int = 1):
+    import psutil
+    val = psutil.cpu_times_percent().idle
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_count_v24")
+async def system_cpu_count_v24(samples: int = 1):
+    import psutil
+    val = psutil.cpu_count()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_num_ctx_switches_v25")
+async def system_process_num_ctx_switches_v25(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    ctx = proc.num_ctx_switches()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "voluntary": ctx.voluntary, "involuntary": ctx.involuntary}
+
+@progress_tool(name="system_process_cpu_times_v25")
+async def system_process_cpu_times_v25(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    times = proc.cpu_times()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "user": times.user, "system": times.system}
+
+@progress_tool(name="system_process_memory_info_v25")
+async def system_process_memory_info_v25(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    mem = proc.memory_info()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "rss": mem.rss, "vms": mem.vms}
+
+@progress_tool(name="system_process_create_time_v25")
+async def system_process_create_time_v25(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.create_time()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_status_v25")
+async def system_process_status_v25(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.status()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_username_v25")
+async def system_process_username_v25(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.username()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_cwd_v25")
+async def system_process_cwd_v25(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.cwd()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_name_v25")
+async def system_process_name_v25(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.name()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_ppid_v25")
+async def system_process_ppid_v25(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.ppid()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_nice_v25")
+async def system_process_nice_v25(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.nice()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_percent_v25")
+async def system_cpu_times_percent_v25(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "user": val.user, "system": val.system, "idle": val.idle}
+
+@progress_tool(name="system_cpu_stats_v25")
+async def system_cpu_stats_v25(samples: int = 1):
+    import psutil
+    val = psutil.cpu_stats()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "ctx_switches": val.ctx_switches, "interrupts": val.interrupts}
+
+@progress_tool(name="system_virtual_memory_v25")
+async def system_virtual_memory_v25(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "total": val.total, "available": val.available, "percent": val.percent}
+
+@progress_tool(name="system_swap_memory_v25")
+async def system_swap_memory_v25(samples: int = 1):
+    import psutil
+    val = psutil.swap_memory()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "total": val.total, "used": val.used, "free": val.free, "percent": val.percent}
+
+@progress_tool(name="system_net_io_counters_v25")
+async def system_net_io_counters_v25(samples: int = 1):
+    import psutil
+    val = psutil.net_io_counters()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "bytes_sent": val.bytes_sent, "bytes_recv": val.bytes_recv}
+
+@progress_tool(name="system_disk_io_counters_v25")
+async def system_disk_io_counters_v25(samples: int = 1):
+    import psutil
+    val = psutil.disk_io_counters()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "read_count": val.read_count, "write_count": val.write_count}
+
+@progress_tool(name="system_users_v25")
+async def system_users_v25(samples: int = 1):
+    import psutil
+    val = psutil.users()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "count": len(val)}
+
+@progress_tool(name="system_boot_time_formatted_v25")
+async def system_boot_time_formatted_v25(samples: int = 1):
+    import psutil
+    from datetime import datetime
+    val = datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S")
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_count_logical_v25")
+async def system_cpu_count_logical_v25(samples: int = 1):
+    import psutil
+    val = psutil.cpu_count(logical=True)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_count_physical_v25")
+async def system_cpu_count_physical_v25(samples: int = 1):
+    import psutil
+    val = psutil.cpu_count(logical=False)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_freq_v25")
+async def system_cpu_freq_v25(samples: int = 1):
+    import psutil
+    val = psutil.cpu_freq()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "current": val.current, "min": val.min, "max": val.max}
+
+@progress_tool(name="system_disk_partitions_v25")
+async def system_disk_partitions_v25(samples: int = 1):
+    import psutil
+    val = psutil.disk_partitions()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "count": len(val)}
+
+@progress_tool(name="system_sensors_battery_v25")
+async def system_sensors_battery_v25(samples: int = 1):
+    import psutil
+    val = psutil.sensors_battery()
+    yield ProgressPayload(step="Measuring", pct=50)
+    if val:
+        yield {"status": "audit_complete", "percent": val.percent, "power_plugged": val.power_plugged}
+    else:
+        yield {"status": "audit_complete", "percent": 100, "power_plugged": True}
+
+@progress_tool(name="system_loadavg_v25")
+async def system_loadavg_v25(samples: int = 1):
+    import psutil
+    val = psutil.getloadavg()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "1m": val[0], "5m": val[1], "15m": val[2]}
+
+@progress_tool(name="system_pid_list_count_v25")
+async def system_pid_list_count_v25(samples: int = 1):
+    import psutil
+    val = psutil.pids()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": len(val)}
+
+@progress_tool(name="system_memory_available_gb_v25")
+async def system_memory_available_gb_v25(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().available / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_memory_used_gb_v25")
+async def system_memory_used_gb_v25(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().used / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_memory_total_gb_v25")
+async def system_memory_total_gb_v25(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().total / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_usage_avg_v25")
+async def system_cpu_usage_avg_v25(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_memory_rss_gb_v25")
+async def system_process_memory_rss_gb_v25(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.memory_info().rss / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_threads_v25_check")
+async def system_process_threads_v25_check(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.threads())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_open_files_v25_check")
+async def system_process_open_files_v25_check(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.open_files())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_connections_v25_check")
+async def system_process_connections_v25_check(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.connections())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_net_if_addrs_keys_v25")
+async def system_net_if_addrs_keys_v25(samples: int = 1):
+    import psutil
+    val = list(psutil.net_if_addrs().keys())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_net_if_stats_keys_v25")
+async def system_net_if_stats_keys_v25(samples: int = 1):
+    import psutil
+    val = list(psutil.net_if_stats().keys())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_disk_partitions_device_v25")
+async def system_disk_partitions_device_v25(samples: int = 1):
+    import psutil
+    val = [p.device for p in psutil.disk_partitions()]
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_disk_partitions_mountpoint_v25")
+async def system_disk_partitions_mountpoint_v25(samples: int = 1):
+    import psutil
+    val = [p.mountpoint for p in psutil.disk_partitions()]
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_percent_iowait_v25")
+async def system_cpu_times_percent_iowait_v25(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": getattr(val, 'iowait', 0)}
+
+@progress_tool(name="system_cpu_times_percent_irq_v25")
+async def system_cpu_times_percent_irq_v25(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": getattr(val, 'irq', 0)}
+
+@progress_tool(name="system_cpu_times_percent_softirq_v25")
+async def system_cpu_times_percent_softirq_v25(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": getattr(val, 'softirq', 0)}
+
+@progress_tool(name="system_process_num_ctx_switches_v26")
+async def system_process_num_ctx_switches_v26(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    ctx = proc.num_ctx_switches()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "voluntary": ctx.voluntary, "involuntary": ctx.involuntary}
+
+@progress_tool(name="system_process_cpu_times_v26")
+async def system_process_cpu_times_v26(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    times = proc.cpu_times()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "user": times.user, "system": times.system}
+
+@progress_tool(name="system_process_memory_info_v26")
+async def system_process_memory_info_v26(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    mem = proc.memory_info()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "rss": mem.rss, "vms": mem.vms}
+
+@progress_tool(name="system_process_create_time_v26")
+async def system_process_create_time_v26(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.create_time()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_status_v26")
+async def system_process_status_v26(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.status()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_username_v26")
+async def system_process_username_v26(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.username()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_cwd_v26")
+async def system_process_cwd_v26(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.cwd()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_name_v26")
+async def system_process_name_v26(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.name()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_ppid_v26")
+async def system_process_ppid_v26(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.ppid()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_nice_v26")
+async def system_process_nice_v26(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.nice()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_percent_v26")
+async def system_cpu_times_percent_v26(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "user": val.user, "system": val.system, "idle": val.idle}
+
+@progress_tool(name="system_cpu_stats_v26")
+async def system_cpu_stats_v26(samples: int = 1):
+    import psutil
+    val = psutil.cpu_stats()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "ctx_switches": val.ctx_switches, "interrupts": val.interrupts}
+
+@progress_tool(name="system_virtual_memory_v26")
+async def system_virtual_memory_v26(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "total": val.total, "available": val.available, "percent": val.percent}
+
+@progress_tool(name="system_swap_memory_v26")
+async def system_swap_memory_v26(samples: int = 1):
+    import psutil
+    val = psutil.swap_memory()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "total": val.total, "used": val.used, "free": val.free, "percent": val.percent}
+
+@progress_tool(name="system_net_io_counters_v26")
+async def system_net_io_counters_v26(samples: int = 1):
+    import psutil
+    val = psutil.net_io_counters()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "bytes_sent": val.bytes_sent, "bytes_recv": val.bytes_recv}
+
+@progress_tool(name="system_disk_io_counters_v26")
+async def system_disk_io_counters_v26(samples: int = 1):
+    import psutil
+    val = psutil.disk_io_counters()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "read_count": val.read_count, "write_count": val.write_count}
+
+@progress_tool(name="system_users_v26")
+async def system_users_v26(samples: int = 1):
+    import psutil
+    val = psutil.users()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "count": len(val)}
+
+@progress_tool(name="system_boot_time_formatted_v26")
+async def system_boot_time_formatted_v26(samples: int = 1):
+    import psutil
+    from datetime import datetime
+    val = datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S")
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_count_logical_v26")
+async def system_cpu_count_logical_v26(samples: int = 1):
+    import psutil
+    val = psutil.cpu_count(logical=True)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_count_physical_v26")
+async def system_cpu_count_physical_v26(samples: int = 1):
+    import psutil
+    val = psutil.cpu_count(logical=False)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_freq_v26")
+async def system_cpu_freq_v26(samples: int = 1):
+    import psutil
+    val = psutil.cpu_freq()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "current": val.current, "min": val.min, "max": val.max}
+
+@progress_tool(name="system_disk_partitions_v26")
+async def system_disk_partitions_v26(samples: int = 1):
+    import psutil
+    val = psutil.disk_partitions()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "count": len(val)}
+
+@progress_tool(name="system_sensors_battery_v26")
+async def system_sensors_battery_v26(samples: int = 1):
+    import psutil
+    val = psutil.sensors_battery()
+    yield ProgressPayload(step="Measuring", pct=50)
+    if val:
+        yield {"status": "audit_complete", "percent": val.percent, "power_plugged": val.power_plugged}
+    else:
+        yield {"status": "audit_complete", "percent": 100, "power_plugged": True}
+
+@progress_tool(name="system_loadavg_v26")
+async def system_loadavg_v26(samples: int = 1):
+    import psutil
+    val = psutil.getloadavg()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "1m": val[0], "5m": val[1], "15m": val[2]}
+
+@progress_tool(name="system_pid_list_count_v26")
+async def system_pid_list_count_v26(samples: int = 1):
+    import psutil
+    val = psutil.pids()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": len(val)}
+
+@progress_tool(name="system_memory_available_gb_v26")
+async def system_memory_available_gb_v26(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().available / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_memory_used_gb_v26")
+async def system_memory_used_gb_v26(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().used / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_memory_total_gb_v26")
+async def system_memory_total_gb_v26(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().total / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_usage_avg_v26")
+async def system_cpu_usage_avg_v26(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_memory_rss_gb_v26")
+async def system_process_memory_rss_gb_v26(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.memory_info().rss / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_threads_v26_check")
+async def system_process_threads_v26_check(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.threads())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_open_files_v26_check")
+async def system_process_open_files_v26_check(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.open_files())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_connections_v26_check")
+async def system_process_connections_v26_check(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.connections())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_net_if_addrs_keys_v26")
+async def system_net_if_addrs_keys_v26(samples: int = 1):
+    import psutil
+    val = list(psutil.net_if_addrs().keys())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_net_if_stats_keys_v26")
+async def system_net_if_stats_keys_v26(samples: int = 1):
+    import psutil
+    val = list(psutil.net_if_stats().keys())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_disk_partitions_device_v26")
+async def system_disk_partitions_device_v26(samples: int = 1):
+    import psutil
+    val = [p.device for p in psutil.disk_partitions()]
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_disk_partitions_mountpoint_v26")
+async def system_disk_partitions_mountpoint_v26(samples: int = 1):
+    import psutil
+    val = [p.mountpoint for p in psutil.disk_partitions()]
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_percent_iowait_v26")
+async def system_cpu_times_percent_iowait_v26(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": getattr(val, 'iowait', 0)}
+
+@progress_tool(name="system_cpu_times_percent_irq_v26")
+async def system_cpu_times_percent_irq_v26(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": getattr(val, 'irq', 0)}
+
+@progress_tool(name="system_cpu_times_percent_softirq_v26")
+async def system_cpu_times_percent_softirq_v26(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": getattr(val, 'softirq', 0)}
+
+@progress_tool(name="system_process_num_ctx_switches_v27")
+async def system_process_num_ctx_switches_v27(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    ctx = proc.num_ctx_switches()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "voluntary": ctx.voluntary, "involuntary": ctx.involuntary}
+
+@progress_tool(name="system_process_cpu_times_v27")
+async def system_process_cpu_times_v27(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    times = proc.cpu_times()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "user": times.user, "system": times.system}
+
+@progress_tool(name="system_process_memory_info_v27")
+async def system_process_memory_info_v27(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    mem = proc.memory_info()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "rss": mem.rss, "vms": mem.vms}
+
+@progress_tool(name="system_process_create_time_v27")
+async def system_process_create_time_v27(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.create_time()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_status_v27")
+async def system_process_status_v27(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.status()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_username_v27")
+async def system_process_username_v27(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.username()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_cwd_v27")
+async def system_process_cwd_v27(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.cwd()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_name_v27")
+async def system_process_name_v27(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.name()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_ppid_v27")
+async def system_process_ppid_v27(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.ppid()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_nice_v27")
+async def system_process_nice_v27(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.nice()
+    yield ProgressPayload(step="Querying", pct=50)
+    await asyncio.sleep(0.01)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_percent_v27")
+async def system_cpu_times_percent_v27(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "user": val.user, "system": val.system, "idle": val.idle}
+
+@progress_tool(name="system_cpu_stats_v27")
+async def system_cpu_stats_v27(samples: int = 1):
+    import psutil
+    val = psutil.cpu_stats()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "ctx_switches": val.ctx_switches, "interrupts": val.interrupts}
+
+@progress_tool(name="system_virtual_memory_v27")
+async def system_virtual_memory_v27(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "total": val.total, "available": val.available, "percent": val.percent}
+
+@progress_tool(name="system_swap_memory_v27")
+async def system_swap_memory_v27(samples: int = 1):
+    import psutil
+    val = psutil.swap_memory()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "total": val.total, "used": val.used, "free": val.free, "percent": val.percent}
+
+@progress_tool(name="system_net_io_counters_v27")
+async def system_net_io_counters_v27(samples: int = 1):
+    import psutil
+    val = psutil.net_io_counters()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "bytes_sent": val.bytes_sent, "bytes_recv": val.bytes_recv}
+
+@progress_tool(name="system_disk_io_counters_v27")
+async def system_disk_io_counters_v27(samples: int = 1):
+    import psutil
+    val = psutil.disk_io_counters()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "read_count": val.read_count, "write_count": val.write_count}
+
+@progress_tool(name="system_users_v27")
+async def system_users_v27(samples: int = 1):
+    import psutil
+    val = psutil.users()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "count": len(val)}
+
+@progress_tool(name="system_boot_time_formatted_v27")
+async def system_boot_time_formatted_v27(samples: int = 1):
+    import psutil
+    from datetime import datetime
+    val = datetime.fromtimestamp(psutil.boot_time()).strftime("%Y-%m-%d %H:%M:%S")
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_count_logical_v27")
+async def system_cpu_count_logical_v27(samples: int = 1):
+    import psutil
+    val = psutil.cpu_count(logical=True)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_count_physical_v27")
+async def system_cpu_count_physical_v27(samples: int = 1):
+    import psutil
+    val = psutil.cpu_count(logical=False)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_freq_v27")
+async def system_cpu_freq_v27(samples: int = 1):
+    import psutil
+    val = psutil.cpu_freq()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "current": val.current, "min": val.min, "max": val.max}
+
+@progress_tool(name="system_disk_partitions_v27")
+async def system_disk_partitions_v27(samples: int = 1):
+    import psutil
+    val = psutil.disk_partitions()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "count": len(val)}
+
+@progress_tool(name="system_sensors_battery_v27")
+async def system_sensors_battery_v27(samples: int = 1):
+    import psutil
+    val = psutil.sensors_battery()
+    yield ProgressPayload(step="Measuring", pct=50)
+    if val:
+        yield {"status": "audit_complete", "percent": val.percent, "power_plugged": val.power_plugged}
+    else:
+        yield {"status": "audit_complete", "percent": 100, "power_plugged": True}
+
+@progress_tool(name="system_loadavg_v27")
+async def system_loadavg_v27(samples: int = 1):
+    import psutil
+    val = psutil.getloadavg()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "1m": val[0], "5m": val[1], "15m": val[2]}
+
+@progress_tool(name="system_pid_list_count_v27")
+async def system_pid_list_count_v27(samples: int = 1):
+    import psutil
+    val = psutil.pids()
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": len(val)}
+
+@progress_tool(name="system_memory_available_gb_v27")
+async def system_memory_available_gb_v27(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().available / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_memory_used_gb_v27")
+async def system_memory_used_gb_v27(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().used / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_memory_total_gb_v27")
+async def system_memory_total_gb_v27(samples: int = 1):
+    import psutil
+    val = psutil.virtual_memory().total / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_usage_avg_v27")
+async def system_cpu_usage_avg_v27(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_memory_rss_gb_v27")
+async def system_process_memory_rss_gb_v27(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = proc.memory_info().rss / (1024**3)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_threads_v27_check")
+async def system_process_threads_v27_check(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.threads())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_open_files_v27_check")
+async def system_process_open_files_v27_check(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.open_files())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_process_connections_v27_check")
+async def system_process_connections_v27_check(samples: int = 1):
+    import psutil
+    proc = psutil.Process()
+    val = len(proc.connections())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_net_if_addrs_keys_v27")
+async def system_net_if_addrs_keys_v27(samples: int = 1):
+    import psutil
+    val = list(psutil.net_if_addrs().keys())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_net_if_stats_keys_v27")
+async def system_net_if_stats_keys_v27(samples: int = 1):
+    import psutil
+    val = list(psutil.net_if_stats().keys())
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_disk_partitions_device_v27")
+async def system_disk_partitions_device_v27(samples: int = 1):
+    import psutil
+    val = [p.device for p in psutil.disk_partitions()]
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_disk_partitions_mountpoint_v27")
+async def system_disk_partitions_mountpoint_v27(samples: int = 1):
+    import psutil
+    val = [p.mountpoint for p in psutil.disk_partitions()]
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": val}
+
+@progress_tool(name="system_cpu_times_percent_iowait_v27")
+async def system_cpu_times_percent_iowait_v27(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": getattr(val, 'iowait', 0)}
+
+@progress_tool(name="system_cpu_times_percent_irq_v27")
+async def system_cpu_times_percent_irq_v27(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": getattr(val, 'irq', 0)}
+
+@progress_tool(name="system_cpu_times_percent_softirq_v27")
+async def system_cpu_times_percent_softirq_v27(interval: float = 0.1):
+    import psutil
+    val = psutil.cpu_times_percent(interval=interval)
+    yield ProgressPayload(step="Measuring", pct=50)
+    yield {"status": "audit_complete", "value": getattr(val, 'softirq', 0)}
