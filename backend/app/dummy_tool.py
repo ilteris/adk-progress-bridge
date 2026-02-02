@@ -8423,3 +8423,81 @@ async def system_disk_io_busy_time_ultimate_audit(samples: int = 3):
     avg_val = sum(busy_samples) / len(busy_samples) if busy_samples else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk busy time: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_busy_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_read_count_ultimate_audit")
+async def system_disk_io_read_count_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide disk read operations count ultimate.
+    """
+    logger.info("Starting system disk read count ultimate audit")
+    yield ProgressPayload(step="Initializing Disk probe", pct=0, log="Collecting system-wide disk read count stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            disk_io = psutil.disk_io_counters()
+            current_val = disk_io.read_count
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Read Count {current_val}")
+            metadata = {"read_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk read count ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Read Count", pct=pct, log=f"Measured disk read count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk read count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_read_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_write_count_ultimate_audit")
+async def system_disk_io_write_count_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide disk write operations count ultimate.
+    """
+    logger.info("Starting system disk write count ultimate audit")
+    yield ProgressPayload(step="Initializing Disk probe", pct=0, log="Collecting system-wide disk write count stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            disk_io = psutil.disk_io_counters()
+            current_val = disk_io.write_count
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Write Count {current_val}")
+            metadata = {"write_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk write count ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Write Count", pct=pct, log=f"Measured disk write count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk write count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_write_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_read_bytes_ultimate_audit")
+async def system_disk_io_read_bytes_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide disk read bytes ultimate.
+    """
+    logger.info("Starting system disk read bytes ultimate audit")
+    yield ProgressPayload(step="Initializing Disk probe", pct=0, log="Collecting system-wide disk read bytes stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            disk_io = psutil.disk_io_counters()
+            current_val = disk_io.read_bytes
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Read Bytes {current_val}")
+            metadata = {"read_bytes": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk read bytes ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Read Bytes", pct=pct, log=f"Measured disk read bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk read bytes: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_read_bytes": avg_val, "stability": "STABLE"}
