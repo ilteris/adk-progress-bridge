@@ -334,3 +334,14 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - `system_swap_memory_used_avg_ultimate_audit`: Average used swap memory tracking.
 - `system_swap_memory_free_avg_ultimate_audit`: Average free swap memory tracking.
 - `system_swap_memory_percent_avg_ultimate_audit`: Average swap memory percentage tracking.
+
+- `system_virtual_memory_total_max_ultimate_audit`: Maximum total virtual memory tracking.
+- `system_virtual_memory_available_max_ultimate_audit`: Maximum available virtual memory tracking.
+- `system_virtual_memory_percent_max_ultimate_audit`: Maximum virtual memory usage percentage tracking.
+- `system_virtual_memory_used_max_ultimate_audit`: Maximum used virtual memory tracking.
+- `system_virtual_memory_free_max_ultimate_audit`: Maximum free virtual memory tracking.
+- `system_virtual_memory_active_max_ultimate_audit`: Maximum active virtual memory tracking.
+- `system_virtual_memory_inactive_max_ultimate_audit`: Maximum inactive virtual memory tracking.
+- `system_virtual_memory_buffers_max_ultimate_audit`: Maximum virtual memory buffers tracking.
+- `system_virtual_memory_cached_max_ultimate_audit`: Maximum virtual memory cached tracking.
+- `system_virtual_memory_shared_max_ultimate_audit`: Maximum shared virtual memory tracking.
