@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Dict, List, AsyncGenerator, Callable, Literal, Union, Optional
+from typing import Any, Dict, List, AsyncGenerator, Callable, Literal, Union, Optional, Set
 from pydantic import BaseModel, Field, validate_call
 from .logger import logger
 from .metrics import ACTIVE_TASKS, PEAK_ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL, TOTAL_TASKS_STARTED
@@ -42,12 +42,12 @@ class ProgressEvent(BaseModel):
     )
     type: Literal["progress", "result", "error", "input_request", "task_started", "system_metrics"] = Field(
         ..., 
-        description="The nature of the event being streamed. 'progress' indicates an interim update, 'result' is the final output, 'error' signifies a failure, and 'input_request' prompts the user for information.",
+        description="The nature of the event being streamed.",
         examples=["progress", "result", "error", "input_request"]
     )
     payload: Union[ProgressPayload, Dict[str, Any]] = Field(
         ..., 
-        description="The actual data payload. Contains a ProgressPayload object for 'progress' types, or the final result/error details.",
+        description="The actual data payload.",
     )
 
 class InputManager:
@@ -75,10 +75,94 @@ class InputManager:
 
 input_manager = InputManager()
 
+class TaskBroadcaster:
+    """
+    Consumes an async generator and broadcasts events to multiple subscribers.
+    Also maintains a buffer of events for late subscribers.
+    """
+    def __init__(self, call_id: str, tool_name: str, gen: AsyncGenerator):
+        self.call_id = call_id
+        self.tool_name = tool_name
+        self.gen = gen
+        self.history: List[ProgressEvent] = []
+        self.subscribers: Set[asyncio.Queue] = set()
+        self.is_done = False
+        self.final_event: Optional[ProgressEvent] = None
+        self.task: Optional[asyncio.Task] = None
+        self._lock = asyncio.Lock()
+
+    async def start(self):
+        self.task = asyncio.create_task(self._run())
+
+    async def _run(self):
+        try:
+            async for item in self.gen:
+                if isinstance(item, ProgressPayload):
+                    event = ProgressEvent(call_id=self.call_id, type="progress", payload=item)
+                elif isinstance(item, dict) and item.get("type") == "input_request":
+                    event = ProgressEvent(call_id=self.call_id, type="input_request", payload=item["payload"])
+                else:
+                    event = ProgressEvent(call_id=self.call_id, type="result", payload=item)
+                
+                async with self._lock:
+                    self.history.append(event)
+                    if event.type == "result":
+                        self.final_event = event
+                        self.is_done = True
+                    
+                    for q in list(self.subscribers):
+                        await q.put(event)
+                
+                if self.is_done:
+                    break
+        except asyncio.CancelledError:
+            await self.gen.aclose()
+            event = ProgressEvent(call_id=self.call_id, type="error", payload={"detail": "Task cancelled"})
+            async with self._lock:
+                self.final_event = event
+                self.is_done = True
+                for q in list(self.subscribers):
+                    await q.put(event)
+        except Exception as e:
+            logger.error(f"Error in task {self.call_id}: {e}")
+            event = ProgressEvent(call_id=self.call_id, type="error", payload={"detail": str(e)})
+            async with self._lock:
+                self.history.append(event)
+                self.final_event = event
+                self.is_done = True
+                for q in list(self.subscribers):
+                    await q.put(event)
+        finally:
+            self.is_done = True
+
+    async def subscribe(self) -> asyncio.Queue:
+        q = asyncio.Queue()
+        async with self._lock:
+            # Replay history
+            for event in self.history:
+                await q.put(event)
+            
+            if not self.is_done:
+                self.subscribers.add(q)
+            elif self.final_event and self.final_event not in self.history:
+                 await q.put(self.final_event)
+            
+            # If done, put a sentinel or the final event is already there
+        return q
+
+    def unsubscribe(self, q: asyncio.Queue):
+        if q in self.subscribers:
+            self.subscribers.remove(q)
+
+    async def stop(self):
+        if self.task:
+            self.task.cancel()
+            await self.gen.aclose()
+
 class ToolRegistry:
     def __init__(self):
         self._tools: Dict[str, Callable] = {}
-        # Stores call_id -> {"gen": gen, "tool_name": str, "created_at": timestamp, "consumed": bool}
+        # Stores call_id -> {"broadcaster": broadcaster, "created_at": timestamp, "consumed": bool}
         self._active_tasks: Dict[str, Dict[str, Any]] = {}
         self._total_tasks_started = 0
         self._peak_active_tasks = 0
@@ -88,16 +172,11 @@ class ToolRegistry:
         import inspect
         def decorator(func: Callable):
             tool_name = name or func.__name__
-            
-            # Verify it's an async generator
             if not inspect.isasyncgenfunction(func):
-                logger.warning(f"Tool {tool_name} is not an async generator function. It might fail during execution.")
-            
-            # Apply pydantic validation to the tool
+                logger.warning(f"Tool {tool_name} is not an async generator function.")
             validated_func = validate_call(func)
-            # No lock needed for simple dict insertion during startup
             self._tools[tool_name] = validated_func
-            logger.info(f"Tool registered: {tool_name}", extra={"tool_name": tool_name})
+            logger.info(f"Tool registered: {tool_name}")
             return func
         return decorator
 
@@ -117,12 +196,11 @@ class ToolRegistry:
         return list(self._tools.keys())
 
     async def list_active_tasks(self) -> List[Dict[str, Any]]:
-        """Returns a list of all active tasks in the registry."""
         async with self._lock:
             return [
                 {
                     "call_id": call_id,
-                    "tool_name": data["tool_name"],
+                    "tool_name": data["broadcaster"].tool_name,
                     "created_at": data["created_at"],
                     "consumed": data["consumed"]
                 }
@@ -133,23 +211,11 @@ class ToolRegistry:
         return self._tools.get(name)
 
     async def store_task(self, call_id: str, gen: AsyncGenerator, tool_name: str):
-        import inspect
         import time
-        # Final safety check: ensure gen is actually an async generator
-        if not inspect.isasyncgen(gen):
-            # If it's a coroutine, we MUST await it or close it to avoid RuntimeWarning
-            if inspect.iscoroutine(gen):
-                try:
-                    # We close it since we can't use it as a generator
-                    gen.close()
-                except:
-                    pass
-            raise TypeError(f"Tool {tool_name} did not return an async generator. Got {type(gen)}")
-
+        broadcaster = TaskBroadcaster(call_id, tool_name, gen)
         async with self._lock:
             self._active_tasks[call_id] = {
-                "gen": gen,
-                "tool_name": tool_name,
+                "broadcaster": broadcaster,
                 "created_at": time.time(),
                 "consumed": False
             }
@@ -161,92 +227,66 @@ class ToolRegistry:
             if current_count > self._peak_active_tasks:
                 self._peak_active_tasks = current_count
                 PEAK_ACTIVE_TASKS.set(current_count)
-                
-        logger.debug(f"Task stored in registry: {call_id}", extra={"call_id": call_id, "tool_name": tool_name})
+        
+        await broadcaster.start()
+        logger.debug(f"Task stored and broadcaster started: {call_id}")
 
-    async def get_task(self, call_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieves the task data and marks it as consumed."""
-        async with self._lock:
-            task_data = self._active_tasks.get(call_id)
-            if task_data and not task_data["consumed"]:
-                task_data["consumed"] = True
-                return task_data
-            return None
-    
-    async def mark_consumed(self, call_id: str):
-        """Marks a task as consumed without retrieving it. Used for WebSocket tasks."""
+    async def get_broadcaster(self, call_id: str) -> Optional[TaskBroadcaster]:
         async with self._lock:
             task_data = self._active_tasks.get(call_id)
             if task_data:
                 task_data["consumed"] = True
-                logger.debug(f"Task marked as consumed: {call_id}", extra={"call_id": call_id})
+                return task_data["broadcaster"]
+            return None
 
     async def get_task_no_consume(self, call_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieves the task data without marking it as consumed."""
         async with self._lock:
             return self._active_tasks.get(call_id)
 
     async def remove_task(self, call_id: str):
-        """Removes the task from the registry if it exists."""
         async with self._lock:
             task_data = self._active_tasks.pop(call_id, None)
             if task_data:
-                tool_name = task_data["tool_name"]
+                tool_name = task_data["broadcaster"].tool_name
                 ACTIVE_TASKS.labels(tool_name=tool_name).dec()
-                logger.info(f"Task removed from registry: {call_id}", extra={"call_id": call_id})
-            else:
-                logger.debug(f"Task not found for removal: {call_id}", extra={"call_id": call_id})
+                # We don't necessarily stop the broadcaster here, 
+                # because we want it to finish and then be cleaned up?
+                # Actually, if we remove it, it should probably stop.
+                await task_data["broadcaster"].stop()
+                logger.info(f"Task removed from registry: {call_id}")
 
     async def cleanup_tasks(self):
-        """Closes all active generators currently in the registry."""
         async with self._lock:
             tasks = list(self._active_tasks.items())
-        
-        if tasks:
-            logger.info(f"Cleaning up {len(tasks)} active tasks during shutdown")
-        
         for call_id, task_data in tasks:
-            gen = task_data["gen"]
-            tool_name = task_data["tool_name"]
-            try:
-                await gen.aclose()
-            except Exception as e:
-                logger.error(f"Error closing generator {call_id}: {e}", extra={"call_id": call_id, "tool_name": tool_name})
-            finally:
-                await self.remove_task(call_id)
+            await task_data["broadcaster"].stop()
+            await self.remove_task(call_id)
 
     async def cleanup_stale_tasks(self, max_age_seconds: int):
         import time
         now = time.time()
         stale_tasks = []
-        
         async with self._lock:
             for call_id, task_data in self._active_tasks.items():
-                if not task_data["consumed"] and now - task_data["created_at"] > max_age_seconds:
-                    stale_tasks.append((call_id, task_data["gen"], task_data["tool_name"]))
+                if task_data["broadcaster"].is_done and now - task_data["created_at"] > max_age_seconds:
+                    stale_tasks.append(call_id)
+                elif not task_data["consumed"] and now - task_data["created_at"] > max_age_seconds:
+                    stale_tasks.append(call_id)
         
-        if not stale_tasks:
-            return
-
-        logger.info(f"Cleaning up {len(stale_tasks)} stale tasks")
-        for call_id, gen, tool_name in stale_tasks:
-            try:
-                await gen.aclose()
-            except Exception as e:
-                logger.error(f"Error closing stale generator {call_id}: {e}", extra={"call_id": call_id, "tool_name": tool_name})
-            finally:
-                await self.remove_task(call_id)
-                STALE_TASKS_CLEANED_TOTAL.inc()
+        for call_id in stale_tasks:
+            await self.remove_task(call_id)
+            STALE_TASKS_CLEANED_TOTAL.inc()
 
 registry = ToolRegistry()
 
 def progress_tool(name: Optional[str] = None):
-    """
-    Decorator to register an async generator as a tool.
-    The generator should yield ProgressPayload objects and finally a Dict for result.
-    """
-    return registry.register(name)
+    def decorator(func: Callable):
+        tool_name = name or func.__name__
+        validated_func = validate_call(func)
+        registry._tools[tool_name] = validated_func
+        logger.info(f"Tool registered: {tool_name}")
+        return func
+    return decorator
 
 async def format_sse(event: ProgressEvent) -> str:
-    """Formats a ProgressEvent as an SSE data string."""
     return f"data: {event.model_dump_json()}\n\n"
