@@ -267,7 +267,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.10.79", "v753-supreme-apex-adele-verification", "v753 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.10.80", "v754-supreme-apex-adele-verification", "v754 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -13379,6 +13379,206 @@ async def system_net_io_per_nic_dropout_avg_ultimate_audit(samples: int = 3):
             logger.error(f"Error auditing net io per nic dropout avg ultimate: {e}")
             metadata = {"error": str(e)}
         yield ProgressPayload(step="Sampling Net", pct=pct, log=f"Measured per-nic dropout sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_read_time_avg_ultimate_audit")
+async def system_disk_io_per_disk_read_time_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system disk io per disk read time avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk I/O Probe", pct=0, log="Collecting per-disk read time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            current_vals = psutil.disk_io_counters(perdisk=True)
+            read_time_avg = sum(c.read_time for c in current_vals.values()) / len(current_vals) if current_vals else 0.0
+            samples_list.append(read_time_avg)
+            metadata = {"read_time_avg": read_time_avg}
+        except Exception as e:
+            logger.error(f"Error auditing disk io per disk read time avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk I/O", pct=pct, log=f"Measured per-disk read time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_write_time_avg_ultimate_audit")
+async def system_disk_io_per_disk_write_time_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system disk io per disk write time avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk I/O Probe", pct=0, log="Collecting per-disk write time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            current_vals = psutil.disk_io_counters(perdisk=True)
+            write_time_avg = sum(c.write_time for c in current_vals.values()) / len(current_vals) if current_vals else 0.0
+            samples_list.append(write_time_avg)
+            metadata = {"write_time_avg": write_time_avg}
+        except Exception as e:
+            logger.error(f"Error auditing disk io per disk write time avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk I/O", pct=pct, log=f"Measured per-disk write time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_disk_io_per_disk_busy_time_avg_ultimate_audit")
+async def system_disk_io_per_disk_busy_time_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system disk io per disk busy time avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk I/O Probe", pct=0, log="Collecting per-disk busy time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            current_vals = psutil.disk_io_counters(perdisk=True)
+            busy_time_avg = sum(getattr(c, "busy_time", 0) for c in current_vals.values()) / len(current_vals) if current_vals else 0.0
+            samples_list.append(busy_time_avg)
+            metadata = {"busy_time_avg": busy_time_avg}
+        except Exception as e:
+            logger.error(f"Error auditing disk io per disk busy time avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk I/O", pct=pct, log=f"Measured per-disk busy time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_buffers_avg_ultimate_audit")
+async def system_memory_virtual_memory_buffers_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system memory virtual memory buffers avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory buffers baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            buffers = getattr(vmem, "buffers", 0)
+            samples_list.append(buffers)
+            metadata = {"buffers": buffers}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory buffers avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory buffers sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_cached_avg_ultimate_audit")
+async def system_memory_virtual_memory_cached_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system memory virtual memory cached avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory cached baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            cached = getattr(vmem, "cached", 0)
+            samples_list.append(cached)
+            metadata = {"cached": cached}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory cached avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory cached sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_shared_avg_ultimate_audit")
+async def system_memory_virtual_memory_shared_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system memory virtual memory shared avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory shared baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            shared = getattr(vmem, "shared", 0)
+            samples_list.append(shared)
+            metadata = {"shared": shared}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory shared avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory shared sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_slab_avg_ultimate_audit")
+async def system_memory_virtual_memory_slab_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system memory virtual memory slab avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory slab baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            slab = getattr(vmem, "slab", 0)
+            samples_list.append(slab)
+            metadata = {"slab": slab}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory slab avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory slab sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_active_avg_ultimate_audit")
+async def system_memory_virtual_memory_active_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system memory virtual memory active avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory active baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            active = getattr(vmem, "active", 0)
+            samples_list.append(active)
+            metadata = {"active": active}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory active avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory active sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_virtual_memory_inactive_avg_ultimate_audit")
+async def system_memory_virtual_memory_inactive_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system memory virtual memory inactive avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting virtual memory inactive baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            inactive = getattr(vmem, "inactive", 0)
+            samples_list.append(inactive)
+            metadata = {"inactive": inactive}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory inactive avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured virtual memory inactive sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_memory_swap_memory_sin_avg_ultimate_audit")
+async def system_memory_swap_memory_sin_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system memory swap memory sin avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting swap memory sin baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            sin = getattr(swap, "sin", 0)
+            samples_list.append(sin)
+            metadata = {"sin": sin}
+        except Exception as e:
+            logger.error(f"Error auditing swap memory sin avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Memory", pct=pct, log=f"Measured swap memory sin sample {i+1}/{samples}.", metadata=metadata)
         await asyncio.sleep(0.1)
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0.0
     yield {"status": "audit_complete", "final_avg": avg_val, "samples": len(samples_list)}
