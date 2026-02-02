@@ -9749,3 +9749,81 @@ async def system_cpu_freq_max_ultimate_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average cpu freq max: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_max": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_load_avg_1m_ultimate_audit")
+async def system_load_avg_1m_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide load average (1 min) ultimate.
+    """
+    logger.info("Starting system load average (1 min) ultimate audit")
+    yield ProgressPayload(step="Initializing Load probe", pct=0, log="Collecting system-wide load average stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            load_avg = psutil.getloadavg()
+            current_val = load_avg[0]
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Load Avg (1m) {current_val}")
+            metadata = {"load_1m": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing load average 1m ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Load Avg 1m", pct=pct, log=f"Measured load average (1m) sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average load average (1m): {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_load_1m": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_load_avg_5m_ultimate_audit")
+async def system_load_avg_5m_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide load average (5 min) ultimate.
+    """
+    logger.info("Starting system load average (5 min) ultimate audit")
+    yield ProgressPayload(step="Initializing Load probe", pct=0, log="Collecting system-wide load average stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            load_avg = psutil.getloadavg()
+            current_val = load_avg[1]
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Load Avg (5m) {current_val}")
+            metadata = {"load_5m": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing load average 5m ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Load Avg 5m", pct=pct, log=f"Measured load average (5m) sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average load average (5m): {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_load_5m": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_load_avg_15m_ultimate_audit")
+async def system_load_avg_15m_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide load average (15 min) ultimate.
+    """
+    logger.info("Starting system load average (15 min) ultimate audit")
+    yield ProgressPayload(step="Initializing Load probe", pct=0, log="Collecting system-wide load average stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            load_avg = psutil.getloadavg()
+            current_val = load_avg[2]
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Load Avg (15m) {current_val}")
+            metadata = {"load_15m": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing load average 15m ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Load Avg 15m", pct=pct, log=f"Measured load average (15m) sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average load average (15m): {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_load_15m": avg_val, "stability": "STABLE"}
