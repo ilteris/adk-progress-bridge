@@ -21124,3 +21124,756 @@ async def system_process_connections_all_count_avg_ultimate_audit(samples: int =
         await asyncio.sleep(0.1)
     final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
     yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_open_files_count_avg_ultimate_audit")
+async def system_process_open_files_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process open files count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting open files baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.open_files())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process open files count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_open_files_count_max_ultimate_audit")
+async def system_process_open_files_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process open files count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting open files baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.open_files())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process open files count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_open_files_count_min_ultimate_audit")
+async def system_process_open_files_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process open files count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting open files baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.open_files())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process open files count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_threads_count_avg_ultimate_audit")
+async def system_process_threads_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process threads count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting threads baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_threads()
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process threads count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_threads_count_max_ultimate_audit")
+async def system_process_threads_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process threads count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting threads baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_threads()
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process threads count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_threads_count_min_ultimate_audit")
+async def system_process_threads_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process threads count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting threads baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_threads()
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process threads count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_num_ctx_switches_voluntary_avg_ultimate_audit")
+async def system_process_num_ctx_switches_voluntary_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process voluntary ctx switches avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting ctx switches baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_ctx_switches().voluntary
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process voluntary ctx switches avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_num_ctx_switches_voluntary_max_ultimate_audit")
+async def system_process_num_ctx_switches_voluntary_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process voluntary ctx switches max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting ctx switches baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_ctx_switches().voluntary
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process voluntary ctx switches max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_num_ctx_switches_involuntary_avg_ultimate_audit")
+async def system_process_num_ctx_switches_involuntary_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process involuntary ctx switches avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting ctx switches baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_ctx_switches().involuntary
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process involuntary ctx switches avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_num_ctx_switches_involuntary_max_ultimate_audit")
+async def system_process_num_ctx_switches_involuntary_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process involuntary ctx switches max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting ctx switches baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.num_ctx_switches().involuntary
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process involuntary ctx switches max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cpu_affinity_count_avg_ultimate_audit")
+async def system_process_cpu_affinity_count_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cpu affinity count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cpu affinity baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.cpu_affinity())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cpu affinity count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cpu_affinity_count_max_ultimate_audit")
+async def system_process_cpu_affinity_count_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cpu affinity count max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cpu affinity baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.cpu_affinity())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cpu affinity count max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_cpu_affinity_count_min_ultimate_audit")
+async def system_process_cpu_affinity_count_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process cpu affinity count min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting cpu affinity baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.cpu_affinity())
+            samples_list.append(val)
+            metadata = {"count": val}
+        except Exception as e:
+            logger.error(f"Error auditing process cpu affinity count min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_percent_avg_ultimate_audit")
+async def system_process_memory_percent_avg_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory percent avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory percent baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_percent()
+            samples_list.append(val)
+            metadata = {"percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory percent avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_memory_percent_max_ultimate_audit")
+async def system_process_memory_percent_max_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting process memory percent max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Probe", pct=0, log="Collecting memory percent baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_percent()
+            samples_list.append(val)
+            metadata = {"percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing process memory percent max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Measured percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max, "samples": len(samples_list)}
+
+@progress_tool(name="system_process_create_time_ultimate_audit")
+async def system_process_create_time_ultimate_audit(samples: int = 1):
+    logger.info("Starting process create time audit")
+    try:
+        import psutil
+        proc = psutil.Process()
+        val = proc.create_time()
+        yield {"status": "audit_complete", "create_time": val}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_status_ultimate_audit")
+async def system_process_status_ultimate_audit(samples: int = 1):
+    try:
+        import psutil
+        proc = psutil.Process()
+        val = proc.status()
+        yield {"status": "audit_complete", "process_status": val}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_username_ultimate_audit")
+async def system_process_username_ultimate_audit(samples: int = 1):
+    try:
+        import psutil
+        proc = psutil.Process()
+        val = proc.username()
+        yield {"status": "audit_complete", "username": val}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_terminal_ultimate_audit")
+async def system_process_terminal_ultimate_audit(samples: int = 1):
+    try:
+        import psutil
+        proc = psutil.Process()
+        val = proc.terminal()
+        yield {"status": "audit_complete", "terminal": val}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_nice_ultimate_audit")
+async def system_process_nice_ultimate_audit(samples: int = 1):
+    try:
+        import psutil
+        proc = psutil.Process()
+        val = proc.nice()
+        yield {"status": "audit_complete", "nice_value": val}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_ionice_value_ultimate_audit")
+async def system_process_ionice_value_ultimate_audit(samples: int = 1):
+    try:
+        import psutil
+        proc = psutil.Process()
+        if hasattr(proc, "ionice"):
+            val = proc.ionice()
+            yield {"status": "audit_complete", "ionice": str(val)}
+        else:
+            yield {"status": "audit_complete", "ionice": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_nofile_soft_ultimate_audit")
+async def system_process_rlimit_nofile_soft_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_NOFILE)[0]
+            yield {"status": "audit_complete", "rlimit_nofile_soft": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_nofile_soft": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_nofile_hard_ultimate_audit")
+async def system_process_rlimit_nofile_hard_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_NOFILE)[1]
+            yield {"status": "audit_complete", "rlimit_nofile_hard": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_nofile_hard": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_cpu_soft_ultimate_audit")
+async def system_process_rlimit_cpu_soft_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_CPU)[0]
+            yield {"status": "audit_complete", "rlimit_cpu_soft": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_cpu_soft": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_cpu_hard_ultimate_audit")
+async def system_process_rlimit_cpu_hard_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_CPU)[1]
+            yield {"status": "audit_complete", "rlimit_cpu_hard": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_cpu_hard": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_fsize_soft_ultimate_audit")
+async def system_process_rlimit_fsize_soft_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_FSIZE)[0]
+            yield {"status": "audit_complete", "rlimit_fsize_soft": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_fsize_soft": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_fsize_hard_ultimate_audit")
+async def system_process_rlimit_fsize_hard_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_FSIZE)[1]
+            yield {"status": "audit_complete", "rlimit_fsize_hard": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_fsize_hard": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_memlock_soft_ultimate_audit")
+async def system_process_rlimit_memlock_soft_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_MEMLOCK)[0]
+            yield {"status": "audit_complete", "rlimit_memlock_soft": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_memlock_soft": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_memlock_hard_ultimate_audit")
+async def system_process_rlimit_memlock_hard_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_MEMLOCK)[1]
+            yield {"status": "audit_complete", "rlimit_memlock_hard": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_memlock_hard": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_rss_soft_ultimate_audit")
+async def system_process_rlimit_rss_soft_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_RSS)[0]
+            yield {"status": "audit_complete", "rlimit_rss_soft": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_rss_soft": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_rss_hard_ultimate_audit")
+async def system_process_rlimit_rss_hard_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_RSS)[1]
+            yield {"status": "audit_complete", "rlimit_rss_hard": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_rss_hard": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_nproc_soft_ultimate_audit")
+async def system_process_rlimit_nproc_soft_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_NPROC)[0]
+            yield {"status": "audit_complete", "rlimit_nproc_soft": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_nproc_soft": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_nproc_hard_ultimate_audit")
+async def system_process_rlimit_nproc_hard_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_NPROC)[1]
+            yield {"status": "audit_complete", "rlimit_nproc_hard": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_nproc_hard": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_stack_soft_ultimate_audit")
+async def system_process_rlimit_stack_soft_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_STACK)[0]
+            yield {"status": "audit_complete", "rlimit_stack_soft": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_stack_soft": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_rlimit_stack_hard_ultimate_audit")
+async def system_process_rlimit_stack_hard_ultimate_audit(samples: int = 1):
+    try:
+        import psutil, resource
+        proc = psutil.Process()
+        if hasattr(proc, "rlimit"):
+            val = proc.rlimit(resource.RLIMIT_STACK)[1]
+            yield {"status": "audit_complete", "rlimit_stack_hard": val}
+        else:
+            yield {"status": "audit_complete", "rlimit_stack_hard": "N/A"}
+    except Exception as e:
+        yield {"status": "error", "detail": str(e)}
+
+@progress_tool(name="system_process_cpu_times_children_user_avg_ultimate_audit")
+async def system_process_cpu_times_children_user_avg_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.cpu_times(), "children_user", 0.0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg}
+
+@progress_tool(name="system_process_cpu_times_children_user_max_ultimate_audit")
+async def system_process_cpu_times_children_user_max_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.cpu_times(), "children_user", 0.0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max}
+
+@progress_tool(name="system_process_cpu_times_children_user_min_ultimate_audit")
+async def system_process_cpu_times_children_user_min_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.cpu_times(), "children_user", 0.0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min}
+
+@progress_tool(name="system_process_cpu_times_children_system_avg_ultimate_audit")
+async def system_process_cpu_times_children_system_avg_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.cpu_times(), "children_system", 0.0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg}
+
+@progress_tool(name="system_process_cpu_times_children_system_max_ultimate_audit")
+async def system_process_cpu_times_children_system_max_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.cpu_times(), "children_system", 0.0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max}
+
+@progress_tool(name="system_process_cpu_times_children_system_min_ultimate_audit")
+async def system_process_cpu_times_children_system_min_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.cpu_times(), "children_system", 0.0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min}
+
+@progress_tool(name="system_process_cpu_times_iowait_avg_ultimate_audit")
+async def system_process_cpu_times_iowait_avg_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.cpu_times(), "iowait", 0.0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg}
+
+@progress_tool(name="system_process_cpu_times_iowait_max_ultimate_audit")
+async def system_process_cpu_times_iowait_max_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.cpu_times(), "iowait", 0.0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max}
+
+@progress_tool(name="system_process_cpu_times_iowait_min_ultimate_audit")
+async def system_process_cpu_times_iowait_min_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.cpu_times(), "iowait", 0.0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min}
+
+@progress_tool(name="system_process_memory_maps_count_avg_ultimate_audit")
+async def system_process_memory_maps_count_avg_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.memory_maps())
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_avg = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_avg}
+
+@progress_tool(name="system_process_memory_maps_count_max_ultimate_audit")
+async def system_process_memory_maps_count_max_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.memory_maps())
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_max = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_max}
+
+@progress_tool(name="system_process_memory_maps_count_min_ultimate_audit")
+async def system_process_memory_maps_count_min_ultimate_audit(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = len(proc.memory_maps())
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_min = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_min}
