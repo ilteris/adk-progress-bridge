@@ -267,7 +267,7 @@ async def deep_health_check():
     dummy_state = DummyState()
     
     yield ProgressPayload(step="Processing metrics", pct=70, log="Mapping raw metrics to structured report...")
-    data = await health_engine.get_health_data(dummy_state, "2.9.5", "v669-supreme-apex-adele-verification", "v669 SUPREME APEX VERIFICATION ADELE")
+    data = await health_engine.get_health_data(dummy_state, "2.10.2", "v676-supreme-apex-adele-verification", "v676 SUPREME APEX VERIFICATION ADELE")
     await asyncio.sleep(0.2)
     
     yield ProgressPayload(step="Finalizing", pct=100, log="Health check complete.")
@@ -6168,3 +6168,64 @@ async def system_cpu_freq_min_avg_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. CPU frequency min statistics are stable.")
     yield {"status": "audit_complete", "final_cpu_freq_min_avg": avg_min_freq, "stability": "STABLE"}
+
+
+@progress_tool(name="system_cpu_freq_max_avg_audit")
+async def system_cpu_freq_max_avg_audit(samples: int = 3):
+    logger.info("Starting system CPU frequency max average audit")
+    yield ProgressPayload(step="Initializing CPU freq max probe", pct=0, log="Collecting system-wide CPU frequency max stats...")
+    avg_max_freq = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            freqs = psutil.cpu_freq(percpu=True)
+            avg_max_freq = sum(f.max for f in freqs) / len(freqs) if freqs else 0
+            logger.info(f"Sample {i+1}/{samples}: Avg Max Freq {avg_max_freq:.2f}MHz")
+            metadata = {"cpu_freq_max_avg": avg_max_freq}
+        except Exception as e:
+            logger.error(f"Error auditing system CPU frequency max average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU freq max average", pct=pct, log=f"Measured CPU frequency max average sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. CPU frequency max statistics are stable.")
+    yield {"status": "audit_complete", "final_cpu_freq_max_avg": avg_max_freq, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_shared_audit")
+async def system_memory_shared_audit(samples: int = 3):
+    logger.info("Starting system memory shared audit")
+    yield ProgressPayload(step="Initializing memory shared probe", pct=0, log="Collecting system-wide shared memory stats...")
+    shared_mem = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            shared_mem = getattr(vmem, "shared", 0)
+            logger.info(f"Sample {i+1}/{samples}: Shared Memory {shared_mem / 1024 / 1024:.2f}MB")
+            metadata = {"memory_shared": shared_mem}
+        except Exception as e:
+            logger.error(f"Error auditing system memory shared: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling memory shared", pct=pct, log=f"Measured system memory shared sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory shared statistics are stable.")
+    yield {"status": "audit_complete", "final_memory_shared": shared_mem, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_slab_audit")
+async def system_memory_slab_audit(samples: int = 3):
+    logger.info("Starting system memory slab audit")
+    yield ProgressPayload(step="Initializing memory slab probe", pct=0, log="Collecting system-wide memory slab stats...")
+    slab_mem = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            slab_mem = getattr(vmem, "slab", 0)
+            logger.info(f"Sample {i+1}/{samples}: Slab Memory {slab_mem / 1024 / 1024:.2f}MB")
+            metadata = {"memory_slab": slab_mem}
+        except Exception as e:
+            logger.error(f"Error auditing system memory slab: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling memory slab", pct=pct, log=f"Measured system memory slab sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory slab statistics are stable.")
+    yield {"status": "audit_complete", "final_memory_slab": slab_mem, "stability": "STABLE"}

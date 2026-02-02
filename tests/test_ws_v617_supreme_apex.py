@@ -6,7 +6,7 @@ from backend.app.main import app, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX
 
 def test_process_memory_percent_audit_tool_ws():
     """
-    Verifies that the process_memory_percent_audit tool (v675) works over WebSocket.
+    Verifies that the process_memory_percent_audit tool (v676) works over WebSocket.
     """
     client = TestClient(app)
     with client.websocket_connect("/ws") as websocket:
@@ -19,7 +19,7 @@ def test_process_memory_percent_audit_tool_ws():
             "type": "start",
             "tool_name": "process_memory_percent_audit",
             "args": {"samples": 2},
-            "request_id": "req-v675"
+            "request_id": "req-v676"
         }))
         
         resp = websocket.receive_json()
@@ -40,14 +40,14 @@ def test_process_memory_percent_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_memory_percent" in resp["payload"]
 
-def test_v675_metadata_baseline():
+def test_v676_metadata_baseline():
     """
-    Verifies the metadata baseline for v675.
-    Note: We've moved to v675 in the current code, but we check if the baseline tools are present.
+    Verifies the metadata baseline for v676.
+    Note: We've moved to v676 in the current code, but we check if the baseline tools are present.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
-    # If we are in v675 session, version will be 2.10.1
-    assert data["version"] == "2.10.1"
+    # If we are in v676 session, version will be 2.10.2
+    assert data["version"] == "2.10.2"

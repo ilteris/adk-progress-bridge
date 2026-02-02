@@ -3,7 +3,7 @@ from backend.app.main import app
 import pytest
 import json
 
-def test_ws_v675_new_tools():
+def test_ws_v676_new_tools():
     client = TestClient(app)
     with client.websocket_connect("/ws?api_key=test-key") as websocket:
         # Handshake
@@ -11,7 +11,7 @@ def test_ws_v675_new_tools():
         assert data["type"] == "connected"
 
         # List tools
-        websocket.send_json({"type": "list_tools", "request_id": "v675_list"})
+        websocket.send_json({"type": "list_tools", "request_id": "v676_list"})
         
         while True:
             data = websocket.receive_json()
@@ -23,7 +23,7 @@ def test_ws_v675_new_tools():
                 break
 
         # Test tool 1
-        req_id = "v675_test_net_conns"
+        req_id = "v676_test_net_conns"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_net_connections_count_audit",
@@ -39,7 +39,7 @@ def test_ws_v675_new_tools():
                 break
 
         # Test tool 2
-        req_id = "v675_test_cpu_logical"
+        req_id = "v676_test_cpu_logical"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_cpu_count_logical_audit",
@@ -55,7 +55,7 @@ def test_ws_v675_new_tools():
                 break
 
         # Test tool 3
-        req_id = "v675_test_cpu_physical"
+        req_id = "v676_test_cpu_physical"
         websocket.send_json({
             "type": "start",
             "tool_name": "system_cpu_count_physical_audit",

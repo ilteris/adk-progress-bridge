@@ -19,7 +19,7 @@ def test_process_page_faults_audit_tool_ws():
             "type": "start",
             "tool_name": "process_page_faults_audit",
             "args": {"samples": 2},
-            "request_id": "req-v675"
+            "request_id": "req-v676"
         }))
         
         resp = websocket.receive_json()
@@ -40,14 +40,14 @@ def test_process_page_faults_audit_tool_ws():
         assert resp["payload"]["status"] == "audit_complete"
         assert "final_page_faults" in resp["payload"]
 
-def test_v675_metadata():
+def test_v676_metadata():
     """
-    Verifies that the system reports correct v675 Supreme Apex metadata.
+    Verifies that the system reports correct v676 Supreme Apex metadata.
     """
     client = TestClient(app)
     response = client.get("/version")
     assert response.status_code == 200
     data = response.json()
     assert data["version"] == APP_VERSION
-    assert data["git_commit"] == "v675-supreme-apex-adele-verification"
-    assert "v675 SUPREME APEX" in data["status"]
+    assert data["git_commit"] == "v676-supreme-apex-adele-verification"
+    assert "v676 SUPREME APEX" in data["status"]
