@@ -2,12 +2,13 @@
 import { ref, onMounted, watch } from 'vue'
 import { useAgentStream } from '../composables/useAgentStream'
 
-const { state, runTool, stopTool, sendInput, reset, fetchTools: fetchToolsFromComposable, fetchHealth } = useAgentStream()
+const { state, runTool, stopTool, sendInput, reset, fetchTools: fetchToolsFromComposable, fetchHealth, fetchActiveTasks, joinTask } = useAgentStream()
 const auditDuration = ref(5)
 const selectedTool = ref('long_audit')
 const userInput = ref('')
 const availableTools = ref<{ id: string, name: string }[]>([])
 const showMetrics = ref(false)
+const showActiveTasks = ref(false)
 
 const fetchTools = async () => {
   try {
@@ -27,6 +28,10 @@ const fetchTools = async () => {
     ]
   }
 }
+
+watch(showActiveTasks, (val) => {
+  if (val) fetchActiveTasks()
+})
 
 watch(() => state.useWS, () => {
   if (!state.isStreaming) {
@@ -70,6 +75,9 @@ const formatBps = (bps: number) => {
       <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <h4 class="mb-0">Task Monitor</h4>
         <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-sm btn-outline-light me-2" @click="showActiveTasks = !showActiveTasks">
+            {{ showActiveTasks ? "Hide" : "Show" }} Tasks
+          </button>
           <button class="btn btn-sm btn-outline-light" @click="showMetrics = !showMetrics">
             {{ showMetrics ? 'Hide' : 'Show' }} Metrics
           </button>

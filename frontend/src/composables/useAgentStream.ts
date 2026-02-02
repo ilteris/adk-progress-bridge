@@ -320,6 +320,14 @@ export class WebSocketManager {
       })
   }
 
+  async subscribeToTask(callId: string, onEvent: (event: AgentEvent) => void): Promise<void> {
+    await this.sendWithCorrelation({
+        type: "subscribe",
+        call_id: callId
+    })
+    this.subscribe(callId, onEvent)
+  }
+
   async startTask(toolName: string, args: any, onEvent: (event: AgentEvent) => void): Promise<string> {
     const data = await this.sendWithCorrelation({
         type: 'start',
@@ -699,5 +707,58 @@ export function useAgentStream() {
     })
   }
   
-  return { state, runTool, stopTool, sendInput, reset, fetchTools, fetchActiveTasks, fetchHealth }
+  const joinTask = async (callId: string) => {
+    if (state.isStreaming) {
+      await stopTool()
+    }
+    const useWS = state.useWS
+    reset()
+    state.useWS = useWS
+    state.isStreaming = true
+    state.callId = callId
+    
+    if (state.useWS) {
+      try {
+        state.status = "connecting"
+        await wsManager.subscribeToTask(callId, (event) => {
+          handleEvent(event, () => {
+            wsManager.unsubscribe(callId)
+          })
+        })
+        state.isConnected = true
+        state.status = "connected"
+      } catch (err: any) {
+        state.error = err.message || "WebSocket error"
+        state.status = "error"
+        state.isStreaming = false
+      }
+    } else {
+      state.status = "connected"
+      const streamUrl = new URL(`${API_BASE_URL}/stream`)
+      streamUrl.searchParams.append("call_id", callId)
+      if (BRIDGE_API_KEY) {
+        streamUrl.searchParams.append("api_key", BRIDGE_API_KEY)
+      }
+      eventSource = new EventSource(streamUrl.toString())
+      eventSource.onopen = () => {
+        state.isConnected = true
+        state.status = "connected"
+        state.error = null
+      }
+      eventSource.onmessage = (event) => {
+        const data: AgentEvent = JSON.parse(event.data)
+        if (data.call_id === state.callId) {
+            handleEvent(data, () => eventSource?.close())
+        }
+      }
+      eventSource.onerror = () => {
+        state.error = "Connection failed"
+        state.status = "error"
+        eventSource?.close()
+        state.isStreaming = false
+      }
+    }
+  }
+
+  return { state, runTool, stopTool, sendInput, reset, fetchTools, fetchActiveTasks, fetchHealth, joinTask }
 }

@@ -34,10 +34,10 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.12.30" # Bumped for v803
-BUILD_TIMESTAMP = "2026-02-02T10:00:00Z"
-GIT_COMMIT = "v807-supreme-apex-1240-v1"
-OPERATIONAL_APEX = "v807 SUPREME APEX 1240 VERIFICATION V1"
+APP_VERSION = "2.12.47" # Bumped for v803
+BUILD_TIMESTAMP = "2026-02-02T11:45:00Z"
+GIT_COMMIT = "v822-supreme-apex-1960"
+OPERATIONAL_APEX = "v822 SUPREME APEX 1960 VERIFICATION"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT, "build_timestamp": BUILD_TIMESTAMP})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -296,6 +296,12 @@ async def websocket_endpoint(websocket: WebSocket):
                         await task_data["broadcaster"].stop()
                         await safe_send_json({"type": "stop_success", "call_id": call_id, "request_id": request_id})
                     else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No active task found"}})
+                elif msg_type == "unsubscribe":
+                    call_id = message.get("call_id")
+                    if call_id in active_tasks:
+                        active_tasks[call_id].cancel()
+                        await safe_send_json({"type": "unsubscribe_success", "call_id": call_id, "request_id": request_id})
+                    else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No subscription found for this task"}})
                 elif msg_type == "subscribe":
                     call_id = message.get("call_id")
                     try:
