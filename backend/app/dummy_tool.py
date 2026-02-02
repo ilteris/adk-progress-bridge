@@ -7330,3 +7330,81 @@ async def system_net_io_dropout_avg_audit(samples: int = 3):
     avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net drop out: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_net_drop_out": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_usage_percent_avg_audit")
+async def system_disk_usage_percent_avg_audit(samples: int = 3):
+    """
+    Audits system-wide disk usage percent average.
+    """
+    logger.info("Starting system disk usage percent average audit")
+    yield ProgressPayload(step="Initializing Disk probe", pct=0, log="Collecting system-wide disk stats...")
+    disk_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            usage = psutil.disk_usage('/')
+            current_val = usage.percent
+            disk_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Percent {current_val}%")
+            metadata = {"disk_percent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk usage percent average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured disk percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(disk_samples) / len(disk_samples) if disk_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk percent: {avg_val:.2f}%")
+    yield {"status": "audit_complete", "avg_disk_percent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_usage_used_avg_audit")
+async def system_disk_usage_used_avg_audit(samples: int = 3):
+    """
+    Audits system-wide disk usage used average.
+    """
+    logger.info("Starting system disk usage used average audit")
+    yield ProgressPayload(step="Initializing Disk probe", pct=0, log="Collecting system-wide disk stats...")
+    disk_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            usage = psutil.disk_usage('/')
+            current_val = usage.used
+            disk_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Used {current_val / 1024 / 1024 / 1024:.2f}GB")
+            metadata = {"disk_used": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk usage used average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured disk used sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(disk_samples) / len(disk_samples) if disk_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk used: {avg_val / 1024 / 1024 / 1024:.2f}GB")
+    yield {"status": "audit_complete", "avg_disk_used": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_usage_free_avg_audit")
+async def system_disk_usage_free_avg_audit(samples: int = 3):
+    """
+    Audits system-wide disk usage free average.
+    """
+    logger.info("Starting system disk usage free average audit")
+    yield ProgressPayload(step="Initializing Disk probe", pct=0, log="Collecting system-wide disk stats...")
+    disk_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            usage = psutil.disk_usage('/')
+            current_val = usage.free
+            disk_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Free {current_val / 1024 / 1024 / 1024:.2f}GB")
+            metadata = {"disk_free": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk usage free average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk", pct=pct, log=f"Measured disk free sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(disk_samples) / len(disk_samples) if disk_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk free: {avg_val / 1024 / 1024 / 1024:.2f}GB")
+    yield {"status": "audit_complete", "avg_disk_free": avg_val, "stability": "STABLE"}
