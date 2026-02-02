@@ -7252,3 +7252,81 @@ async def system_net_io_errin_avg_audit(samples: int = 3):
     avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net errors in: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_net_errors_in": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_errout_avg_audit")
+async def system_net_io_errout_avg_audit(samples: int = 3):
+    """
+    Audits system-wide network IO errors out average.
+    """
+    logger.info("Starting system network IO errors out average audit")
+    yield ProgressPayload(step="Initializing Net IO probe", pct=0, log="Collecting system-wide network IO stats...")
+    net_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            net_io = psutil.net_io_counters()
+            current_val = net_io.errout
+            net_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net Errors Out {current_val}")
+            metadata = {"net_errors_out": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing network IO errors out average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net IO", pct=pct, log=f"Measured net errors out sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net errors out: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_net_errors_out": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_dropin_avg_audit")
+async def system_net_io_dropin_avg_audit(samples: int = 3):
+    """
+    Audits system-wide network IO drop in average.
+    """
+    logger.info("Starting system network IO drop in average audit")
+    yield ProgressPayload(step="Initializing Net IO probe", pct=0, log="Collecting system-wide network IO stats...")
+    net_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            net_io = psutil.net_io_counters()
+            current_val = net_io.dropin
+            net_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net Drop In {current_val}")
+            metadata = {"net_drop_in": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing network IO drop in average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net IO", pct=pct, log=f"Measured net drop in sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net drop in: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_net_drop_in": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_dropout_avg_audit")
+async def system_net_io_dropout_avg_audit(samples: int = 3):
+    """
+    Audits system-wide network IO drop out average.
+    """
+    logger.info("Starting system network IO drop out average audit")
+    yield ProgressPayload(step="Initializing Net IO probe", pct=0, log="Collecting system-wide network IO stats...")
+    net_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            net_io = psutil.net_io_counters()
+            current_val = net_io.dropout
+            net_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net Drop Out {current_val}")
+            metadata = {"net_drop_out": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing network IO drop out average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net IO", pct=pct, log=f"Measured net drop out sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net drop out: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_net_drop_out": avg_val, "stability": "STABLE"}
