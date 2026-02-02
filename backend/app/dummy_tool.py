@@ -10388,3 +10388,1449 @@ async def system_disk_partitions_mountpoint_count_ultimate_audit(samples: int = 
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk partition mountpoint count: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_mountpoint_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_opts_count_ultimate_audit")
+async def system_disk_partitions_opts_count_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide disk partitions options count ultimate.
+    """
+    logger.info("Starting system disk partitions opts count ultimate audit")
+    yield ProgressPayload(step="Initializing Partition Opts probe", pct=0, log="Collecting system-wide disk partition options stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions(all=True)
+            opts = set(p.opts for p in partitions if p.opts)
+            current_val = len(opts)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Partition Opts {current_val}")
+            metadata = {"opts_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions opts count ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Partition Opts Count", pct=pct, log=f"Measured disk partition opts count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk partition opts count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_opts_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_speed_avg_ultimate_audit")
+async def system_net_if_stats_speed_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network interface statistics speed average ultimate.
+    """
+    logger.info("Starting system net if stats speed avg ultimate audit")
+    yield ProgressPayload(step="Initializing Net If Speed probe", pct=0, log="Collecting system-wide network interface speed stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            speeds = [s.speed for s in stats.values() if s.speed > 0]
+            current_val = sum(speeds) / len(speeds) if speeds else 0
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Speed Avg {current_val:.2f}")
+            metadata = {"speed_avg": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats speed avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Speed Avg", pct=pct, log=f"Measured net if stats speed avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if stats speed avg: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_speed_avg": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_duplex_total_ultimate_audit")
+async def system_net_if_stats_duplex_total_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network interface statistics duplex total ultimate.
+    """
+    logger.info("Starting system net if stats duplex total ultimate audit")
+    yield ProgressPayload(step="Initializing Net If Duplex probe", pct=0, log="Collecting system-wide network interface duplex stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            duplex_count = len([s.duplex for s in stats.values() if hasattr(s, "duplex")])
+            current_val = duplex_count
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Duplex Total {current_val}")
+            metadata = {"duplex_total": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats duplex total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Duplex Total", pct=pct, log=f"Measured net if stats duplex total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if stats duplex total: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_duplex_total": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_isup_avg_ultimate_audit")
+async def system_net_if_stats_isup_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network interface statistics isup average ultimate.
+    """
+    logger.info("Starting system net if stats isup avg ultimate audit")
+    yield ProgressPayload(step="Initializing Net If IsUp probe", pct=0, log="Collecting system-wide network interface isup stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            isup_vals = [1 if s.isup else 0 for s in stats.values()]
+            current_val = sum(isup_vals) / len(isup_vals) if isup_vals else 0
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If IsUp Avg {current_val:.2f}")
+            metadata = {"isup_avg": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats isup avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If IsUp Avg", pct=pct, log=f"Measured net if stats isup avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if stats isup avg: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_isup_avg": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_mtu_total_ultimate_audit")
+async def system_net_if_stats_mtu_total_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network interface statistics MTU total ultimate.
+    """
+    logger.info("Starting system net if stats mtu total ultimate audit")
+    yield ProgressPayload(step="Initializing Net If MTU probe", pct=0, log="Collecting system-wide network interface MTU stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            mtu_total = sum(s.mtu for s in stats.values() if hasattr(s, "mtu") and s.mtu > 0)
+            current_val = mtu_total
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If MTU Total {current_val}")
+            metadata = {"mtu_total": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats mtu total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If MTU Total", pct=pct, log=f"Measured net if stats mtu total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if stats mtu total: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_mtu_total": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_flags_total_ultimate_audit")
+async def system_net_if_stats_flags_total_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network interface statistics flags total ultimate.
+    """
+    logger.info("Starting system net if stats flags total ultimate audit")
+    yield ProgressPayload(step="Initializing Net If Flags probe", pct=0, log="Collecting system-wide network interface flags stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            flags_count = sum(len(s.flags.split(",")) if isinstance(s.flags, str) else 1 for s in stats.values() if hasattr(s, "flags") and s.flags)
+            current_val = flags_count
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Flags Total {current_val}")
+            metadata = {"flags_total": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats flags total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Flags Total", pct=pct, log=f"Measured net if stats flags total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if stats flags total: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_flags_total": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_device_count_ultimate_audit")
+async def system_disk_partitions_device_count_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide disk partitions device count ultimate.
+    """
+    logger.info("Starting system disk partitions device count ultimate audit")
+    yield ProgressPayload(step="Initializing Partition Device probe", pct=0, log="Collecting system-wide disk partition devices stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions(all=True)
+            devices = set(p.device for p in partitions if p.device)
+            current_val = len(devices)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Partition Devices {current_val}")
+            metadata = {"device_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions device count ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Partition Device Count", pct=pct, log=f"Measured disk partition device count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk partition device count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_device_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_all_count_ultimate_audit")
+async def system_disk_partitions_all_count_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide disk partitions all count ultimate.
+    """
+    logger.info("Starting system disk partitions all count ultimate audit")
+    yield ProgressPayload(step="Initializing Partition All probe", pct=0, log="Collecting all system-wide disk partitions stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions(all=True)
+            current_val = len(partitions)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Partition All Count {current_val}")
+            metadata = {"all_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions all count ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Partition All Count", pct=pct, log=f"Measured disk partition all count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk partition all count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_all_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_mtu_max_ultimate_audit")
+async def system_net_if_stats_mtu_max_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network interface statistics MTU max ultimate.
+    """
+    logger.info("Starting system net if stats mtu max ultimate audit")
+    yield ProgressPayload(step="Initializing Net If MTU Max probe", pct=0, log="Collecting system-wide network interface MTU max stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            mtu_max = max(s.mtu for s in stats.values() if hasattr(s, "mtu") and s.mtu > 0) if stats else 0
+            current_val = mtu_max
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If MTU Max {current_val}")
+            metadata = {"mtu_max": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats mtu max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If MTU Max", pct=pct, log=f"Measured net if stats mtu max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if stats mtu max: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_mtu_max": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_speed_max_ultimate_audit")
+async def system_net_if_stats_speed_max_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network interface statistics speed max ultimate.
+    """
+    logger.info("Starting system net if stats speed max ultimate audit")
+    yield ProgressPayload(step="Initializing Net If Speed Max probe", pct=0, log="Collecting system-wide network interface speed max stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            speed_max = max(s.speed for s in stats.values() if hasattr(s, "speed") and s.speed > 0) if stats else 0
+            current_val = speed_max
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Speed Max {current_val}")
+            metadata = {"speed_max": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats speed max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Speed Max", pct=pct, log=f"Measured net if stats speed max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if stats speed max: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_speed_max": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ipv4_avg_ultimate_audit")
+async def system_net_if_addrs_ipv4_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network interface addresses IPv4 avg ultimate.
+    """
+    logger.info("Starting system net if addrs ipv4 avg ultimate audit")
+    yield ProgressPayload(step="Initializing Net If Addrs IPv4 probe", pct=0, log="Collecting system-wide network interface IPv4 stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            ipv4_count = sum(1 for interface in addrs.values() for addr in interface if addr.family == 2) # AF_INET
+            current_val = ipv4_count
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs IPv4 Count {current_val}")
+            metadata = {"ipv4_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs ipv4 avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs IPv4", pct=pct, log=f"Measured net if addrs ipv4 sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if addrs ipv4 count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_ipv4_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ipv6_avg_ultimate_audit")
+async def system_net_if_addrs_ipv6_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network interface addresses IPv6 avg ultimate.
+    """
+    logger.info("Starting system net if addrs ipv6 avg ultimate audit")
+    yield ProgressPayload(step="Initializing Net If Addrs IPv6 probe", pct=0, log="Collecting system-wide network interface IPv6 stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            import socket
+            af_inet6 = getattr(socket, "AF_INET6", 30) # Default for Darwin
+            ipv6_count = sum(1 for interface in addrs.values() for addr in interface if addr.family == af_inet6)
+            current_val = ipv6_count
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs IPv6 Count {current_val}")
+            metadata = {"ipv6_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs ipv6 avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs IPv6", pct=pct, log=f"Measured net if addrs ipv6 sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if addrs ipv6 count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_ipv6_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_flags_max_ultimate_audit")
+async def system_net_if_stats_flags_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum flags across all network interfaces.
+    """
+    logger.info(f"Starting system net if stats flags max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Stats Flags Probe", pct=0, log="Collecting network interface flags baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            max_val = max(s.flags for s in stats.values()) if stats else 0
+            samples_list.append(max_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Stats Flags Max {max_val}")
+            metadata = {"flags_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats flags max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Stats Flags Max", pct=pct, log=f"Measured net if stats flags max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum net if stats flags: {final_val}")
+    yield {"status": "audit_complete", "max_flags": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_isup_max_ultimate_audit")
+async def system_net_if_stats_isup_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum isup status across all network interfaces (binary max).
+    """
+    logger.info(f"Starting system net if stats isup max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Stats Isup Probe", pct=0, log="Collecting network interface isup baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            max_val = max(int(s.isup) for s in stats.values()) if stats else 0
+            samples_list.append(max_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Stats Isup Max {max_val}")
+            metadata = {"isup_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats isup max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Stats Isup Max", pct=pct, log=f"Measured net if stats isup max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum net if stats isup: {final_val}")
+    yield {"status": "audit_complete", "max_isup": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_mac_avg_ultimate_audit")
+async def system_net_if_addrs_mac_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average count of MAC addresses per interface.
+    """
+    logger.info(f"Starting system net if addrs mac avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Addrs MAC Probe", pct=0, log="Collecting network interface MAC address baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            af_link = getattr(psutil, "AF_LINK", -1)
+            if af_link == -1:
+                import socket
+                af_link = getattr(socket, "AF_LINK", 18 if sys.platform == "darwin" else 17)
+            
+            mac_count = sum(1 for interface in addrs.values() for addr in interface if addr.family == af_link)
+            samples_list.append(mac_count)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs MAC Count {mac_count}")
+            metadata = {"mac_count": mac_count}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs mac avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs MAC", pct=pct, log=f"Measured net if addrs mac sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if addrs mac count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_mac_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_broadcast_avg_ultimate_audit")
+async def system_net_if_addrs_broadcast_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average count of broadcast addresses across all interfaces.
+    """
+    logger.info(f"Starting system net if addrs broadcast avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Addrs Broadcast Probe", pct=0, log="Collecting network interface broadcast address baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            broadcast_count = sum(1 for interface in addrs.values() for addr in interface if getattr(addr, "broadcast", None))
+            samples_list.append(broadcast_count)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs Broadcast Count {broadcast_count}")
+            metadata = {"broadcast_count": broadcast_count}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs broadcast avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs Broadcast", pct=pct, log=f"Measured net if addrs broadcast sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if addrs broadcast count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_broadcast_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_mtu_min_ultimate_audit")
+async def system_net_if_stats_mtu_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum MTU status across all network interfaces.
+    """
+    logger.info(f"Starting system net if stats mtu min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Stats MTU Probe", pct=0, log="Collecting network interface MTU baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            min_val = min(s.mtu for s in stats.values() if s.mtu > 0) if stats else 0
+            samples_list.append(min_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Stats MTU Min {min_val}")
+            metadata = {"mtu_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats mtu min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Stats MTU Min", pct=pct, log=f"Measured net if stats mtu min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum net if stats mtu: {final_val}")
+    yield {"status": "audit_complete", "min_mtu": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_speed_min_ultimate_audit")
+async def system_net_if_stats_speed_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum speed status across all network interfaces.
+    """
+    logger.info(f"Starting system net if stats speed min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Stats Speed Probe", pct=0, log="Collecting network interface speed baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            # Some speeds might be 0 or negative if unknown
+            valid_speeds = [s.speed for s in stats.values() if s.speed > 0]
+            min_val = min(valid_speeds) if valid_speeds else 0
+            samples_list.append(min_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Stats Speed Min {min_val}")
+            metadata = {"speed_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats speed min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Stats Speed Min", pct=pct, log=f"Measured net if stats speed min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum net if stats speed: {final_val}")
+    yield {"status": "audit_complete", "min_speed": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_mac_max_ultimate_audit")
+async def system_net_if_addrs_mac_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum count of MAC addresses found on a single interface.
+    """
+    logger.info(f"Starting system net if addrs mac max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Addrs MAC Probe", pct=0, log="Collecting network interface MAC address baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            af_link = getattr(psutil, "AF_LINK", -1)
+            if af_link == -1:
+                import socket
+                af_link = getattr(socket, "AF_LINK", 18 if sys.platform == "darwin" else 17)
+            
+            max_macs = max(sum(1 for addr in interface if addr.family == af_link) for interface in addrs.values()) if addrs else 0
+            samples_list.append(max_macs)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs MAC Max {max_macs}")
+            metadata = {"mac_max": max_macs}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs mac max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs MAC Max", pct=pct, log=f"Measured net if addrs mac max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum net if addrs mac count: {final_val}")
+    yield {"status": "audit_complete", "max_mac_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_broadcast_max_ultimate_audit")
+async def system_net_if_addrs_broadcast_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum count of broadcast addresses found on a single interface.
+    """
+    logger.info(f"Starting system net if addrs broadcast max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Addrs Broadcast Probe", pct=0, log="Collecting network interface broadcast address baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            max_broadcasts = max(sum(1 for addr in interface if getattr(addr, "broadcast", None)) for interface in addrs.values()) if addrs else 0
+            samples_list.append(max_broadcasts)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs Broadcast Max {max_broadcasts}")
+            metadata = {"broadcast_max": max_broadcasts}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs broadcast max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs Broadcast Max", pct=pct, log=f"Measured net if addrs broadcast max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum net if addrs broadcast count: {final_val}")
+    yield {"status": "audit_complete", "max_broadcast_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_isup_min_ultimate_audit")
+async def system_net_if_stats_isup_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum isup status across all network interfaces (binary min).
+    """
+    logger.info(f"Starting system net if stats isup min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Stats Isup Probe", pct=0, log="Collecting network interface isup baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            min_val = min(int(s.isup) for s in stats.values()) if stats else 0
+            samples_list.append(min_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Stats Isup Min {min_val}")
+            metadata = {"isup_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats isup min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Stats Isup Min", pct=pct, log=f"Measured net if stats isup min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum net if stats isup: {final_val}")
+    yield {"status": "audit_complete", "min_isup": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_duplex_min_ultimate_audit")
+async def system_net_if_stats_duplex_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum duplex status across all network interfaces.
+    """
+    logger.info(f"Starting system net if stats duplex min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Stats Duplex Probe", pct=0, log="Collecting network interface duplex baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            min_val = min(int(s.duplex) for s in stats.values()) if stats else 0
+            samples_list.append(min_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Stats Duplex Min {min_val}")
+            metadata = {"duplex_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats duplex min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Stats Duplex Min", pct=pct, log=f"Measured net if stats duplex min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum net if stats duplex: {final_val}")
+    yield {"status": "audit_complete", "min_duplex": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ipv4_max_ultimate_audit")
+async def system_net_if_addrs_ipv4_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum count of IPv4 addresses found on a single interface.
+    """
+    logger.info(f"Starting system net if addrs ipv4 max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Addrs IPv4 Probe", pct=0, log="Collecting network interface IPv4 address baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            import socket
+            af_inet = getattr(socket, "AF_INET", 2)
+            
+            max_ips = max(sum(1 for addr in interface if addr.family == af_inet) for interface in addrs.values()) if addrs else 0
+            samples_list.append(max_ips)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs IPv4 Max {max_ips}")
+            metadata = {"ipv4_max": max_ips}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs ipv4 max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs IPv4 Max", pct=pct, log=f"Measured net if addrs ipv4 max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum net if addrs ipv4 count: {final_val}")
+    yield {"status": "audit_complete", "max_ipv4_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ipv6_max_ultimate_audit")
+async def system_net_if_addrs_ipv6_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum count of IPv6 addresses found on a single interface.
+    """
+    logger.info(f"Starting system net if addrs ipv6 max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Addrs IPv6 Probe", pct=0, log="Collecting network interface IPv6 address baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            import socket
+            af_inet6 = getattr(socket, "AF_INET6", 30 if sys.platform == "darwin" else 10)
+            
+            max_ips = max(sum(1 for addr in interface if addr.family == af_inet6) for interface in addrs.values()) if addrs else 0
+            samples_list.append(max_ips)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs IPv6 Max {max_ips}")
+            metadata = {"ipv6_max": max_ips}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs ipv6 max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs IPv6 Max", pct=pct, log=f"Measured net if addrs ipv6 max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum net if addrs ipv6 count: {final_val}")
+    yield {"status": "audit_complete", "max_ipv6_count": final_val, "stability": "STABLE"}
+
+
+@progress_tool(name="system_net_if_stats_duplex_max_ultimate_audit")
+async def system_net_if_stats_duplex_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum duplex status across all network interfaces.
+    """
+    logger.info(f"Starting system net if stats duplex max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Stats Duplex Probe", pct=0, log="Collecting network interface duplex baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            max_val = max(int(s.duplex) for s in stats.values()) if stats else 0
+            samples_list.append(max_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Stats Duplex Max {max_val}")
+            metadata = {"duplex_max": max_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats duplex max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Stats Duplex Max", pct=pct, log=f"Measured net if stats duplex max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum net if stats duplex: {final_val}")
+    yield {"status": "audit_complete", "max_duplex": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_duplex_avg_ultimate_audit")
+async def system_net_if_stats_duplex_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average duplex status across all network interfaces.
+    """
+    logger.info(f"Starting system net if stats duplex avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Stats Duplex Probe", pct=0, log="Collecting network interface duplex baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            avg_val = sum(int(s.duplex) for s in stats.values()) / len(stats) if stats else 0
+            samples_list.append(avg_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Stats Duplex Avg {avg_val}")
+            metadata = {"duplex_avg": avg_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats duplex avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Stats Duplex Avg", pct=pct, log=f"Measured net if stats duplex avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if stats duplex: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_duplex": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_flags_avg_ultimate_audit")
+async def system_net_if_stats_flags_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average flags value across all network interfaces.
+    """
+    logger.info(f"Starting system net if stats flags avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Stats Flags Probe", pct=0, log="Collecting network interface flags baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            def get_flags_val(s):
+                if isinstance(s.flags, str):
+                    return len(s.flags.split(',')) if s.flags else 0
+                return s.flags
+            avg_val = sum(get_flags_val(s) for s in stats.values()) / len(stats) if stats else 0
+            samples_list.append(avg_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Stats Flags Avg {avg_val}")
+            metadata = {"flags_avg": avg_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats flags avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Stats Flags Avg", pct=pct, log=f"Measured net if stats flags avg sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if stats flags: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_flags": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_stats_flags_min_ultimate_audit")
+async def system_net_if_stats_flags_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum flags value across all network interfaces.
+    """
+    logger.info(f"Starting system net if stats flags min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Stats Flags Probe", pct=0, log="Collecting network interface flags baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.net_if_stats()
+            def get_flags_val(s):
+                if isinstance(s.flags, str):
+                    return len(s.flags.split(',')) if s.flags else 0
+                return s.flags
+            min_val = min(get_flags_val(s) for s in stats.values()) if stats else 0
+            samples_list.append(min_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Stats Flags Min {min_val}")
+            metadata = {"flags_min": min_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if stats flags min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Stats Flags Min", pct=pct, log=f"Measured net if stats flags min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum net if stats flags: {final_val}")
+    yield {"status": "audit_complete", "min_flags": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_netmask_avg_ultimate_audit")
+async def system_net_if_addrs_netmask_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average count of netmasks found per interface.
+    """
+    logger.info(f"Starting system net if addrs netmask avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Addrs Netmask Probe", pct=0, log="Collecting network interface netmask baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            netmask_count = sum(1 for interface in addrs.values() for addr in interface if addr.netmask)
+            samples_list.append(netmask_count)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs Netmask Count {netmask_count}")
+            metadata = {"netmask_count": netmask_count}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs netmask avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs Netmask", pct=pct, log=f"Measured net if addrs netmask sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if addrs netmask count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_netmask_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_netmask_max_ultimate_audit")
+async def system_net_if_addrs_netmask_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum count of netmasks found on a single interface.
+    """
+    logger.info(f"Starting system net if addrs netmask max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Addrs Netmask Probe", pct=0, log="Collecting network interface netmask baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            max_netmasks = max(sum(1 for addr in interface if addr.netmask) for interface in addrs.values()) if addrs else 0
+            samples_list.append(max_netmasks)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs Netmask Max {max_netmasks}")
+            metadata = {"netmask_max": max_netmasks}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs netmask max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs Netmask Max", pct=pct, log=f"Measured net if addrs netmask max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum net if addrs netmask count: {final_val}")
+    yield {"status": "audit_complete", "max_netmask_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ptp_avg_ultimate_audit")
+async def system_net_if_addrs_ptp_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average count of PTP addresses found per interface.
+    """
+    logger.info(f"Starting system net if addrs ptp avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Addrs PTP Probe", pct=0, log="Collecting network interface PTP baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            ptp_count = sum(1 for interface in addrs.values() for addr in interface if getattr(addr, "ptp", None))
+            samples_list.append(ptp_count)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs PTP Count {ptp_count}")
+            metadata = {"ptp_count": ptp_count}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs ptp avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs PTP", pct=pct, log=f"Measured net if addrs ptp sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if addrs ptp count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_ptp_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ptp_max_ultimate_audit")
+async def system_net_if_addrs_ptp_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum count of PTP addresses found on a single interface.
+    """
+    logger.info(f"Starting system net if addrs ptp max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net If Addrs PTP Probe", pct=0, log="Collecting network interface PTP baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            max_ptp = max(sum(1 for addr in interface if getattr(addr, "ptp", None)) for interface in addrs.values()) if addrs else 0
+            samples_list.append(max_ptp)
+            logger.info(f"Sample {i+1}/{samples}: Net If Addrs PTP Max {max_ptp}")
+            metadata = {"ptp_max": max_ptp}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs ptp_max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Addrs PTP Max", pct=pct, log=f"Measured net if addrs ptp max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum net if addrs ptp count: {final_val}")
+    yield {"status": "audit_complete", "max_ptp_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_fstype_avg_ultimate_audit")
+async def system_disk_partitions_fstype_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average count of unique file system types found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions fstype avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Fstype Probe", pct=0, log="Collecting disk partition fstype baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            fstypes = {p.fstype for p in parts if p.fstype}
+            current_val = len(fstypes)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Fstypes Count {current_val}")
+            metadata = {"fstype_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions fstype avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Fstypes", pct=pct, log=f"Measured disk partitions fstype sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk partition fstype count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_fstype_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_fstype_max_ultimate_audit")
+async def system_disk_partitions_fstype_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum count of unique file system types found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions fstype max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Fstype Probe", pct=0, log="Collecting disk partition fstype baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            fstypes = {p.fstype for p in parts if p.fstype}
+            current_val = len(fstypes)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Fstypes Max {current_val}")
+            metadata = {"fstype_max": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions fstype_max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Fstypes Max", pct=pct, log=f"Measured disk partitions fstype max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum disk partition fstype count: {final_val}")
+    yield {"status": "audit_complete", "max_fstype_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_mountpoint_avg_ultimate_audit")
+async def system_disk_partitions_mountpoint_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average count of unique mountpoints found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions mountpoint avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Mountpoint Probe", pct=0, log="Collecting disk partition mountpoint baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            mounts = {p.mountpoint for p in parts if p.mountpoint}
+            current_val = len(mounts)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Mountpoints Count {current_val}")
+            metadata = {"mountpoint_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions mountpoint avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Mountpoints", pct=pct, log=f"Measured disk partitions mountpoint sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk partition mountpoint count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_mountpoint_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_mountpoint_max_ultimate_audit")
+async def system_disk_partitions_mountpoint_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum count of unique mountpoints found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions mountpoint max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Mountpoint Probe", pct=0, log="Collecting disk partition mountpoint baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            mounts = {p.mountpoint for p in parts if p.mountpoint}
+            current_val = len(mounts)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Mountpoints Max {current_val}")
+            metadata = {"mountpoint_max": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions mountpoint max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Mountpoints Max", pct=pct, log=f"Measured disk partitions mountpoint max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum disk partition mountpoint count: {final_val}")
+    yield {"status": "audit_complete", "max_mountpoint_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_fstype_min_ultimate_audit")
+async def system_disk_partitions_fstype_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum count of unique file system types found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions fstype min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Fstype Probe", pct=0, log="Collecting disk partition fstype baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            fstypes = {p.fstype for p in parts if p.fstype}
+            current_val = len(fstypes)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Fstypes Min {current_val}")
+            metadata = {"fstype_min": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions fstype min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Fstypes Min", pct=pct, log=f"Measured disk partitions fstype min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum disk partition fstype count: {final_val}")
+    yield {"status": "audit_complete", "min_fstype_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_mountpoint_min_ultimate_audit")
+async def system_disk_partitions_mountpoint_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum count of unique mountpoints found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions mountpoint min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Mountpoint Probe", pct=0, log="Collecting disk partition mountpoint baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            mounts = {p.mountpoint for p in parts if p.mountpoint}
+            current_val = len(mounts)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Mountpoints Min {current_val}")
+            metadata = {"mountpoint_min": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions mountpoint min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Mountpoints Min", pct=pct, log=f"Measured disk partitions mountpoint min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum disk partition mountpoint count: {final_val}")
+    yield {"status": "audit_complete", "min_mountpoint_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_opts_avg_ultimate_audit")
+async def system_disk_partitions_opts_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average count of unique mount options found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions opts avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Opts Probe", pct=0, log="Collecting disk partition options baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            opts = set()
+            for p in parts:
+                if p.opts:
+                    for opt in p.opts.split(","):
+                        opts.add(opt)
+            current_val = len(opts)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Opts Count {current_val}")
+            metadata = {"opts_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions opts avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Opts", pct=pct, log=f"Measured disk partitions opts sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk partition opts count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_opts_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_opts_max_ultimate_audit")
+async def system_disk_partitions_opts_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum count of unique mount options found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions opts max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Opts Probe", pct=0, log="Collecting disk partition options baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            opts = set()
+            for p in parts:
+                if p.opts:
+                    for opt in p.opts.split(","):
+                        opts.add(opt)
+            current_val = len(opts)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Opts Max {current_val}")
+            metadata = {"opts_max": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions opts max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Opts Max", pct=pct, log=f"Measured disk partitions opts max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum disk partition opts count: {final_val}")
+    yield {"status": "audit_complete", "max_opts_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_opts_min_ultimate_audit")
+async def system_disk_partitions_opts_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum count of unique mount options found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions opts min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Opts Probe", pct=0, log="Collecting disk partition options baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            opts = set()
+            for p in parts:
+                if p.opts:
+                    for opt in p.opts.split(","):
+                        opts.add(opt)
+            current_val = len(opts)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Opts Min {current_val}")
+            metadata = {"opts_min": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions opts min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Opts Min", pct=pct, log=f"Measured disk partitions opts min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum disk partition opts count: {final_val}")
+    yield {"status": "audit_complete", "min_opts_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_device_avg_ultimate_audit")
+async def system_disk_partitions_device_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average count of unique devices found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions device avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Device Probe", pct=0, log="Collecting disk partition device baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            devices = {p.device for p in parts if p.device}
+            current_val = len(devices)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Devices Count {current_val}")
+            metadata = {"device_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions device avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Devices", pct=pct, log=f"Measured disk partitions device sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk partition device count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_device_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_device_max_ultimate_audit")
+async def system_disk_partitions_device_max_ultimate_audit(samples: int = 3):
+    """
+    Audits the maximum count of unique devices found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions device max ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Device Probe", pct=0, log="Collecting disk partition device baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            devices = {p.device for p in parts if p.device}
+            current_val = len(devices)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Devices Max {current_val}")
+            metadata = {"device_max": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions device max ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Devices Max", pct=pct, log=f"Measured disk partitions device max sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = max(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Maximum disk partition device count: {final_val}")
+    yield {"status": "audit_complete", "max_device_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_device_min_ultimate_audit")
+async def system_disk_partitions_device_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum count of unique devices found per disk scan.
+    """
+    logger.info(f"Starting system disk partitions device min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk Device Probe", pct=0, log="Collecting disk partition device baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            parts = psutil.disk_partitions(all=True)
+            devices = {p.device for p in parts if p.device}
+            current_val = len(devices)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Devices Min {current_val}")
+            metadata = {"device_min": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions device min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Devices Min", pct=pct, log=f"Measured disk partitions device min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum disk partition device count: {final_val}")
+    yield {"status": "audit_complete", "min_device_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_netmask_min_ultimate_audit")
+async def system_net_if_addrs_netmask_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum count of unique netmasks found per network scan.
+    """
+    logger.info(f"Starting system net if addrs netmask min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Netmask Probe", pct=0, log="Collecting network interface netmask baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            netmasks = set()
+            for interface, snics in addrs.items():
+                for snic in snics:
+                    if snic.netmask:
+                        netmasks.add(snic.netmask)
+            current_val = len(netmasks)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Netmask Min {current_val}")
+            metadata = {"netmask_min": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs netmask min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Netmask Min", pct=pct, log=f"Measured net if addrs netmask min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum netmask count: {final_val}")
+    yield {"status": "audit_complete", "min_netmask_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ptp_min_ultimate_audit")
+async def system_net_if_addrs_ptp_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum count of unique PTP addresses found per network scan.
+    """
+    logger.info(f"Starting system net if addrs ptp min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing PTP Probe", pct=0, log="Collecting network interface ptp baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            ptps = set()
+            for interface, snics in addrs.items():
+                for snic in snics:
+                    if snic.ptp:
+                        ptps.add(snic.ptp)
+            current_val = len(ptps)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: PTP Min {current_val}")
+            metadata = {"ptp_min": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs ptp min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling PTP Min", pct=pct, log=f"Measured net if addrs ptp min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum ptp count: {final_val}")
+    yield {"status": "audit_complete", "min_ptp_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ipv4_min_ultimate_audit")
+async def system_net_if_addrs_ipv4_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum count of unique IPv4 addresses found per network scan.
+    """
+    logger.info(f"Starting system net if addrs ipv4 min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing IPv4 Probe", pct=0, log="Collecting network interface ipv4 baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            ipv4s = set()
+            for interface, snics in addrs.items():
+                for snic in snics:
+                    if snic.family == 2: # AF_INET
+                        ipv4s.add(snic.address)
+            current_val = len(ipv4s)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: IPv4 Min {current_val}")
+            metadata = {"ipv4_min": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs ipv4 min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling IPv4 Min", pct=pct, log=f"Measured net if addrs ipv4 min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum ipv4 count: {final_val}")
+    yield {"status": "audit_complete", "min_ipv4_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ipv6_min_ultimate_audit")
+async def system_net_if_addrs_ipv6_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum count of unique IPv6 addresses found per network scan.
+    """
+    logger.info(f"Starting system net if addrs ipv6 min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing IPv6 Probe", pct=0, log="Collecting network interface ipv6 baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            ipv6s = set()
+            for interface, snics in addrs.items():
+                for snic in snics:
+                    if snic.family == 30 or snic.family == 23: # AF_INET6 (30 on Linux, 23 on Darwin/BSD)
+                        ipv6s.add(snic.address)
+            current_val = len(ipv6s)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: IPv6 Min {current_val}")
+            metadata = {"ipv6_min": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs ipv6 min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling IPv6 Min", pct=pct, log=f"Measured net if addrs ipv6 min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum ipv6 count: {final_val}")
+    yield {"status": "audit_complete", "min_ipv6_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_mac_min_ultimate_audit")
+async def system_net_if_addrs_mac_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum count of unique MAC addresses found per network scan.
+    """
+    logger.info(f"Starting system net if addrs mac min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing MAC Probe", pct=0, log="Collecting network interface mac baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            macs = set()
+            for interface, snics in addrs.items():
+                for snic in snics:
+                    if snic.family == psutil.AF_LINK:
+                        macs.add(snic.address)
+            current_val = len(macs)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: MAC Min {current_val}")
+            metadata = {"mac_min": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs mac min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling MAC Min", pct=pct, log=f"Measured net if addrs mac min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum mac count: {final_val}")
+    yield {"status": "audit_complete", "min_mac_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_broadcast_min_ultimate_audit")
+async def system_net_if_addrs_broadcast_min_ultimate_audit(samples: int = 3):
+    """
+    Audits the minimum count of unique broadcast addresses found per network scan.
+    """
+    logger.info(f"Starting system net if addrs broadcast min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Broadcast Probe", pct=0, log="Collecting network interface broadcast baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            broadcasts = set()
+            for interface, snics in addrs.items():
+                for snic in snics:
+                    if snic.broadcast:
+                        broadcasts.add(snic.broadcast)
+            current_val = len(broadcasts)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Broadcast Min {current_val}")
+            metadata = {"broadcast_min": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs broadcast min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Broadcast Min", pct=pct, log=f"Measured net if addrs broadcast min sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    final_val = min(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Minimum broadcast count: {final_val}")
+    yield {"status": "audit_complete", "min_broadcast_count": final_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_counters_read_count_avg_ultimate_audit")
+async def system_disk_io_counters_read_count_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average disk read count across multiple samples.
+    """
+    logger.info(f"Starting system disk io counters read count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk IO Probe", pct=0, log="Collecting disk read count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            io = psutil.disk_io_counters()
+            current_val = io.read_count if io else 0
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Read Count {current_val}")
+            metadata = {"read_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk io read count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Read Count", pct=pct, log=f"Measured disk read count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk read count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_read_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_counters_write_count_avg_ultimate_audit")
+async def system_disk_io_counters_write_count_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average disk write count across multiple samples.
+    """
+    logger.info(f"Starting system disk io counters write count avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk IO Probe", pct=0, log="Collecting disk write count baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            io = psutil.disk_io_counters()
+            current_val = io.write_count if io else 0
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Write Count {current_val}")
+            metadata = {"write_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk io write count avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Write Count", pct=pct, log=f"Measured disk write count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk write count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_write_count": avg_val, "stability": "STABLE"}
