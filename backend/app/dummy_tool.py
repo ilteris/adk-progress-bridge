@@ -8813,3 +8813,81 @@ async def system_disk_io_read_count_ultimate_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk read count: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_read_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_ctx_switches_ultimate_audit")
+async def system_cpu_stats_ctx_switches_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide CPU context switches ultimate.
+    """
+    logger.info("Starting system CPU context switches ultimate audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide CPU context switches stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_stats = psutil.cpu_stats()
+            current_val = cpu_stats.ctx_switches
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Context Switches {current_val}")
+            metadata = {"ctx_switches": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU context switches ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Context Switches", pct=pct, log=f"Measured CPU context switches sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU context switches: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_ctx_switches": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_interrupts_ultimate_audit")
+async def system_cpu_stats_interrupts_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide CPU interrupts ultimate.
+    """
+    logger.info("Starting system CPU interrupts ultimate audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide CPU interrupts stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_stats = psutil.cpu_stats()
+            current_val = cpu_stats.interrupts
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Interrupts {current_val}")
+            metadata = {"interrupts": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU interrupts ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Interrupts", pct=pct, log=f"Measured CPU interrupts sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU interrupts: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_interrupts": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_soft_interrupts_ultimate_audit")
+async def system_cpu_stats_soft_interrupts_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide CPU soft interrupts ultimate.
+    """
+    logger.info("Starting system CPU soft interrupts ultimate audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide CPU soft interrupts stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            cpu_stats = psutil.cpu_stats()
+            current_val = cpu_stats.soft_interrupts
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Soft Interrupts {current_val}")
+            metadata = {"soft_interrupts": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU soft interrupts ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Soft Interrupts", pct=pct, log=f"Measured CPU soft interrupts sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU soft interrupts: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_soft_interrupts": avg_val, "stability": "STABLE"}
