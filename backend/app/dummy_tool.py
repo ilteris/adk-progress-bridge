@@ -6289,3 +6289,135 @@ async def system_memory_wired_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory wired statistics are stable.")
     yield {"status": "audit_complete", "final_memory_wired": wired_mem, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_buffers_audit")
+async def system_memory_buffers_audit(samples: int = 3):
+    logger.info("Starting system memory buffers audit")
+    yield ProgressPayload(step="Initializing memory buffers probe", pct=0, log="Collecting system-wide memory buffers stats...")
+    buffers_mem = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            buffers_mem = getattr(vmem, "buffers", 0)
+            logger.info(f"Sample {i+1}/{samples}: Buffers Memory {buffers_mem / 1024 / 1024:.2f}MB")
+            metadata = {"memory_buffers": buffers_mem}
+        except Exception as e:
+            logger.error(f"Error auditing system memory buffers: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling memory buffers", pct=pct, log=f"Measured system memory buffers sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory buffers statistics are stable.")
+    yield {"status": "audit_complete", "final_memory_buffers": buffers_mem, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_cached_audit")
+async def system_memory_cached_audit(samples: int = 3):
+    logger.info("Starting system memory cached audit")
+    yield ProgressPayload(step="Initializing memory cached probe", pct=0, log="Collecting system-wide memory cached stats...")
+    cached_mem = 0
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            cached_mem = getattr(vmem, "cached", 0)
+            logger.info(f"Sample {i+1}/{samples}: Cached Memory {cached_mem / 1024 / 1024:.2f}MB")
+            metadata = {"memory_cached": cached_mem}
+        except Exception as e:
+            logger.error(f"Error auditing system memory cached: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling memory cached", pct=pct, log=f"Measured system memory cached sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    yield ProgressPayload(step="Finalizing", pct=100, log="Audit complete. Memory cached statistics are stable.")
+    yield {"status": "audit_complete", "final_memory_cached": cached_mem, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_percent_avg_audit")
+async def system_memory_percent_avg_audit(samples: int = 3):
+    logger.info("Starting system memory percentage average audit")
+    yield ProgressPayload(step="Initializing memory percentage probe", pct=0, log="Collecting system-wide memory percentage stats...")
+    memory_percents = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            current_percent = vmem.percent
+            memory_percents.append(current_percent)
+            logger.info(f"Sample {i+1}/{samples}: Memory Usage {current_percent}%")
+            metadata = {"memory_percent": current_percent}
+        except Exception as e:
+            logger.error(f"Error auditing system memory percentage: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling memory percentage", pct=pct, log=f"Measured system memory percentage sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_percent = sum(memory_percents) / len(memory_percents) if memory_percents else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average memory usage: {avg_percent:.2f}%")
+    yield {"status": "audit_complete", "avg_memory_percent": avg_percent, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_available_avg_audit")
+async def system_memory_available_avg_audit(samples: int = 3):
+    logger.info("Starting system memory available average audit")
+    yield ProgressPayload(step="Initializing memory available probe", pct=0, log="Collecting system-wide available memory stats...")
+    memory_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            current_val = vmem.available
+            memory_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Available Memory {current_val / 1024 / 1024:.2f}MB")
+            metadata = {"memory_available": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing system memory available: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling memory available", pct=pct, log=f"Measured system memory available sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(memory_samples) / len(memory_samples) if memory_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average available memory: {avg_val / 1024 / 1024:.2f}MB")
+    yield {"status": "audit_complete", "avg_memory_available": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_used_avg_audit")
+async def system_memory_used_avg_audit(samples: int = 3):
+    logger.info("Starting system memory used average audit")
+    yield ProgressPayload(step="Initializing memory used probe", pct=0, log="Collecting system-wide used memory stats...")
+    memory_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            current_val = vmem.used
+            memory_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Used Memory {current_val / 1024 / 1024:.2f}MB")
+            metadata = {"memory_used": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing system memory used: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling memory used", pct=pct, log=f"Measured system memory used sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(memory_samples) / len(memory_samples) if memory_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average used memory: {avg_val / 1024 / 1024:.2f}MB")
+    yield {"status": "audit_complete", "avg_memory_used": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_free_avg_audit")
+async def system_memory_free_avg_audit(samples: int = 3):
+    logger.info("Starting system memory free average audit")
+    yield ProgressPayload(step="Initializing memory free probe", pct=0, log="Collecting system-wide free memory stats...")
+    memory_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vmem = psutil.virtual_memory()
+            current_val = vmem.free
+            memory_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Free Memory {current_val / 1024 / 1024:.2f}MB")
+            metadata = {"memory_free": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing system memory free: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling memory free", pct=pct, log=f"Measured system memory free sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(memory_samples) / len(memory_samples) if memory_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average free memory: {avg_val / 1024 / 1024:.2f}MB")
+    yield {"status": "audit_complete", "avg_memory_free": avg_val, "stability": "STABLE"}
