@@ -9047,3 +9047,81 @@ async def system_memory_percent_ultimate_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average memory percentage: {avg_val:.2f}%")
     yield {"status": "audit_complete", "avg_percent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_active_ultimate_audit")
+async def system_memory_active_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide active memory ultimate.
+    """
+    logger.info("Starting system active memory ultimate audit")
+    yield ProgressPayload(step="Initializing Memory probe", pct=0, log="Collecting system-wide active memory stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            mem = psutil.virtual_memory()
+            current_val = getattr(mem, "active", 0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Active Memory {current_val}")
+            metadata = {"active": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing active memory ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Active Memory", pct=pct, log=f"Measured active memory sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average active memory: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_active": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_inactive_ultimate_audit")
+async def system_memory_inactive_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide inactive memory ultimate.
+    """
+    logger.info("Starting system inactive memory ultimate audit")
+    yield ProgressPayload(step="Initializing Memory probe", pct=0, log="Collecting system-wide inactive memory stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            mem = psutil.virtual_memory()
+            current_val = getattr(mem, "inactive", 0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Inactive Memory {current_val}")
+            metadata = {"inactive": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing inactive memory ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Inactive Memory", pct=pct, log=f"Measured inactive memory sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average inactive memory: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_inactive": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_memory_wired_ultimate_audit")
+async def system_memory_wired_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide wired memory ultimate.
+    """
+    logger.info("Starting system wired memory ultimate audit")
+    yield ProgressPayload(step="Initializing Memory probe", pct=0, log="Collecting system-wide wired memory stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            mem = psutil.virtual_memory()
+            current_val = getattr(mem, "wired", 0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Wired Memory {current_val}")
+            metadata = {"wired": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing wired memory ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Wired Memory", pct=pct, log=f"Measured wired memory sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average wired memory: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_wired": avg_val, "stability": "STABLE"}
