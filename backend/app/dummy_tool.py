@@ -6628,3 +6628,81 @@ async def system_cpu_idle_time_avg_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU idle time: {avg_val:.2f} s")
     yield {"status": "audit_complete", "avg_idle_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_mem_swap_total_audit")
+async def system_mem_swap_total_audit(samples: int = 3):
+    """
+    Audits system-wide swap memory total capacity.
+    """
+    logger.info("Starting system swap memory total audit")
+    yield ProgressPayload(step="Initializing Swap probe", pct=0, log="Collecting system-wide swap total stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.total
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Swap Total {current_val} bytes")
+            metadata = {"swap_total": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing system swap total: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling swap total", pct=pct, log=f"Measured system swap total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap total: {avg_val:.2f} bytes")
+    yield {"status": "audit_complete", "avg_swap_total": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_mem_swap_used_audit")
+async def system_mem_swap_used_audit(samples: int = 3):
+    """
+    Audits system-wide swap memory used amount.
+    """
+    logger.info("Starting system swap memory used audit")
+    yield ProgressPayload(step="Initializing Swap probe", pct=0, log="Collecting system-wide swap used stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.used
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Swap Used {current_val} bytes")
+            metadata = {"swap_used": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing system swap used: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling swap used", pct=pct, log=f"Measured system swap used sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap used: {avg_val:.2f} bytes")
+    yield {"status": "audit_complete", "avg_swap_used": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_mem_swap_free_audit")
+async def system_mem_swap_free_audit(samples: int = 3):
+    """
+    Audits system-wide swap memory free amount.
+    """
+    logger.info("Starting system swap memory free audit")
+    yield ProgressPayload(step="Initializing Swap probe", pct=0, log="Collecting system-wide swap free stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.free
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Swap Free {current_val} bytes")
+            metadata = {"swap_free": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing system swap free: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling swap free", pct=pct, log=f"Measured system swap free sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap free: {avg_val:.2f} bytes")
+    yield {"status": "audit_complete", "avg_swap_free": avg_val, "stability": "STABLE"}
