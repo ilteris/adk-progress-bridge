@@ -6559,3 +6559,72 @@ async def system_disk_io_write_time_avg_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk write time: {avg_val:.2f} ms")
     yield {"status": "audit_complete", "avg_write_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_user_time_avg_audit")
+async def system_cpu_user_time_avg_audit(samples: int = 3):
+    logger.info("Starting system CPU user time average audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide CPU user time stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            current_val = times.user
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU User Time {current_val} s")
+            metadata = {"user_time": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing system CPU user time: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU user time", pct=pct, log=f"Measured system CPU user time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU user time: {avg_val:.2f} s")
+    yield {"status": "audit_complete", "avg_user_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_system_time_avg_audit")
+async def system_cpu_system_time_avg_audit(samples: int = 3):
+    logger.info("Starting system CPU system time average audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide CPU system time stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            current_val = times.system
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU System Time {current_val} s")
+            metadata = {"system_time": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing system CPU system time: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU system time", pct=pct, log=f"Measured system CPU system time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU system time: {avg_val:.2f} s")
+    yield {"status": "audit_complete", "avg_system_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_idle_time_avg_audit")
+async def system_cpu_idle_time_avg_audit(samples: int = 3):
+    logger.info("Starting system CPU idle time average audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide CPU idle time stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            current_val = times.idle
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Idle Time {current_val} s")
+            metadata = {"idle_time": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing system CPU idle time: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU idle time", pct=pct, log=f"Measured system CPU idle time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU idle time: {avg_val:.2f} s")
+    yield {"status": "audit_complete", "avg_idle_time": avg_val, "stability": "STABLE"}
