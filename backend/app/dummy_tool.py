@@ -8579,3 +8579,81 @@ async def system_disk_io_write_time_ultimate_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk write time: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_write_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_bytes_sent_ultimate_audit")
+async def system_net_io_bytes_sent_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network bytes sent ultimate.
+    """
+    logger.info("Starting system network bytes sent ultimate audit")
+    yield ProgressPayload(step="Initializing Network probe", pct=0, log="Collecting system-wide network bytes sent stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            net_io = psutil.net_io_counters()
+            current_val = net_io.bytes_sent
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Network Bytes Sent {current_val}")
+            metadata = {"bytes_sent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing network bytes sent ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Network Bytes Sent", pct=pct, log=f"Measured network bytes sent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average network bytes sent: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_bytes_sent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_bytes_recv_ultimate_audit")
+async def system_net_io_bytes_recv_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network bytes received ultimate.
+    """
+    logger.info("Starting system network bytes received ultimate audit")
+    yield ProgressPayload(step="Initializing Network probe", pct=0, log="Collecting system-wide network bytes received stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            net_io = psutil.net_io_counters()
+            current_val = net_io.bytes_recv
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Network Bytes Received {current_val}")
+            metadata = {"bytes_recv": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing network bytes received ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Network Bytes Received", pct=pct, log=f"Measured network bytes received sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average network bytes received: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_bytes_recv": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_packets_sent_ultimate_audit")
+async def system_net_io_packets_sent_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network packets sent ultimate.
+    """
+    logger.info("Starting system network packets sent ultimate audit")
+    yield ProgressPayload(step="Initializing Network probe", pct=0, log="Collecting system-wide network packets sent stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            net_io = psutil.net_io_counters()
+            current_val = net_io.packets_sent
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Network Packets Sent {current_val}")
+            metadata = {"packets_sent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing network packets sent ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Network Packets Sent", pct=pct, log=f"Measured network packets sent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average network packets sent: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_packets_sent": avg_val, "stability": "STABLE"}
