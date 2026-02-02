@@ -9281,3 +9281,81 @@ async def system_swap_memory_free_ultimate_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap free: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_free": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_swap_memory_percent_ultimate_audit")
+async def system_swap_memory_percent_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide swap memory percent ultimate.
+    """
+    logger.info("Starting system swap memory percent ultimate audit")
+    yield ProgressPayload(step="Initializing Swap probe", pct=0, log="Collecting system-wide swap memory percent stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.percent
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Swap Percent {current_val}%")
+            metadata = {"percent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing swap memory percent ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Swap Percent", pct=pct, log=f"Measured swap memory percent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap percent: {avg_val:.2f}%")
+    yield {"status": "audit_complete", "avg_percent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_swap_memory_sin_ultimate_audit")
+async def system_swap_memory_sin_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide swap memory sin ultimate (bytes swapped in from disk).
+    """
+    logger.info("Starting system swap memory sin ultimate audit")
+    yield ProgressPayload(step="Initializing Swap probe", pct=0, log="Collecting system-wide swap memory sin stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.sin
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Swap Sin {current_val}")
+            metadata = {"sin": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing swap memory sin ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Swap Sin", pct=pct, log=f"Measured swap memory sin sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap sin: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_sin": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_swap_memory_sout_ultimate_audit")
+async def system_swap_memory_sout_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide swap memory sout ultimate (bytes swapped out to disk).
+    """
+    logger.info("Starting system swap memory sout ultimate audit")
+    yield ProgressPayload(step="Initializing Swap probe", pct=0, log="Collecting system-wide swap memory sout stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.sout
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Swap Sout {current_val}")
+            metadata = {"sout": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing swap memory sout ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Swap Sout", pct=pct, log=f"Measured swap memory sout sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap sout: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_sout": avg_val, "stability": "STABLE"}
