@@ -8344,3 +8344,82 @@ async def system_swap_memory_free_avg_audit(samples: int = 3):
     avg_val = sum(mem_samples) / len(mem_samples) if mem_samples else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap free: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_swap_free": avg_val, "stability": "STABLE"}
+
+
+@progress_tool(name="system_swap_memory_sin_ultimate_audit")
+async def system_swap_memory_sin_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide swap memory sin (bytes read from disk) ultimate.
+    """
+    logger.info("Starting system swap memory sin ultimate audit")
+    yield ProgressPayload(step="Initializing Swap probe", pct=0, log="Collecting system-wide swap sin stats...")
+    mem_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.sin
+            mem_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Swap Sin {current_val}")
+            metadata = {"swap_sin": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing swap sin ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Swap Sin", pct=pct, log=f"Measured swap sin sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(mem_samples) / len(mem_samples) if mem_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap sin: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_swap_sin": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_swap_memory_sout_ultimate_audit")
+async def system_swap_memory_sout_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide swap memory sout (bytes written to disk) ultimate.
+    """
+    logger.info("Starting system swap memory sout ultimate audit")
+    yield ProgressPayload(step="Initializing Swap probe", pct=0, log="Collecting system-wide swap sout stats...")
+    mem_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.sout
+            mem_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Swap Sout {current_val}")
+            metadata = {"swap_sout": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing swap sout ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Swap Sout", pct=pct, log=f"Measured swap sout sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(mem_samples) / len(mem_samples) if mem_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap sout: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_swap_sout": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_busy_time_ultimate_audit")
+async def system_disk_io_busy_time_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide disk I/O busy time ultimate.
+    """
+    logger.info("Starting system disk I/O busy time ultimate audit")
+    yield ProgressPayload(step="Initializing Disk probe", pct=0, log="Collecting system-wide disk I/O busy time stats...")
+    busy_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            disk_io = psutil.disk_io_counters()
+            current_val = getattr(disk_io, "busy_time", 0)
+            busy_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Busy Time {current_val}")
+            metadata = {"busy_time": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk busy time ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Busy Time", pct=pct, log=f"Measured disk busy time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(busy_samples) / len(busy_samples) if busy_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk busy time: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_busy_time": avg_val, "stability": "STABLE"}
