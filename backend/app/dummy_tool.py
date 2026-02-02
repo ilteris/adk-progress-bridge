@@ -9905,3 +9905,78 @@ async def disk_io_read_time_ultimate_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk io read time: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_read_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_pids_count_ultimate_audit")
+async def system_pids_count_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide PID count ultimate.
+    """
+    logger.info("Starting system PID count ultimate audit")
+    yield ProgressPayload(step="Initializing PID probe", pct=0, log="Collecting system-wide active PID stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            current_val = len(psutil.pids())
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: PID Count {current_val}")
+            metadata = {"pid_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing PID count ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling PID Count", pct=pct, log=f"Measured PID count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average PID count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_pid_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_boot_time_ultimate_audit")
+async def system_boot_time_ultimate_audit(samples: int = 3):
+    """
+    Audits system boot time ultimate.
+    """
+    logger.info("Starting system boot time ultimate audit")
+    yield ProgressPayload(step="Initializing Boot probe", pct=0, log="Collecting system boot time stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            current_val = psutil.boot_time()
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Boot Time {current_val}")
+            metadata = {"boot_time": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing boot time ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Boot Time", pct=pct, log=f"Measured boot time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average boot time: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_boot_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_users_count_ultimate_audit")
+async def system_users_count_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide logged-in users count ultimate.
+    """
+    logger.info("Starting system users count ultimate audit")
+    yield ProgressPayload(step="Initializing User probe", pct=0, log="Collecting system-wide logged-in user stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            current_val = len(psutil.users())
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: User Count {current_val}")
+            metadata = {"user_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing user count ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling User Count", pct=pct, log=f"Measured user count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average user count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_user_count": avg_val, "stability": "STABLE"}
