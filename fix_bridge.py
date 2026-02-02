@@ -1,13 +1,15 @@
-import asyncio
+import os
+
+content = """import asyncio
 from typing import Any, Dict, List, AsyncGenerator, Callable, Literal, Union, Optional, Set
 from pydantic import BaseModel, Field, validate_call
 from .logger import logger
 from .metrics import ACTIVE_TASKS, PEAK_ACTIVE_TASKS, STALE_TASKS_CLEANED_TOTAL, TOTAL_TASKS_STARTED
 
 class ProgressPayload(BaseModel):
-    """
+    \"\"\"
     Standard schema for progress updates yielded by tools.
-    """
+    \"\"\"
     step: str = Field(
         ..., 
         description="A human-readable label for the current task phase.",
@@ -32,9 +34,9 @@ class ProgressPayload(BaseModel):
     )
 
 class ProgressEvent(BaseModel):
-    """
+    \"\"\"
     The event envelope sent over the Server-Sent Events (SSE) stream.
-    """
+    \"\"\"
     call_id: str = Field(
         ..., 
         description="The unique identifier for this specific task execution session.",
@@ -81,10 +83,10 @@ class InputManager:
 input_manager = InputManager()
 
 class TaskBroadcaster:
-    """
+    \"\"\"
     Consumes an async generator and broadcasts events to multiple subscribers.
     Also maintains a buffer of events for late subscribers.
-    """
+    \"\"\"
     def __init__(self, call_id: str, tool_name: str, gen: AsyncGenerator):
         self.call_id = call_id
         self.tool_name = tool_name
@@ -107,14 +109,14 @@ class TaskBroadcaster:
             async for item in self.gen:
                 if isinstance(item, ProgressPayload):
                     event = ProgressEvent(call_id=self.call_id, type="progress", payload=item)
-                elif isinstance(item, dict) and item.get("type") == "input_request":
-                    event = ProgressEvent(call_id=self.call_id, type="input_request", payload=item["payload"])
+                elif isinstance(item, dict) and item.get(\"type\") == \"input_request\":
+                    event = ProgressEvent(call_id=self.call_id, type=\"input_request\", payload=item[\"payload\"])
                 else:
-                    event = ProgressEvent(call_id=self.call_id, type="result", payload=item)
+                    event = ProgressEvent(call_id=self.call_id, type=\"result\", payload=item)
                 
                 async with self._lock:
                     self.history.append(event)
-                    if event.type == "result":
+                    if event.type == \"result\":
                         self.final_event = event
                         self.is_done = True
                     
@@ -133,8 +135,8 @@ class TaskBroadcaster:
             # Yield a progress event for cancellation to match verification expectations
             event = ProgressEvent(
                 call_id=self.call_id, 
-                type="progress", 
-                payload=ProgressPayload(step="Cancelled", pct=100, log="Task cancelled by user.")
+                type=\"progress\", 
+                payload=ProgressPayload(step=\"Cancelled\", pct=100, log=\"Task cancelled by user.\")
             )
             async with self._lock:
                 self.history.append(event)
@@ -144,7 +146,7 @@ class TaskBroadcaster:
                     await q.put(event)
         except Exception as e:
             logger.error(f"Error in task {self.call_id}: {e}")
-            event = ProgressEvent(call_id=self.call_id, type="error", payload={"detail": str(e)})
+            event = ProgressEvent(call_id=self.call_id, type=\"error\", payload={\"detail\": str(e)})
             async with self._lock:
                 self.history.append(event)
                 self.final_event = event
@@ -180,7 +182,7 @@ class TaskBroadcaster:
 class ToolRegistry:
     def __init__(self):
         self._tools: Dict[str, Callable] = {}
-        # Stores call_id -> {"broadcaster": broadcaster, "created_at": timestamp, "consumed": bool}
+        # Stores call_id -> {\"broadcaster\": broadcaster, \"created_at\": timestamp, \"consumed\": bool}
         self._active_tasks: Dict[str, Dict[str, Any]] = {}
         self._total_tasks_started = 0
         self._peak_active_tasks = 0
@@ -217,10 +219,10 @@ class ToolRegistry:
         async with self._lock:
             return [
                 {
-                    "call_id": call_id,
-                    "tool_name": data["broadcaster"].tool_name,
-                    "created_at": data["created_at"],
-                    "consumed": data["consumed"]
+                    \"call_id\": call_id,
+                    \"tool_name\": data[\"broadcaster\"].tool_name,
+                    \"created_at\": data[\"created_at\"],
+                    \"consumed\": data[\"consumed\"]
                 }
                 for call_id, data in self._active_tasks.items()
             ]
@@ -233,9 +235,9 @@ class ToolRegistry:
         broadcaster = TaskBroadcaster(call_id, tool_name, gen)
         async with self._lock:
             self._active_tasks[call_id] = {
-                "broadcaster": broadcaster,
-                "created_at": time.time(),
-                "consumed": False
+                \"broadcaster\": broadcaster,
+                \"created_at\": time.time(),
+                \"consumed\": False
             }
             ACTIVE_TASKS.labels(tool_name=tool_name).inc()
             self._total_tasks_started += 1
@@ -253,8 +255,8 @@ class ToolRegistry:
         async with self._lock:
             task_data = self._active_tasks.get(call_id)
             if task_data:
-                task_data["consumed"] = True
-                return task_data["broadcaster"]
+                task_data[\"consumed\"] = True
+                return task_data[\"broadcaster\"]
             return None
 
     async def get_task_no_consume(self, call_id: str) -> Optional[Dict[str, Any]]:
@@ -265,9 +267,9 @@ class ToolRegistry:
         async with self._lock:
             task_data = self._active_tasks.pop(call_id, None)
             if task_data:
-                tool_name = task_data["broadcaster"].tool_name
+                tool_name = task_data[\"broadcaster\"].tool_name
                 ACTIVE_TASKS.labels(tool_name=tool_name).dec()
-                await task_data["broadcaster"].stop()
+                await task_data[\"broadcaster\"].stop()
                 logger.info(f"Task removed from registry: {call_id}")
                 return True
             return False
@@ -279,7 +281,7 @@ class ToolRegistry:
         async with self._lock:
             tasks = list(self._active_tasks.items())
         for call_id, task_data in tasks:
-            await task_data["broadcaster"].stop()
+            await task_data[\"broadcaster\"].stop()
             await self.remove_task(call_id)
 
     async def cleanup_stale_tasks(self, max_age_seconds: int):
@@ -288,9 +290,9 @@ class ToolRegistry:
         stale_tasks = []
         async with self._lock:
             for call_id, task_data in self._active_tasks.items():
-                if task_data["broadcaster"].is_done and now - task_data["created_at"] > max_age_seconds:
+                if task_data[\"broadcaster\"].is_done and now - task_data[\"created_at\"] > max_age_seconds:
                     stale_tasks.append(call_id)
-                elif not task_data["consumed"] and now - task_data["created_at"] > max_age_seconds:
+                elif not task_data[\"consumed\"] and now - task_data[\"created_at\"] > max_age_seconds:
                     stale_tasks.append(call_id)
         
         for call_id in stale_tasks:
@@ -309,4 +311,8 @@ def progress_tool(name: Optional[str] = None):
     return decorator
 
 async def format_sse(event: ProgressEvent) -> str:
-    return f"data: {event.model_dump_json()}\n\n"
+    return f\"data: {event.model_dump_json()}\\n\\n\"
+\"\"\"
+
+with open('backend/app/bridge.py', 'w') as f:
+    f.write(content)

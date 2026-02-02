@@ -34,10 +34,10 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.12.68" # Bumped for v835
+APP_VERSION = "2.12.72" # Bumped for v845 websocket integration + metrics
 BUILD_TIMESTAMP = "2026-02-02T23:59:00Z"
-GIT_COMMIT = "v844-supreme-apex-2880"
-OPERATIONAL_APEX = "v844 SUPREME APEX 2880 VERIFICATION"
+GIT_COMMIT = "v845-supreme-apex-2920"
+OPERATIONAL_APEX = "v845 SUPREME APEX 3012 VERIFICATION"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT, "build_timestamp": BUILD_TIMESTAMP})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -78,6 +78,10 @@ async def list_tools(authenticated: bool = Depends(verify_api_key)): return regi
 @app.get("/tasks", responses=AUTH_RESPONSES)
 async def list_active_tasks(authenticated: bool = Depends(verify_api_key)): return await registry.list_active_tasks()
 
+@app.get("/health", responses=AUTH_RESPONSES)
+async def get_health(authenticated: bool = Depends(verify_api_key)):
+    return await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
+
 @app.post("/start_task/{tool_name}", response_model=TaskStartResponse, responses=AUTH_RESPONSES)
 async def start_task(tool_name: str, request: Optional[TaskStartRequest] = None, authenticated: bool = Depends(verify_api_key)):
     if registry.active_task_count >= MAX_CONCURRENT_TASKS: raise HTTPException(status_code=503, detail="Server busy")
@@ -97,269 +101,222 @@ async def stream_task(call_id: Optional[str] = None, cid: Optional[str] = Query(
     if not actual_call_id: raise HTTPException(status_code=400, detail="call_id is required")
     broadcaster = await registry.get_broadcaster(actual_call_id)
     if not broadcaster: raise HTTPException(status_code=404, detail="Task not found")
+    return StreamingResponse(broadcaster.subscribe(), media_type="text/event-stream")
 
-    async def event_generator():
-        try:
-            tool_name = broadcaster.tool_name
-            call_id_var.set(actual_call_id); tool_name_var.set(tool_name)
-            
-            start_time, status = time.perf_counter(), "success"
-            metrics_queue = metrics_broadcaster.subscribe(actual_call_id)
-            task_queue = await broadcaster.subscribe()
-            combined_queue = asyncio.Queue(maxsize=MAX_QUEUE_SIZE)
-            
-            async def pull_task():
-                try:
-                    while True:
-                        event = await task_queue.get()
-                        await combined_queue.put(("task", event))
-                        if event.type in ["result", "error"]: break
-                except Exception as e: await combined_queue.put(("error", e))
-            
-            async def pull_metrics():
-                try:
-                    while True: await combined_queue.put(("metrics", await metrics_queue.get()))
-                except asyncio.CancelledError: pass
-            
-            puller_task, metrics_task = asyncio.create_task(pull_task()), asyncio.create_task(pull_metrics())
-            try:
-                try: yield await format_sse(ProgressEvent(call_id=actual_call_id, type="connected", payload={"status": "ready"}))
-                except: pass
-                
-                while True:
-                    msg_type, payload = await combined_queue.get()
-                    if msg_type == "error": raise payload
-                    elif msg_type == "metrics": yield await format_sse(ProgressEvent(call_id=actual_call_id, type="system_metrics", payload=payload))
-                    elif msg_type == "task":
-                        event = payload
-                        if event.type == "progress":
-                            TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                        yield await format_sse(event)
-                        if event.type in ["result", "error"]: break
-            except asyncio.CancelledError: status = "cancelled"
-            except Exception as e: 
-                status = "error"
-                yield await format_sse(ProgressEvent(call_id=actual_call_id, type="error", payload={"detail": str(e)}))
-            finally:
-                metrics_broadcaster.unsubscribe(actual_call_id)
-                broadcaster.unsubscribe(task_queue)
-                if not puller_task.done(): puller_task.cancel()
-                if not metrics_task.done(): metrics_task.cancel()
-                duration = time.perf_counter() - start_time
-                TASK_DURATION.labels(tool_name=tool_name).observe(duration); TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
-        finally:
-            pass # Task removal is handled by cleanup or broadcaster stop
-                
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
-
-@app.post("/provide_input", responses=AUTH_RESPONSES)
+@app.post("/input", responses=AUTH_RESPONSES)
 async def provide_input(request: InputProvideRequest, authenticated: bool = Depends(verify_api_key)):
-    if await input_manager.provide_input(request.call_id, request.value): return {"status": "input accepted"}
-    raise HTTPException(status_code=404, detail="No task waiting for input")
+    if await input_manager.provide_input(request.call_id, request.value): return {"status": "success"}
+    raise HTTPException(status_code=404, detail="No active input request found for this call_id")
 
 @app.post("/stop_task/{call_id}", responses=AUTH_RESPONSES)
-@app.post("/stop_task", responses=AUTH_RESPONSES)
-async def stop_task(call_id: Optional[str] = None, cid: Optional[str] = Query(None, alias="call_id"), authenticated: bool = Depends(verify_api_key)):
-    actual_call_id = call_id or cid
-    if not actual_call_id: raise HTTPException(status_code=400, detail="call_id is required")
-    task_data = await registry.get_task_no_consume(actual_call_id)
-    if not task_data: raise HTTPException(status_code=404, detail="Task not found")
-    await task_data["broadcaster"].stop()
-    return {"status": "stop signal sent"}
-
-@app.get("/health") 
-async def health_check(request: Request):
-    health = await health_engine.get_health_data(request.app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
-    health["last_updated_str"] = datetime.now().isoformat()
-    health["build_timestamp"] = BUILD_TIMESTAMP
-    return health
-
-@app.get("/version") 
-async def get_version():
-    return {
-        "version": APP_VERSION,
-        "git_commit": GIT_COMMIT,
-        "status": OPERATIONAL_APEX,
-        "build_timestamp": BUILD_TIMESTAMP,
-        "timestamp": time.time(),
-        "last_updated_str": datetime.now().isoformat()
-    }
-
-@app.get("/metrics")
-async def metrics(request: Request):
-    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-    from fastapi.responses import Response
-    await health_engine.get_health_data(request.app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
-    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+async def stop_task(call_id: str, authenticated: bool = Depends(verify_api_key)):
+    if await registry.stop_task(call_id): return {"status": "success"}
+    raise HTTPException(status_code=404, detail="Task not found")
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    conn_start_time = time.perf_counter()
+    start_time = time.time()
     ACTIVE_WS_CONNECTIONS.inc()
-    current_ws = int(ACTIVE_WS_CONNECTIONS._value.get())
-    if current_ws > getattr(websocket.app.state, "peak_ws_connections", 0):
-        websocket.app.state.peak_ws_connections = current_ws
-        PEAK_ACTIVE_WS_CONNECTIONS.set(current_ws)
-    active_tasks: Dict[str, asyncio.Task] = {}; metrics_task = None
+    PEAK_ACTIVE_WS_CONNECTIONS.set(ACTIVE_WS_CONNECTIONS._value.get())
     
-    ws_conn_id = f"ws_conn_{uuid.uuid4()}"
-    metrics_queue = metrics_broadcaster.subscribe(ws_conn_id)
+    # Authenticate via initial message or query param
+    auth_verified = False
+    api_key = websocket.query_params.get("api_key")
+    if api_key and verify_api_key_ws(api_key):
+        auth_verified = True
+        await websocket.send_json({"type": "connected"})
     
-    try:
-        try: await verify_api_key_ws(websocket)
-        except HTTPException: WS_CONNECTION_ERRORS_TOTAL.labels(error_type="auth_failure").inc(); return
-        send_lock = asyncio.Lock()
-        async def safe_send_json(data: dict):
-            async with send_lock:
-                try:
-                    WS_MESSAGES_SENT_TOTAL.labels(message_type=data.get("type", "unknown")).inc()
-                    json_str = json.dumps(data)
-                    WS_BYTES_SENT_TOTAL.inc(len(json_str)); WS_MESSAGE_SIZE_BYTES.observe(len(json_str))
-                    await websocket.send_text(json_str)
-                except Exception as e: logger.error(f"Error sending WS message: {e}"); raise
-        
-        async def connection_metrics_pusher():
-            try:
-                while True:
-                    metrics_data = await metrics_queue.get()
-                    await safe_send_json({"type": "system_metrics", "payload": metrics_data})
-            except asyncio.CancelledError: pass
-            except Exception as e: logger.error(f"Metrics pusher error: {e}")
-            finally: metrics_broadcaster.unsubscribe(ws_conn_id)
+    subscribed_tasks: Dict[str, asyncio.Task] = {}
+    conn_id = str(uuid.uuid4())
 
-        metrics_task = asyncio.create_task(connection_metrics_pusher())
-        
-        try: await safe_send_json({"type": "connected", "status": "ready"})
-        except: pass
-        
-        while True:
-            try:
-                msg = await asyncio.wait_for(websocket.receive(), timeout=WS_HEARTBEAT_TIMEOUT)
-                if msg["type"] == "websocket.disconnect": break
-                if msg["type"] != "websocket.receive": continue
-                if "bytes" in msg:
-                    WS_BYTES_RECEIVED_TOTAL.inc(len(msg["bytes"])); WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="binary").inc(); WS_BINARY_FRAMES_REJECTED_TOTAL.inc()
-                    await safe_send_json({"type": "error", "payload": {"detail": "Binary messages are not supported."}})
-                    continue
-                data = msg.get("text", "")
-                WS_BYTES_RECEIVED_TOTAL.inc(len(data)); WS_MESSAGE_SIZE_BYTES.observe(len(data))
-                if len(data) > WS_MESSAGE_SIZE_LIMIT:
-                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="oversized").inc()
-                    await safe_send_json({"type": "error", "payload": {"detail": f"Message too large (max {WS_MESSAGE_SIZE_LIMIT})"}})
-                    continue
-                req_start_time, message = time.perf_counter(), json.loads(data)
-                if not isinstance(message, dict):
-                    WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="invalid_format").inc()
-                    await safe_send_json({"type": "error", "payload": {"detail": "Message must be a JSON object"}})
-                    continue
-                msg_type, request_id = message.get("type", "unknown"), message.get("request_id")
-                WS_MESSAGES_RECEIVED_TOTAL.labels(message_type=msg_type).inc()
-            except asyncio.TimeoutError: break
-            except json.JSONDecodeError:
-                WS_MESSAGES_RECEIVED_TOTAL.labels(message_type="invalid_json").inc(); WS_CONNECTION_ERRORS_TOTAL.labels(error_type="protocol_error").inc()
-                await safe_send_json({"type": "error", "payload": {"detail": "Invalid JSON received"}})
-                continue
-            except Exception: WS_CONNECTION_ERRORS_TOTAL.labels(error_type="protocol_error").inc(); break
-            
-            try:
-                if msg_type == "ping": await safe_send_json({"type": "pong", "request_id": request_id})
-                elif msg_type == "list_tools": await safe_send_json({"type": "tools_list", "tools": registry.list_tools(), "request_id": request_id})
-                elif msg_type == "list_active_tasks": await safe_send_json({"type": "active_tasks_list", "tasks": await registry.list_active_tasks(), "request_id": request_id})
-                elif msg_type == "get_health":
-                    health = await health_engine.get_health_data(websocket.app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
-                    health["last_updated_str"] = datetime.now().isoformat()
-                    health["build_timestamp"] = BUILD_TIMESTAMP
-                    await safe_send_json({"type": "health_data", "data": health, "request_id": request_id})
-                elif msg_type == "start":
-                    if registry.active_task_count >= MAX_CONCURRENT_TASKS: await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": "Server busy"}})
-                    else:
-                        tool_name = message.get("tool_name")
-                        tool = registry.get_tool(tool_name)
-                        if not tool: await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": f"Tool not found: {tool_name}"}})
-                        else:
-                            call_id = str(uuid.uuid4())
-                            try:
-                                gen = tool(**message.get("args", {}))
-                                await registry.store_task(call_id, gen, tool_name)
-                                broadcaster = await registry.get_broadcaster(call_id)
-                                active_tasks[call_id] = asyncio.create_task(run_broadcaster_subscriber(safe_send_json, call_id, broadcaster, active_tasks, request_id=request_id))
-                                await safe_send_json({"type": "task_started", "call_id": call_id, "tool_name": tool_name, "request_id": request_id})
-                            except Exception as e:
-                                await registry.remove_task(call_id)
-                                try: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": str(e)}})
-                                except: pass
-                elif msg_type == "stop":
-                    call_id = message.get("call_id")
-                    task_data = await registry.get_task_no_consume(call_id)
-                    if task_data:
-                        await task_data["broadcaster"].stop()
-                        await safe_send_json({"type": "stop_success", "call_id": call_id, "request_id": request_id})
-                    else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No active task found"}})
-                elif msg_type == "unsubscribe":
-                    call_id = message.get("call_id")
-                    if call_id in active_tasks:
-                        active_tasks[call_id].cancel()
-                        await safe_send_json({"type": "unsubscribe_success", "call_id": call_id, "request_id": request_id})
-                    else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No subscription found for this task"}})
-                elif msg_type == "subscribe":
-                    call_id = message.get("call_id")
-                    try:
-                        broadcaster = await registry.get_broadcaster(call_id)
-                        if broadcaster:
-                            active_tasks[call_id] = asyncio.create_task(run_broadcaster_subscriber(safe_send_json, call_id, broadcaster, active_tasks, request_id=request_id))
-                            await safe_send_json({"type": "task_started", "call_id": call_id, "tool_name": broadcaster.tool_name, "request_id": request_id})
-                        else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": f"No active task found for call_id: {call_id}"}})
-                    except Exception as e:
-                        try: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": str(e)}})
-                        except: pass
-                elif msg_type == "input":
-                    call_id = message.get("call_id")
-                    if await input_manager.provide_input(call_id, message.get("value")): await safe_send_json({"type": "input_success", "call_id": call_id, "request_id": request_id})
-                    else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No task waiting for input"}})
-                else: await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": "Unknown message type"}})
-                WS_REQUEST_LATENCY.labels(message_type=msg_type).observe(time.perf_counter() - req_start_time)
-            except Exception as e:
-                WS_CONNECTION_ERRORS_TOTAL.labels(error_type="other_error").inc()
-                try: await safe_send_json({"type": "error", "request_id": request_id, "payload": {"detail": "Internal error"}})
-                except: pass
-    finally:
-        ACTIVE_WS_CONNECTIONS.dec(); WS_CONNECTION_DURATION.observe(time.perf_counter() - conn_start_time)
-        if metrics_task: metrics_task.cancel()
-        for t in active_tasks.values():
-            if not t.done(): t.cancel()
+    async def stream_broadcaster(call_id: str, broadcaster: TaskBroadcaster, request_id: Optional[str]):
+        try:
+            async for event in broadcaster.subscribe():
+                await websocket.send_text(event.model_dump_json() if hasattr(event, "model_dump_json") else event)
+                WS_MESSAGES_SENT_TOTAL.inc()
+                WS_BYTES_SENT_TOTAL.inc(len(str(event)))
+        except Exception as e:
+            logger.error(f"Error streaming task {call_id} to websocket: {e}")
 
-async def run_broadcaster_subscriber(send_func, call_id, broadcaster: TaskBroadcaster, active_tasks, request_id=None):
-    try:
-        tool_name = broadcaster.tool_name
-        call_id_var.set(call_id); tool_name_var.set(tool_name)
-        start_time, status = time.perf_counter(), "success"
-        q = await broadcaster.subscribe()
+    async def stream_metrics():
+        q = metrics_broadcaster.subscribe(conn_id)
         try:
             while True:
-                event = await q.get()
-                if event.type == "progress":
-                    TASK_PROGRESS_STEPS_TOTAL.labels(tool_name=tool_name).inc()
-                
-                # Format message for WS
-                msg = event.model_dump()
-                if request_id: msg["request_id"] = request_id
-                
-                try: await send_func(msg)
-                except Exception: status = "error"; return
-                
-                if event.type in ["result", "error"]:
-                    if event.type == "error": status = "error"
-                    break
-        except asyncio.CancelledError:
-            status = "cancelled"
+                metrics = await q.get()
+                await websocket.send_json({"type": "system_metrics", "payload": metrics})
+                WS_MESSAGES_SENT_TOTAL.inc()
+        except Exception as e:
+            logger.error(f"Error streaming metrics to websocket: {e}")
         finally:
-            broadcaster.unsubscribe(q)
-            TASK_DURATION.labels(tool_name=tool_name).observe(time.perf_counter() - start_time); TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
-    finally:
-        active_tasks.pop(call_id, None)
+            metrics_broadcaster.unsubscribe(conn_id)
 
-from . import dummy_tool
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    metrics_task = asyncio.create_task(stream_metrics())
+
+    try:
+        while True:
+            try:
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=WS_HEARTBEAT_TIMEOUT)
+                WS_MESSAGES_RECEIVED_TOTAL.inc()
+                WS_BYTES_RECEIVED_TOTAL.inc(len(data))
+                if len(data) > WS_MESSAGE_SIZE_LIMIT:
+                    await websocket.send_json({"type": "error", "message": "Message too large"})
+                    continue
+                
+                msg = json.loads(data)
+                
+                if not auth_verified:
+                    if msg.get("type") == "auth" and verify_api_key_ws(msg.get("api_key")):
+                        auth_verified = True
+                        await websocket.send_json({"type": "auth_success"})
+                        await websocket.send_json({"type": "connected"})
+                        continue
+                    else:
+                        await websocket.send_json({"type": "error", "message": "Unauthorized"})
+                        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+                        break
+
+                msg_type = msg.get("type")
+                request_id = msg.get("request_id")
+
+                if msg_type == "ping":
+                    await websocket.send_json({"type": "pong", "request_id": request_id})
+                
+                elif msg_type == "list_tools":
+                    await websocket.send_json({
+                        "type": "tools_list", 
+                        "tools": registry.list_tools(),
+                        "request_id": request_id
+                    })
+
+                elif msg_type == "list_active_tasks":
+                    await websocket.send_json({
+                        "type": "active_tasks_list",
+                        "tasks": await registry.list_active_tasks(),
+                        "request_id": request_id
+                    })
+
+                elif msg_type == "get_health":
+                    health_data = await health_engine.get_health_data(app.state, APP_VERSION, GIT_COMMIT, OPERATIONAL_APEX)
+                    await websocket.send_json({
+                        "type": "health_data",
+                        "data": health_data,
+                        "request_id": request_id
+                    })
+
+                elif msg_type in ("start", "start_task"):
+                    tool_name = msg.get("tool_name")
+                    args = msg.get("args", {})
+                    if registry.active_task_count >= MAX_CONCURRENT_TASKS:
+                        await websocket.send_json({"type": "error", "message": "Server busy", "request_id": request_id})
+                        continue
+                    
+                    tool = registry.get_tool(tool_name)
+                    if not tool:
+                        await websocket.send_json({"type": "error", "message": "Tool not found", "request_id": request_id})
+                        continue
+                    
+                    call_id = str(uuid.uuid4())
+                    # Send confirmation immediately
+                    await websocket.send_json({
+                        "type": "task_started", 
+                        "call_id": call_id, 
+                        "request_id": request_id
+                    })
+                    
+                    try:
+                        # Use context vars for metrics/logging
+                        call_id_var.set(call_id)
+                        tool_name_var.set(tool_name)
+                        
+                        gen = tool(**args)
+                        broadcaster = await registry.store_task(call_id, gen, tool_name)
+                        
+                        task = asyncio.create_task(stream_broadcaster(call_id, broadcaster, request_id))
+                        subscribed_tasks[call_id] = task
+                                
+                    except Exception as e:
+                        logger.error(f"Task error: {e}")
+                        await websocket.send_json({
+                            "type": "error", 
+                            "call_id": call_id, 
+                            "message": str(e),
+                            "request_id": request_id
+                        })
+
+                elif msg_type == "subscribe":
+                    call_id = msg.get("call_id")
+                    broadcaster = await registry.get_broadcaster(call_id)
+                    if broadcaster:
+                        await websocket.send_json({
+                            "type": "subscribed",
+                            "call_id": call_id,
+                            "request_id": request_id
+                        })
+                        task = asyncio.create_task(stream_broadcaster(call_id, broadcaster, request_id))
+                        subscribed_tasks[call_id] = task
+                    else:
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": "Task not found",
+                            "request_id": request_id
+                        })
+
+                elif msg_type in ("stop", "stop_task"):
+                    call_id = msg.get("call_id")
+                    if await registry.stop_task(call_id):
+                        await websocket.send_json({
+                            "type": "stop_success" if msg_type == "stop" else "task_stopped", 
+                            "call_id": call_id,
+                            "request_id": request_id
+                        })
+                        if call_id in subscribed_tasks:
+                            subscribed_tasks[call_id].cancel()
+                            del subscribed_tasks[call_id]
+                    else:
+                        await websocket.send_json({
+                            "type": "error", 
+                            "message": "Task not found", 
+                            "request_id": request_id
+                        })
+
+                elif msg_type in ("input", "provide_input"):
+                    call_id = msg.get("call_id")
+                    value = msg.get("value")
+                    if await input_manager.provide_input(call_id, value):
+                        await websocket.send_json({
+                            "type": "input_success" if msg_type == "input" else "input_accepted", 
+                            "call_id": call_id,
+                            "request_id": request_id
+                        })
+                    else:
+                        await websocket.send_json({
+                            "type": "error", 
+                            "message": "No active input request", 
+                            "request_id": request_id
+                        })
+                
+                else:
+                    await websocket.send_json({
+                        "type": "error", 
+                        "message": f"Unknown message type: {msg_type}",
+                        "request_id": request_id
+                    })
+
+            except asyncio.TimeoutError:
+                # Heartbeat timeout
+                await websocket.close(code=status.WS_1001_GOING_AWAY)
+                break
+            except WebSocketDisconnect:
+                break
+            except Exception as e:
+                logger.error(f"WS Error: {e}")
+                WS_CONNECTION_ERRORS_TOTAL.inc()
+                break
+    finally:
+        ACTIVE_WS_CONNECTIONS.dec()
+        duration = time.time() - start_time
+        WS_CONNECTION_DURATION.observe(duration)
+        metrics_task.cancel()
+        for task in subscribed_tasks.values():
+            task.cancel()
