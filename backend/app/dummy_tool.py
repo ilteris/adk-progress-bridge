@@ -14385,3 +14385,203 @@ async def system_swap_memory_sout_min_ultimate_audit(samples: int = 3):
         await asyncio.sleep(0.1)
     min_val = min(samples_list) if samples_list else 0.0
     yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_virtual_memory_total_min_ultimate_audit")
+async def system_virtual_memory_total_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system virtual memory total min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing VM Probe", pct=0, log="Collecting total vm baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vm = psutil.virtual_memory()
+            val = getattr(vm, "total", 0)
+            samples_list.append(val)
+            metadata = {"total": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory total min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling VM", pct=pct, log=f"Measured total vm sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_virtual_memory_available_min_ultimate_audit")
+async def system_virtual_memory_available_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system virtual memory available min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing VM Probe", pct=0, log="Collecting available vm baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vm = psutil.virtual_memory()
+            val = getattr(vm, "available", 0)
+            samples_list.append(val)
+            metadata = {"available": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory available min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling VM", pct=pct, log=f"Measured available vm sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_virtual_memory_percent_min_ultimate_audit")
+async def system_virtual_memory_percent_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system virtual memory percent min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing VM Probe", pct=0, log="Collecting percent vm baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vm = psutil.virtual_memory()
+            val = getattr(vm, "percent", 0)
+            samples_list.append(val)
+            metadata = {"percent": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory percent min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling VM", pct=pct, log=f"Measured percent vm sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_virtual_memory_used_min_ultimate_audit")
+async def system_virtual_memory_used_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system virtual memory used min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing VM Probe", pct=0, log="Collecting used vm baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vm = psutil.virtual_memory()
+            val = getattr(vm, "used", 0)
+            samples_list.append(val)
+            metadata = {"used": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory used min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling VM", pct=pct, log=f"Measured used vm sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_virtual_memory_free_min_ultimate_audit")
+async def system_virtual_memory_free_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system virtual memory free min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing VM Probe", pct=0, log="Collecting free vm baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vm = psutil.virtual_memory()
+            val = getattr(vm, "free", 0)
+            samples_list.append(val)
+            metadata = {"free": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory free min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling VM", pct=pct, log=f"Measured free vm sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_virtual_memory_active_min_ultimate_audit")
+async def system_virtual_memory_active_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system virtual memory active min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing VM Probe", pct=0, log="Collecting active vm baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vm = psutil.virtual_memory()
+            val = getattr(vm, "active", 0)
+            samples_list.append(val)
+            metadata = {"active": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory active min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling VM", pct=pct, log=f"Measured active vm sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_virtual_memory_inactive_min_ultimate_audit")
+async def system_virtual_memory_inactive_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system virtual memory inactive min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing VM Probe", pct=0, log="Collecting inactive vm baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vm = psutil.virtual_memory()
+            val = getattr(vm, "inactive", 0)
+            samples_list.append(val)
+            metadata = {"inactive": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory inactive min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling VM", pct=pct, log=f"Measured inactive vm sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_virtual_memory_buffers_min_ultimate_audit")
+async def system_virtual_memory_buffers_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system virtual memory buffers min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing VM Probe", pct=0, log="Collecting buffers vm baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vm = psutil.virtual_memory()
+            val = getattr(vm, "buffers", 0)
+            samples_list.append(val)
+            metadata = {"buffers": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory buffers min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling VM", pct=pct, log=f"Measured buffers vm sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_virtual_memory_cached_min_ultimate_audit")
+async def system_virtual_memory_cached_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system virtual memory cached min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing VM Probe", pct=0, log="Collecting cached vm baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vm = psutil.virtual_memory()
+            val = getattr(vm, "cached", 0)
+            samples_list.append(val)
+            metadata = {"cached": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory cached min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling VM", pct=pct, log=f"Measured cached vm sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
+
+@progress_tool(name="system_virtual_memory_shared_min_ultimate_audit")
+async def system_virtual_memory_shared_min_ultimate_audit(samples: int = 3):
+    logger.info(f"Starting system virtual memory shared min ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing VM Probe", pct=0, log="Collecting shared vm baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            vm = psutil.virtual_memory()
+            val = getattr(vm, "shared", 0)
+            samples_list.append(val)
+            metadata = {"shared": val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory shared min ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling VM", pct=pct, log=f"Measured shared vm sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    min_val = min(samples_list) if samples_list else 0.0
+    yield {"status": "audit_complete", "final_min": min_val, "samples": len(samples_list)}
