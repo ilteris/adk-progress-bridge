@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.10.74
+# Specification: ADK Progress Bridge v2.10.84
 
 ## Overview
 The ADK Progress Bridge is a high-performance middleware designed to connect background tools/tasks with a real-time terminal user interface (TUI). It provides a standardized protocol for reporting progress, logs, and results via Server-Sent Events (SSE) and WebSockets.
@@ -305,11 +305,21 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - `system_cpu_times_user_avg_ultimate_audit`: Average CPU user time tracking.
 - `system_cpu_times_system_avg_ultimate_audit`: Average CPU system time tracking.
 
+- `system_disk_io_read_count_min_ultimate_audit`: Minimum disk read count tracking. 
+- `system_disk_io_write_count_min_ultimate_audit`: Minimum disk write count tracking. 
+- `system_disk_io_read_time_min_ultimate_audit`: Minimum disk read time tracking. 
+- `system_disk_io_write_time_min_ultimate_audit`: Minimum disk write time tracking. 
+- `system_disk_io_busy_time_min_ultimate_audit`: Minimum disk busy time tracking. 
+- `system_swap_memory_total_min_ultimate_audit`: Minimum total swap memory tracking. 
+- `system_swap_memory_used_min_ultimate_audit`: Minimum used swap memory tracking. 
+- `system_swap_memory_free_min_ultimate_audit`: Minimum free swap memory tracking. 
+- `system_swap_memory_sin_min_ultimate_audit`: Minimum swap-in total tracking. 
+- `system_swap_memory_sout_min_ultimate_audit`: Minimum swap-out total tracking. 
 ## 5. Metadata
-- **APP_VERSION**: 2.10.73
+- **APP_VERSION**: 2.10.84
 - **BUILD_TIMESTAMP**: 2026-02-01T23:59:59Z
-- **GIT_COMMIT**: v749-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: v749 SUPREME APEX VERIFICATION ADELE- `system_swap_memory_total_avg_ultimate_audit`: Average total swap memory tracking.
+- **GIT_COMMIT**: v758-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: v758 SUPREME APEX VERIFICATION ADELE- `system_swap_memory_total_avg_ultimate_audit`: Average total swap memory tracking.
 - `system_swap_memory_used_avg_ultimate_audit`: Average used swap memory tracking.
 - `system_swap_memory_free_avg_ultimate_audit`: Average free swap memory tracking.
 - `system_swap_memory_percent_avg_ultimate_audit`: Average swap memory percentage tracking.
