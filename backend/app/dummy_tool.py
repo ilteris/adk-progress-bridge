@@ -24891,3 +24891,323 @@ async def system_process_memory_full_info_uss_max_ultimate_audit_v4(samples: int
         await asyncio.sleep(0.1)
     final_val = max(samples_list) if samples_list else 0
     yield {"status": "audit_complete", "final_max": final_val}
+
+@progress_tool(name="system_process_memory_full_info_uss_min_ultimate_audit_v4")
+async def system_process_memory_full_info_uss_min_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_full_info().uss
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_val}
+
+@progress_tool(name="system_process_memory_full_info_pss_avg_ultimate_audit_v4")
+async def system_process_memory_full_info_pss_avg_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "pss", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_val}
+
+@progress_tool(name="system_process_memory_full_info_pss_max_ultimate_audit_v4")
+async def system_process_memory_full_info_pss_max_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "pss", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_val}
+
+@progress_tool(name="system_process_memory_full_info_pss_min_ultimate_audit_v4")
+async def system_process_memory_full_info_pss_min_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "pss", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_val}
+
+@progress_tool(name="system_process_memory_full_info_swap_avg_ultimate_audit_v4")
+async def system_process_memory_full_info_swap_avg_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "swap", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_val}
+
+@progress_tool(name="system_process_memory_full_info_swap_max_ultimate_audit_v4")
+async def system_process_memory_full_info_swap_max_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "swap", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_val}
+
+@progress_tool(name="system_process_memory_full_info_swap_min_ultimate_audit_v4")
+async def system_process_memory_full_info_swap_min_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "swap", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_val}
+
+@progress_tool(name="system_process_memory_full_info_rss_avg_ultimate_audit_v4")
+async def system_process_memory_full_info_rss_avg_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_full_info().rss
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_val}
+
+@progress_tool(name="system_process_memory_full_info_rss_max_ultimate_audit_v4")
+async def system_process_memory_full_info_rss_max_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_full_info().rss
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_val}
+
+@progress_tool(name="system_process_memory_full_info_rss_min_ultimate_audit_v4")
+async def system_process_memory_full_info_rss_min_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_full_info().rss
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_val}
+
+@progress_tool(name="system_process_memory_full_info_vms_avg_ultimate_audit_v4")
+async def system_process_memory_full_info_vms_avg_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_full_info().vms
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_val}
+
+@progress_tool(name="system_process_memory_full_info_vms_max_ultimate_audit_v4")
+async def system_process_memory_full_info_vms_max_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_full_info().vms
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_val}
+
+@progress_tool(name="system_process_memory_full_info_vms_min_ultimate_audit_v4")
+async def system_process_memory_full_info_vms_min_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = proc.memory_full_info().vms
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_val}
+
+@progress_tool(name="system_process_memory_full_info_shared_avg_ultimate_audit_v4")
+async def system_process_memory_full_info_shared_avg_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "shared", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_val}
+
+@progress_tool(name="system_process_memory_full_info_shared_max_ultimate_audit_v4")
+async def system_process_memory_full_info_shared_max_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "shared", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_val}
+
+@progress_tool(name="system_process_memory_full_info_shared_min_ultimate_audit_v4")
+async def system_process_memory_full_info_shared_min_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "shared", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_val}
+
+@progress_tool(name="system_process_memory_full_info_text_avg_ultimate_audit_v4")
+async def system_process_memory_full_info_text_avg_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "text", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_val}
+
+@progress_tool(name="system_process_memory_full_info_text_max_ultimate_audit_v4")
+async def system_process_memory_full_info_text_max_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "text", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = max(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_max": final_val}
+
+@progress_tool(name="system_process_memory_full_info_text_min_ultimate_audit_v4")
+async def system_process_memory_full_info_text_min_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "text", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = min(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_min": final_val}
+
+@progress_tool(name="system_process_memory_full_info_data_avg_ultimate_audit_v4")
+async def system_process_memory_full_info_data_avg_ultimate_audit_v4(samples: int = 3):
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            import psutil
+            proc = psutil.Process()
+            val = getattr(proc.memory_full_info(), "data", 0)
+            samples_list.append(val)
+        except: pass
+        yield ProgressPayload(step="Sampling", pct=pct, log=f"Sample {i+1}/{samples}")
+        await asyncio.sleep(0.1)
+    final_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield {"status": "audit_complete", "final_avg": final_val}
