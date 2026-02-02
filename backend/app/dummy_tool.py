@@ -7435,58 +7435,6 @@ async def system_disk_partitions_count_avg_audit(samples: int = 3):
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk partitions count: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_disk_partitions_count": avg_val, "stability": "STABLE"}
 
-@progress_tool(name="system_disk_io_read_time_avg_audit")
-async def system_disk_io_read_time_avg_audit(samples: int = 3):
-    """
-    Audits system-wide disk IO read time average.
-    """
-    logger.info("Starting system disk IO read time average audit")
-    yield ProgressPayload(step="Initializing Disk IO probe", pct=0, log="Collecting system-wide disk IO stats...")
-    disk_samples = []
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            io = psutil.disk_io_counters()
-            current_val = io.read_time
-            disk_samples.append(current_val)
-            logger.info(f"Sample {i+1}/{samples}: Disk Read Time {current_val}ms")
-            metadata = {"disk_read_time": current_val}
-        except Exception as e:
-            logger.error(f"Error auditing disk IO read time average: {e}")
-            metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling Disk IO", pct=pct, log=f"Measured disk read time sample {i+1}/{samples}.", metadata=metadata)
-        await asyncio.sleep(0.1)
-    
-    avg_val = sum(disk_samples) / len(disk_samples) if disk_samples else 0
-    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk read time: {avg_val:.2f}ms")
-    yield {"status": "audit_complete", "avg_disk_read_time": avg_val, "stability": "STABLE"}
-
-@progress_tool(name="system_disk_io_write_time_avg_audit")
-async def system_disk_io_write_time_avg_audit(samples: int = 3):
-    """
-    Audits system-wide disk IO write time average.
-    """
-    logger.info("Starting system disk IO write time average audit")
-    yield ProgressPayload(step="Initializing Disk IO probe", pct=0, log="Collecting system-wide disk IO stats...")
-    disk_samples = []
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            io = psutil.disk_io_counters()
-            current_val = io.write_time
-            disk_samples.append(current_val)
-            logger.info(f"Sample {i+1}/{samples}: Disk Write Time {current_val}ms")
-            metadata = {"disk_write_time": current_val}
-        except Exception as e:
-            logger.error(f"Error auditing disk IO write time average: {e}")
-            metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling Disk IO", pct=pct, log=f"Measured disk write time sample {i+1}/{samples}.", metadata=metadata)
-        await asyncio.sleep(0.1)
-    
-    avg_val = sum(disk_samples) / len(disk_samples) if disk_samples else 0
-    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk write time: {avg_val:.2f}ms")
-    yield {"status": "audit_complete", "avg_disk_write_time": avg_val, "stability": "STABLE"}
-
 @progress_tool(name="system_net_io_sent_bytes_avg_audit")
 async def system_net_io_sent_bytes_avg_audit(samples: int = 3):
     """
@@ -7538,110 +7486,6 @@ async def system_net_io_recv_bytes_avg_audit(samples: int = 3):
     avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net received bytes: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_net_recv_bytes": avg_val, "stability": "STABLE"}
-
-@progress_tool(name="system_net_io_packets_sent_avg_audit")
-async def system_net_io_packets_sent_avg_audit(samples: int = 3):
-    """
-    Audits system-wide network packets sent average.
-    """
-    logger.info("Starting system network packets sent average audit")
-    yield ProgressPayload(step="Initializing Network probe", pct=0, log="Collecting system-wide network stats...")
-    net_samples = []
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            io = psutil.net_io_counters()
-            current_val = io.packets_sent
-            net_samples.append(current_val)
-            logger.info(f"Sample {i+1}/{samples}: Net Packets Sent {current_val}")
-            metadata = {"net_packets_sent": current_val}
-        except Exception as e:
-            logger.error(f"Error auditing network packets sent average: {e}")
-            metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling Network", pct=pct, log=f"Measured net packets sent sample {i+1}/{samples}.", metadata=metadata)
-        await asyncio.sleep(0.1)
-    
-    avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
-    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net packets sent: {avg_val:.2f}")
-    yield {"status": "audit_complete", "avg_net_packets_sent": avg_val, "stability": "STABLE"}
-
-@progress_tool(name="system_net_io_packets_recv_avg_audit")
-async def system_net_io_packets_recv_avg_audit(samples: int = 3):
-    """
-    Audits system-wide network packets received average.
-    """
-    logger.info("Starting system network packets received average audit")
-    yield ProgressPayload(step="Initializing Network probe", pct=0, log="Collecting system-wide network stats...")
-    net_samples = []
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            io = psutil.net_io_counters()
-            current_val = io.packets_recv
-            net_samples.append(current_val)
-            logger.info(f"Sample {i+1}/{samples}: Net Packets Recv {current_val}")
-            metadata = {"net_packets_recv": current_val}
-        except Exception as e:
-            logger.error(f"Error auditing network packets received average: {e}")
-            metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling Network", pct=pct, log=f"Measured net packets recv sample {i+1}/{samples}.", metadata=metadata)
-        await asyncio.sleep(0.1)
-    
-    avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
-    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net packets received: {avg_val:.2f}")
-    yield {"status": "audit_complete", "avg_net_packets_recv": avg_val, "stability": "STABLE"}
-
-@progress_tool(name="system_net_io_errin_avg_audit")
-async def system_net_io_errin_avg_audit(samples: int = 3):
-    """
-    Audits system-wide network input errors average.
-    """
-    logger.info("Starting system network input errors average audit")
-    yield ProgressPayload(step="Initializing Network probe", pct=0, log="Collecting system-wide network stats...")
-    net_samples = []
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            io = psutil.net_io_counters()
-            current_val = io.errin
-            net_samples.append(current_val)
-            logger.info(f"Sample {i+1}/{samples}: Net ErrIn {current_val}")
-            metadata = {"net_errin": current_val}
-        except Exception as e:
-            logger.error(f"Error auditing network input errors average: {e}")
-            metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling Network", pct=pct, log=f"Measured net errin sample {i+1}/{samples}.", metadata=metadata)
-        await asyncio.sleep(0.1)
-    
-    avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
-    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net input errors: {avg_val:.2f}")
-    yield {"status": "audit_complete", "avg_net_errin": avg_val, "stability": "STABLE"}
-
-@progress_tool(name="system_net_io_errout_avg_audit")
-async def system_net_io_errout_avg_audit(samples: int = 3):
-    """
-    Audits system-wide network output errors average.
-    """
-    logger.info("Starting system network output errors average audit")
-    yield ProgressPayload(step="Initializing Network probe", pct=0, log="Collecting system-wide network stats...")
-    net_samples = []
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            io = psutil.net_io_counters()
-            current_val = io.errout
-            net_samples.append(current_val)
-            logger.info(f"Sample {i+1}/{samples}: Net ErrOut {current_val}")
-            metadata = {"net_errout": current_val}
-        except Exception as e:
-            logger.error(f"Error auditing network output errors average: {e}")
-            metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling Network", pct=pct, log=f"Measured net errout sample {i+1}/{samples}.", metadata=metadata)
-        await asyncio.sleep(0.1)
-    
-    avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
-    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net output errors: {avg_val:.2f}")
-    yield {"status": "audit_complete", "avg_net_errout": avg_val, "stability": "STABLE"}
 
 @progress_tool(name="system_cpu_stats_ctx_switches_avg_audit")
 async def system_cpu_stats_ctx_switches_avg_audit(samples: int = 3):
@@ -8788,32 +8632,6 @@ async def system_net_io_dropout_ultimate_audit(samples: int = 3):
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average network output drops: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_dropout": avg_val, "stability": "STABLE"}
 
-@progress_tool(name="system_disk_io_read_count_ultimate_audit")
-async def system_disk_io_read_count_ultimate_audit(samples: int = 3):
-    """
-    Audits system-wide disk read count ultimate.
-    """
-    logger.info("Starting system disk read count ultimate audit")
-    yield ProgressPayload(step="Initializing Disk probe", pct=0, log="Collecting system-wide disk read count stats...")
-    samples_list = []
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            disk_io = psutil.disk_io_counters()
-            current_val = disk_io.read_count
-            samples_list.append(current_val)
-            logger.info(f"Sample {i+1}/{samples}: Disk Read Count {current_val}")
-            metadata = {"read_count": current_val}
-        except Exception as e:
-            logger.error(f"Error auditing disk read count ultimate: {e}")
-            metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling Disk Read Count", pct=pct, log=f"Measured disk read count sample {i+1}/{samples}.", metadata=metadata)
-        await asyncio.sleep(0.1)
-    
-    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
-    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk read count: {avg_val:.2f}")
-    yield {"status": "audit_complete", "avg_read_count": avg_val, "stability": "STABLE"}
-
 @progress_tool(name="system_cpu_stats_ctx_switches_ultimate_audit")
 async def system_cpu_stats_ctx_switches_ultimate_audit(samples: int = 3):
     """
@@ -9308,58 +9126,6 @@ async def system_swap_memory_percent_ultimate_audit(samples: int = 3):
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap percent: {avg_val:.2f}%")
     yield {"status": "audit_complete", "avg_percent": avg_val, "stability": "STABLE"}
 
-@progress_tool(name="system_swap_memory_sin_ultimate_audit")
-async def system_swap_memory_sin_ultimate_audit(samples: int = 3):
-    """
-    Audits system-wide swap memory sin ultimate (bytes swapped in from disk).
-    """
-    logger.info("Starting system swap memory sin ultimate audit")
-    yield ProgressPayload(step="Initializing Swap probe", pct=0, log="Collecting system-wide swap memory sin stats...")
-    samples_list = []
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            swap = psutil.swap_memory()
-            current_val = swap.sin
-            samples_list.append(current_val)
-            logger.info(f"Sample {i+1}/{samples}: Swap Sin {current_val}")
-            metadata = {"sin": current_val}
-        except Exception as e:
-            logger.error(f"Error auditing swap memory sin ultimate: {e}")
-            metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling Swap Sin", pct=pct, log=f"Measured swap memory sin sample {i+1}/{samples}.", metadata=metadata)
-        await asyncio.sleep(0.1)
-    
-    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
-    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap sin: {avg_val:.2f}")
-    yield {"status": "audit_complete", "avg_swap_sin": avg_val, "stability": "STABLE"}
-
-@progress_tool(name="system_swap_memory_sout_ultimate_audit")
-async def system_swap_memory_sout_ultimate_audit(samples: int = 3):
-    """
-    Audits system-wide swap memory sout ultimate (bytes swapped out to disk).
-    """
-    logger.info("Starting system swap memory sout ultimate audit")
-    yield ProgressPayload(step="Initializing Swap probe", pct=0, log="Collecting system-wide swap memory sout stats...")
-    samples_list = []
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            swap = psutil.swap_memory()
-            current_val = swap.sout
-            samples_list.append(current_val)
-            logger.info(f"Sample {i+1}/{samples}: Swap Sout {current_val}")
-            metadata = {"sout": current_val}
-        except Exception as e:
-            logger.error(f"Error auditing swap memory sout ultimate: {e}")
-            metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling Swap Sout", pct=pct, log=f"Measured swap memory sout sample {i+1}/{samples}.", metadata=metadata)
-        await asyncio.sleep(0.1)
-    
-    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
-    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap sout: {avg_val:.2f}")
-    yield {"status": "audit_complete", "avg_swap_sout": avg_val, "stability": "STABLE"}
-
 @progress_tool(name="system_cpu_times_user_ultimate_audit")
 async def system_cpu_times_user_ultimate_audit(samples: int = 3):
     """
@@ -9465,32 +9231,6 @@ async def system_cpu_times_nice_ultimate_audit(samples: int = 3):
     yield {"status": "audit_complete", "avg_nice": avg_val, "stability": "STABLE"}
 
     yield {"status": "audit_complete", "avg_ctx_switches": avg_val, "stability": "STABLE"}
-
-@progress_tool(name="system_cpu_stats_interrupts_ultimate_audit")
-async def system_cpu_stats_interrupts_ultimate_audit(samples: int = 3):
-    """
-    Audits system-wide CPU stats interrupts ultimate.
-    """
-    logger.info("Starting system cpu stats interrupts ultimate audit")
-    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide cpu stats interrupts...")
-    samples_list = []
-    for i in range(samples):
-        pct = int(((i + 1) / samples) * 100)
-        try:
-            stats = psutil.cpu_stats()
-            current_val = stats.interrupts
-            samples_list.append(current_val)
-            logger.info(f"Sample {i+1}/{samples}: CPU Interrupts {current_val}")
-            metadata = {"interrupts": current_val}
-        except Exception as e:
-            logger.error(f"Error auditing cpu stats interrupts ultimate: {e}")
-            metadata = {"error": str(e)}
-        yield ProgressPayload(step="Sampling CPU Interrupts", pct=pct, log=f"Measured cpu stats interrupts sample {i+1}/{samples}.", metadata=metadata)
-        await asyncio.sleep(0.1)
-    
-    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
-    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average cpu interrupts: {avg_val:.2f}")
-    yield {"status": "audit_complete", "avg_interrupts": avg_val, "stability": "STABLE"}
 
 @progress_tool(name="system_cpu_times_iowait_ultimate_audit")
 async def system_cpu_times_iowait_ultimate_audit(samples: int = 3):
@@ -11834,3 +11574,889 @@ async def system_disk_io_counters_write_count_avg_ultimate_audit(samples: int = 
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk write count: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_write_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_counters_read_bytes_avg_ultimate_audit")
+async def system_disk_io_counters_read_bytes_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average disk read bytes across multiple samples.
+    """
+    logger.info(f"Starting system disk io counters read bytes avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk IO Probe", pct=0, log="Collecting disk read bytes baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            io = psutil.disk_io_counters()
+            current_val = io.read_bytes if io else 0
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Read Bytes {current_val}")
+            metadata = {"read_bytes": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk io read bytes avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Read Bytes", pct=pct, log=f"Measured disk read bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk read bytes: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_read_bytes": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_counters_write_bytes_avg_ultimate_audit")
+async def system_disk_io_counters_write_bytes_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average disk write bytes across multiple samples.
+    """
+    logger.info(f"Starting system disk io counters write bytes avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk IO Probe", pct=0, log="Collecting disk write bytes baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            io = psutil.disk_io_counters()
+            current_val = io.write_bytes if io else 0
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Write Bytes {current_val}")
+            metadata = {"write_bytes": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk io write bytes avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Write Bytes", pct=pct, log=f"Measured disk write bytes sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk write bytes: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_write_bytes": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_counters_read_time_avg_ultimate_audit")
+async def system_disk_io_counters_read_time_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average disk read time across multiple samples.
+    """
+    logger.info(f"Starting system disk io counters read time avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk IO Probe", pct=0, log="Collecting disk read time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            io = psutil.disk_io_counters()
+            current_val = io.read_time if io else 0
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Read Time {current_val}")
+            metadata = {"read_time": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk io read time avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Read Time", pct=pct, log=f"Measured disk read time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk read time: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_read_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_counters_write_time_avg_ultimate_audit")
+async def system_disk_io_counters_write_time_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average disk write time across multiple samples.
+    """
+    logger.info(f"Starting system disk io counters write time avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk IO Probe", pct=0, log="Collecting disk write time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            io = psutil.disk_io_counters()
+            current_val = io.write_time if io else 0
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Write Time {current_val}")
+            metadata = {"write_time": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk io write time avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Write Time", pct=pct, log=f"Measured disk write time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk write time: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_write_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_io_counters_busy_time_avg_ultimate_audit")
+async def system_disk_io_counters_busy_time_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average disk busy time across multiple samples.
+    """
+    logger.info(f"Starting system disk io counters busy time avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Disk IO Probe", pct=0, log="Collecting disk busy time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            io = psutil.disk_io_counters()
+            current_val = getattr(io, "busy_time", 0) if io else 0
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Busy Time {current_val}")
+            metadata = {"busy_time": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk io busy time avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Disk Busy Time", pct=pct, log=f"Measured disk busy time sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk busy time: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_busy_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_ctx_switches_avg_ultimate_audit")
+async def system_cpu_stats_ctx_switches_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU context switches across multiple samples.
+    """
+    logger.info(f"Starting system cpu stats ctx switches avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Stats Probe", pct=0, log="Collecting CPU context switches baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            current_val = stats.ctx_switches
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Ctx Switches {current_val}")
+            metadata = {"ctx_switches": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu stats ctx switches avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Ctx Switches", pct=pct, log=f"Measured cpu stats ctx switches sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU context switches: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_ctx_switches": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_interrupts_avg_ultimate_audit")
+async def system_cpu_stats_interrupts_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU interrupts across multiple samples.
+    """
+    logger.info(f"Starting system cpu stats interrupts avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Stats Probe", pct=0, log="Collecting CPU interrupts baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            current_val = stats.interrupts
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Interrupts {current_val}")
+            metadata = {"interrupts": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu stats interrupts avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Interrupts", pct=pct, log=f"Measured cpu stats interrupts sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU interrupts: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_interrupts": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_syscalls_avg_ultimate_audit")
+async def system_cpu_stats_syscalls_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU syscalls across multiple samples.
+    """
+    logger.info(f"Starting system cpu stats syscalls avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Stats Probe", pct=0, log="Collecting CPU syscalls baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            current_val = stats.syscalls
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Syscalls {current_val}")
+            metadata = {"syscalls": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu stats syscalls avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Syscalls", pct=pct, log=f"Measured cpu stats syscalls sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU syscalls: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_syscalls": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_stats_soft_interrupts_avg_ultimate_audit")
+async def system_cpu_stats_soft_interrupts_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU soft interrupts across multiple samples.
+    """
+    logger.info(f"Starting system cpu stats soft interrupts avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Stats Probe", pct=0, log="Collecting CPU soft interrupts baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            stats = psutil.cpu_stats()
+            current_val = getattr(stats, "soft_interrupts", 0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Soft Interrupts {current_val}")
+            metadata = {"soft_interrupts": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu stats soft interrupts avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Soft Interrupts", pct=pct, log=f"Measured cpu stats soft interrupts sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU soft interrupts: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_soft_interrupts": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_percent_iowait_avg_ultimate_audit")
+async def system_cpu_times_percent_iowait_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU iowait percentage across multiple samples.
+    """
+    logger.info(f"Starting system cpu times percent iowait avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Times Probe", pct=0, log="Collecting CPU iowait percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times_percent(interval=None)
+            current_val = getattr(times, "iowait", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Iowait % {current_val}")
+            metadata = {"iowait_percent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times percent iowait avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Iowait %", pct=pct, log=f"Measured cpu times percent iowait sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU iowait %: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_iowait_percent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_percent_irq_avg_ultimate_audit")
+async def system_cpu_times_percent_irq_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU irq percentage across multiple samples.
+    """
+    logger.info(f"Starting system cpu times percent irq avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Times Probe", pct=0, log="Collecting CPU irq percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times_percent(interval=None)
+            current_val = getattr(times, "irq", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Irq % {current_val}")
+            metadata = {"irq_percent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times percent irq avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Irq %", pct=pct, log=f"Measured cpu times percent irq sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU irq %: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_irq_percent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_percent_softirq_avg_ultimate_audit")
+async def system_cpu_times_percent_softirq_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU softirq percentage across multiple samples.
+    """
+    logger.info(f"Starting system cpu times percent softirq avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Times Probe", pct=0, log="Collecting CPU softirq percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times_percent(interval=None)
+            current_val = getattr(times, "softirq", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Softirq % {current_val}")
+            metadata = {"softirq_percent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times percent softirq avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Softirq %", pct=pct, log=f"Measured cpu times percent softirq sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU softirq %: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_softirq_percent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_percent_steal_avg_ultimate_audit")
+async def system_cpu_times_percent_steal_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU steal percentage across multiple samples.
+    """
+    logger.info(f"Starting system cpu times percent steal avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Times Probe", pct=0, log="Collecting CPU steal percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times_percent(interval=None)
+            current_val = getattr(times, "steal", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Steal % {current_val}")
+            metadata = {"steal_percent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times percent steal avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Steal %", pct=pct, log=f"Measured cpu times percent steal sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU steal %: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_steal_percent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_percent_guest_avg_ultimate_audit")
+async def system_cpu_times_percent_guest_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU guest percentage across multiple samples.
+    """
+    logger.info(f"Starting system cpu times percent guest avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Times Probe", pct=0, log="Collecting CPU guest percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times_percent(interval=None)
+            current_val = getattr(times, "guest", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Guest % {current_val}")
+            metadata = {"guest_percent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times percent guest avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Guest %", pct=pct, log=f"Measured cpu times percent guest sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU guest %: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_guest_percent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_percent_guest_nice_avg_ultimate_audit")
+async def system_cpu_times_percent_guest_nice_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU guest_nice percentage across multiple samples.
+    """
+    logger.info(f"Starting system cpu times percent guest_nice avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Times Probe", pct=0, log="Collecting CPU guest_nice percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times_percent(interval=None)
+            current_val = getattr(times, "guest_nice", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Guest Nice % {current_val}")
+            metadata = {"guest_nice_percent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times percent guest_nice avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Guest Nice %", pct=pct, log=f"Measured cpu times percent guest_nice sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU guest_nice %: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_guest_nice_percent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_percent_nice_avg_ultimate_audit")
+async def system_cpu_times_percent_nice_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU nice percentage across multiple samples.
+    """
+    logger.info(f"Starting system cpu times percent nice avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Times Probe", pct=0, log="Collecting CPU nice percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times_percent(interval=None)
+            current_val = getattr(times, "nice", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Nice % {current_val}")
+            metadata = {"nice_percent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times percent nice avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU Nice %", pct=pct, log=f"Measured cpu times percent nice sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU nice %: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_nice_percent": avg_val, "stability": "STABLE"}
+
+
+
+@progress_tool(name="system_virtual_memory_shared_avg_ultimate_audit")
+async def system_virtual_memory_shared_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average shared virtual memory across multiple samples.
+    """
+    logger.info(f"Starting system virtual memory shared avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting shared virtual memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            mem = psutil.virtual_memory()
+            current_val = getattr(mem, "shared", 0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Shared Memory {current_val}")
+            metadata = {"shared_memory": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory shared avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Shared Memory", pct=pct, log=f"Measured virtual memory shared sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average shared memory: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_shared_memory": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_virtual_memory_slab_avg_ultimate_audit")
+async def system_virtual_memory_slab_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average slab virtual memory across multiple samples.
+    """
+    logger.info(f"Starting system virtual memory slab avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting slab virtual memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            mem = psutil.virtual_memory()
+            current_val = getattr(mem, "slab", 0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Slab Memory {current_val}")
+            metadata = {"slab_memory": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory slab avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Slab Memory", pct=pct, log=f"Measured virtual memory slab sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average slab memory: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_slab_memory": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_virtual_memory_mapped_avg_ultimate_audit")
+async def system_virtual_memory_mapped_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average mapped virtual memory across multiple samples.
+    """
+    logger.info(f"Starting system virtual memory mapped avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting mapped virtual memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            mem = psutil.virtual_memory()
+            current_val = getattr(mem, "mapped", 0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Mapped Memory {current_val}")
+            metadata = {"mapped_memory": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory mapped avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Mapped Memory", pct=pct, log=f"Measured virtual memory mapped sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average mapped memory: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_mapped_memory": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_virtual_memory_dirty_avg_ultimate_audit")
+async def system_virtual_memory_dirty_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average dirty virtual memory across multiple samples.
+    """
+    logger.info(f"Starting system virtual memory dirty avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Memory Probe", pct=0, log="Collecting dirty virtual memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            mem = psutil.virtual_memory()
+            current_val = getattr(mem, "dirty", 0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Dirty Memory {current_val}")
+            metadata = {"dirty_memory": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing virtual memory dirty avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Dirty Memory", pct=pct, log=f"Measured virtual memory dirty sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average dirty memory: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_dirty_memory": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_swap_memory_total_avg_ultimate_audit")
+async def system_swap_memory_total_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average total swap memory across multiple samples.
+    """
+    logger.info(f"Starting system swap memory total avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Swap Probe", pct=0, log="Collecting total swap memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.total
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Total Swap Memory {current_val}")
+            metadata = {"total_swap_memory": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing swap memory total avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Total Swap Memory", pct=pct, log=f"Measured total swap memory sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average total swap memory: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_total_swap": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_swap_memory_used_avg_ultimate_audit")
+async def system_swap_memory_used_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average used swap memory across multiple samples.
+    """
+    logger.info(f"Starting system swap memory used avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Swap Probe", pct=0, log="Collecting used swap memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.used
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Used Swap Memory {current_val}")
+            metadata = {"used_swap_memory": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing swap memory used avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Used Swap Memory", pct=pct, log=f"Measured used swap memory sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average used swap memory: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_used_swap": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_swap_memory_free_avg_ultimate_audit")
+async def system_swap_memory_free_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average free swap memory across multiple samples.
+    """
+    logger.info(f"Starting system swap memory free avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Swap Probe", pct=0, log="Collecting free swap memory baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.free
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Free Swap Memory {current_val}")
+            metadata = {"free_swap_memory": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing swap memory free avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Free Swap Memory", pct=pct, log=f"Measured free swap memory sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average free swap memory: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_free_swap": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_swap_memory_percent_avg_ultimate_audit")
+async def system_swap_memory_percent_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average swap memory percentage across multiple samples.
+    """
+    logger.info(f"Starting system swap memory percent avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Swap Probe", pct=0, log="Collecting swap memory percentage baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            swap = psutil.swap_memory()
+            current_val = swap.percent
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Swap Memory % {current_val}")
+            metadata = {"swap_memory_percent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing swap memory percent avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Swap Memory %", pct=pct, log=f"Measured swap memory percentage sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap memory %: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_swap_percent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_bytes_sent_avg_ultimate_audit")
+async def system_net_io_bytes_sent_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average network bytes sent across multiple samples.
+    """
+    logger.info(f"Starting system net io bytes sent avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting bytes sent baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            current_val = counters.bytes_sent
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Bytes Sent {current_val}")
+            metadata = {"bytes_sent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net io bytes sent avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Bytes Sent", pct=pct, log=f"Measured net io bytes sent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average bytes sent: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_bytes_sent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_bytes_recv_avg_ultimate_audit")
+async def system_net_io_bytes_recv_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average network bytes received across multiple samples.
+    """
+    logger.info(f"Starting system net io bytes recv avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting bytes received baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            current_val = counters.bytes_recv
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Bytes Recv {current_val}")
+            metadata = {"bytes_recv": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net io bytes recv avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Bytes Recv", pct=pct, log=f"Measured net io bytes recv sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average bytes received: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_bytes_recv": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_packets_sent_avg_ultimate_audit")
+async def system_net_io_packets_sent_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average network packets sent across multiple samples.
+    """
+    logger.info(f"Starting system net io packets sent avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting packets sent baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            current_val = counters.packets_sent
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Packets Sent {current_val}")
+            metadata = {"packets_sent": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net io packets sent avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Packets Sent", pct=pct, log=f"Measured net io packets sent sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average packets sent: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_packets_sent": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_packets_recv_avg_ultimate_audit")
+async def system_net_io_packets_recv_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average network packets received across multiple samples.
+    """
+    logger.info(f"Starting system net io packets recv avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting packets received baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            current_val = counters.packets_recv
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Packets Recv {current_val}")
+            metadata = {"packets_recv": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net io packets recv avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Packets Recv", pct=pct, log=f"Measured net io packets recv sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average packets received: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_packets_recv": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_errin_avg_ultimate_audit")
+async def system_net_io_errin_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average network input errors across multiple samples.
+    """
+    logger.info(f"Starting system net io errin avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting input errors baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            current_val = counters.errin
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Input Errors {current_val}")
+            metadata = {"errin": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net io errin avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Input Errors", pct=pct, log=f"Measured net io errin sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average input errors: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_errin": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_errout_avg_ultimate_audit")
+async def system_net_io_errout_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average network output errors across multiple samples.
+    """
+    logger.info(f"Starting system net io errout avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting output errors baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            current_val = counters.errout
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Output Errors {current_val}")
+            metadata = {"errout": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net io errout avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Output Errors", pct=pct, log=f"Measured net io errout sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average output errors: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_errout": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_dropin_avg_ultimate_audit")
+async def system_net_io_dropin_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average network input drops across multiple samples.
+    """
+    logger.info(f"Starting system net io dropin avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting input drops baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            current_val = counters.dropin
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Input Drops {current_val}")
+            metadata = {"dropin": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net io dropin avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Input Drops", pct=pct, log=f"Measured net io dropin sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average input drops: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_dropin": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_dropout_avg_ultimate_audit")
+async def system_net_io_dropout_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average network output drops across multiple samples.
+    """
+    logger.info(f"Starting system net io dropout avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing Net Probe", pct=0, log="Collecting output drops baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            counters = psutil.net_io_counters()
+            current_val = counters.dropout
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Output Drops {current_val}")
+            metadata = {"dropout": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net io dropout avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Output Drops", pct=pct, log=f"Measured net io dropout sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average output drops: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_dropout": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_user_avg_ultimate_audit")
+async def system_cpu_times_user_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU user time across multiple samples.
+    """
+    logger.info(f"Starting system cpu times user avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting user time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            current_val = times.user
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: User Time {current_val}")
+            metadata = {"user_time": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times user avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling User Time", pct=pct, log=f"Measured cpu times user sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average user time: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_user_time": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_system_avg_ultimate_audit")
+async def system_cpu_times_system_avg_ultimate_audit(samples: int = 3):
+    """
+    Audits the average CPU system time across multiple samples.
+    """
+    logger.info(f"Starting system cpu times system avg ultimate audit with {samples} samples")
+    yield ProgressPayload(step="Initializing CPU Probe", pct=0, log="Collecting system time baseline...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            current_val = times.system
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: System Time {current_val}")
+            metadata = {"system_time": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times system avg ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling System Time", pct=pct, log=f"Measured cpu times system sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average system time: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_system_time": avg_val, "stability": "STABLE"}

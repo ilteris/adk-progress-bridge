@@ -34,10 +34,10 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.10.68"
-BUILD_TIMESTAMP = "2026-02-01T23:35:00Z"
-GIT_COMMIT = "v742-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v742 SUPREME APEX VERIFICATION ADELE"
+APP_VERSION = "2.10.75"
+BUILD_TIMESTAMP = "2026-02-02T00:05:00Z"
+GIT_COMMIT = "v749-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v749 SUPREME APEX VERIFICATION ADELE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT, "build_timestamp": BUILD_TIMESTAMP})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -199,6 +199,11 @@ async def websocket_endpoint(websocket: WebSocket):
         websocket.app.state.peak_ws_connections = current_ws
         PEAK_ACTIVE_WS_CONNECTIONS.set(current_ws)
     active_tasks: Dict[str, asyncio.Task] = {}
+    
+    # Shared metrics pusher for this WS connection
+    ws_conn_id = f"ws_conn_{uuid.uuid4()}"
+    metrics_queue = metrics_broadcaster.subscribe(ws_conn_id)
+    
     try:
         try: await verify_api_key_ws(websocket)
         except HTTPException: WS_CONNECTION_ERRORS_TOTAL.labels(error_type="auth_failure").inc(); return
@@ -211,6 +216,17 @@ async def websocket_endpoint(websocket: WebSocket):
                     WS_BYTES_SENT_TOTAL.inc(len(json_str)); WS_MESSAGE_SIZE_BYTES.observe(len(json_str))
                     await websocket.send_text(json_str)
                 except Exception as e: logger.error(f"Error sending WS message: {e}"); raise
+        
+        async def connection_metrics_pusher():
+            try:
+                while True:
+                    metrics_data = await metrics_queue.get()
+                    await safe_send_json({"type": "system_metrics", "payload": metrics_data})
+            except asyncio.CancelledError: pass
+            except Exception as e: logger.error(f"Metrics pusher error: {e}")
+            finally: metrics_broadcaster.unsubscribe(ws_conn_id)
+
+        metrics_task = asyncio.create_task(connection_metrics_pusher())
         
         try: await safe_send_json({"type": "connected", "status": "ready"})
         except: pass
@@ -283,7 +299,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         task_data = await registry.get_task_no_consume(call_id)
                         if task_data:
                             await task_data["gen"].aclose()
-                            if not task_data["consumed"]: await registry.remove_task(actual_call_id)
+                            if not task_data["consumed"]: await registry.remove_task(call_id)
                             await safe_send_json({"type": "stop_success", "call_id": call_id, "request_id": request_id})
                         else: await safe_send_json({"type": "error", "call_id": call_id, "request_id": request_id, "payload": {"detail": "No active task found"}})
                 elif msg_type == "subscribe":
@@ -311,22 +327,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 except: pass
     finally:
         ACTIVE_WS_CONNECTIONS.dec(); WS_CONNECTION_DURATION.observe(time.perf_counter() - conn_start_time)
+        metrics_task.cancel()
         for t in active_tasks.values():
             if not t.done(): t.cancel()
 
 async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks, request_id=None):
     try:
         call_id_var.set(call_id); tool_name_var.set(tool_name)
-        start_time, status, metrics_queue = time.perf_counter(), "success", metrics_broadcaster.subscribe(call_id)
-        async def metrics_pusher():
-            try:
-                while True:
-                    metrics_data = await metrics_queue.get()
-                    try:
-                        await send_func({"call_id": call_id, "request_id": request_id, "type": "system_metrics", "payload": metrics_data})
-                    except: break
-            except asyncio.CancelledError: pass
-        metrics_task = asyncio.create_task(metrics_pusher())
+        start_time, status = time.perf_counter(), "success"
         try:
             try:
                 async for item in gen:
@@ -347,7 +355,6 @@ async def run_ws_generator(send_func, call_id, tool_name, gen, active_tasks, req
                 except: pass
         except asyncio.CancelledError: status = "cancelled"; await gen.aclose()
         finally:
-            metrics_broadcaster.unsubscribe(call_id); metrics_task.cancel()
             TASK_DURATION.labels(tool_name=tool_name).observe(time.perf_counter() - start_time); TASKS_TOTAL.labels(tool_name=tool_name, status=status).inc()
     finally:
         await registry.remove_task(call_id); active_tasks.pop(call_id, None)

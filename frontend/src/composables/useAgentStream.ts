@@ -57,6 +57,7 @@ const WS_BUFFER_SIZE = 1000
 export class WebSocketManager {
   private ws: WebSocket | null = null
   private subscribers: Map<string, (event: AgentEvent) => void> = new Map()
+  private globalSubscribers: Set<(event: AgentEvent) => void> = new Set()
   private requestCallbacks: Map<string, { resolve: (data: any) => void, reject: (err: any) => void, timeout: any }> = new Map()
   private messageBuffer: AgentEvent[] = []
   private connectionPromise: Promise<void> | null = null
@@ -75,6 +76,7 @@ export class WebSocketManager {
       this.ws = null
     }
     this.subscribers.clear()
+    this.globalSubscribers.clear()
     this.messageBuffer = []
     for (const req of this.requestCallbacks.values()) {
         clearTimeout(req.timeout)
@@ -130,11 +132,15 @@ export class WebSocketManager {
                 return
             }
 
+            if (data.type === 'system_metrics' || !data.call_id) {
+                this.broadcast(data)
+                return
+            }
+
             const callback = data.call_id ? this.subscribers.get(data.call_id) : null
             if (callback) {
                 callback(data)
             } else {
-                // Buffer message if no subscriber yet, or if it's a broadcast like system_metrics
                 this.messageBuffer.push(data)
                 if (this.messageBuffer.length > WS_BUFFER_SIZE) {
                     this.messageBuffer.shift()
@@ -163,6 +169,7 @@ export class WebSocketManager {
         } else {
             this.notifyErrorToAll('WebSocket connection closed')
             this.subscribers.clear()
+            this.globalSubscribers.clear()
             this.messageBuffer = []
             
             for (const [reqId, req] of this.requestCallbacks.entries()) {
@@ -177,24 +184,37 @@ export class WebSocketManager {
     return this.connectionPromise
   }
 
-  private notifyStatusToAll(type: 'reconnecting' | 'connected') {
-    for (const [callId, callback] of this.subscribers.entries()) {
-        callback({
-            call_id: callId,
-            type: type,
-            payload: {}
-        })
+  private broadcast(data: AgentEvent) {
+    this.globalSubscribers.forEach(cb => cb(data))
+    
+    // Also send to all task subscribers for backward compatibility 
+    // if they are not also global subscribers
+    for (const cb of this.subscribers.values()) {
+        cb(data)
+    }
+
+    if (this.globalSubscribers.size === 0 && this.subscribers.size === 0) {
+        this.messageBuffer.push(data)
+        if (this.messageBuffer.length > WS_BUFFER_SIZE) {
+            this.messageBuffer.shift()
+        }
     }
   }
 
-  private notifyErrorToAll(detail: string) {
-    for (const [callId, callback] of this.subscribers.entries()) {
-        callback({
-            call_id: callId,
-            type: 'error',
-            payload: { detail }
-        })
+  private notifyStatusToAll(type: 'reconnecting' | 'connected') {
+    const event: AgentEvent = {
+        type: type,
+        payload: {}
     }
+    this.broadcast(event)
+  }
+
+  private notifyErrorToAll(detail: string) {
+    const event: AgentEvent = {
+        type: 'error',
+        payload: { detail }
+    }
+    this.broadcast(event)
   }
 
   private scheduleReconnect() {
@@ -203,6 +223,7 @@ export class WebSocketManager {
         console.error('[WS] Max reconnect attempts reached')
         this.notifyErrorToAll('WebSocket connection failed permanently')
         this.subscribers.clear()
+        this.globalSubscribers.clear()
         this.messageBuffer = []
         return
     }
@@ -247,13 +268,25 @@ export class WebSocketManager {
     const relevantMessages = this.messageBuffer.filter(msg => msg.call_id === callId || (msg.type === 'system_metrics' && !msg.call_id))
     if (relevantMessages.length > 0) {
         relevantMessages.forEach(msg => callback(msg))
-        this.messageBuffer = this.messageBuffer.filter(msg => msg.call_id !== callId)
+        this.messageBuffer = this.messageBuffer.filter(msg => msg.call_id !== callId && (msg.type !== 'system_metrics' || msg.call_id))
     }
   }
 
   unsubscribe(callId: string) {
     this.subscribers.delete(callId)
     this.messageBuffer = this.messageBuffer.filter(msg => msg.call_id !== callId)
+  }
+
+  subscribeGlobal(callback: (event: AgentEvent) => void) {
+      this.globalSubscribers.add(callback)
+      // Flush buffered global messages
+      const globalMessages = this.messageBuffer.filter(msg => !msg.call_id)
+      globalMessages.forEach(msg => callback(msg))
+      this.messageBuffer = this.messageBuffer.filter(msg => msg.call_id)
+  }
+
+  unsubscribeGlobal(callback: (event: AgentEvent) => void) {
+      this.globalSubscribers.delete(callback)
   }
 
   send(data: any): boolean {
@@ -342,6 +375,20 @@ export function useAgentStream() {
 
   let eventSource: EventSource | null = null
 
+  const handleGlobalEvent = (data: AgentEvent) => {
+      if (data.type === 'system_metrics') {
+          state.systemMetrics = data.payload
+      } else if (data.type === 'connected') {
+          state.isConnected = true
+          if (state.status === 'reconnecting') state.status = 'connected'
+      } else if (data.type === 'reconnecting') {
+          state.isConnected = false
+          state.status = 'reconnecting'
+      }
+  }
+
+  wsManager.subscribeGlobal(handleGlobalEvent)
+
   const reset = () => {
     if (state.useWS && state.callId) {
         wsManager.unsubscribe(state.callId)
@@ -357,7 +404,7 @@ export function useAgentStream() {
     state.error = null
     state.isStreaming = false
     state.inputPrompt = null
-    state.systemMetrics = null
+    // We don't reset systemMetrics here as they are global
     
     if (eventSource) {
       eventSource.close()
@@ -644,6 +691,7 @@ export function useAgentStream() {
 
   if (getCurrentInstance()) {
     onUnmounted(() => {
+      wsManager.unsubscribeGlobal(handleGlobalEvent)
       if (state.isStreaming) {
           stopTool()
       }

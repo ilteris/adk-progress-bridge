@@ -1,4 +1,4 @@
-# Specification: ADK Progress Bridge v2.10.68
+# Specification: ADK Progress Bridge v2.10.74
 
 ## Overview
 The ADK Progress Bridge is a high-performance middleware designed to connect background tools/tasks with a real-time terminal user interface (TUI). It provides a standardized protocol for reporting progress, logs, and results via Server-Sent Events (SSE) and WebSockets.
@@ -206,31 +206,34 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - `system_memory_available_avg_audit`: System-wide average available memory tracking.
 - `system_memory_used_avg_audit`: System-wide average used memory tracking.
 - `system_memory_free_avg_audit`: System-wide average free memory tracking.
+- `system_cpu_times_percent_steal_avg_ultimate_audit`: Average CPU steal percentage tracking.
+- `system_cpu_times_percent_guest_avg_ultimate_audit`: Average CPU guest percentage tracking.
+- `system_cpu_times_percent_guest_nice_avg_ultimate_audit`: Average CPU guest_nice percentage tracking.
+- `system_cpu_times_percent_nice_avg_ultimate_audit`: Average CPU nice percentage tracking.
+- `system_virtual_memory_shared_avg_ultimate_audit`: Average shared virtual memory tracking.
+- `system_virtual_memory_slab_avg_ultimate_audit`: Average slab virtual memory tracking.
+- `system_virtual_memory_mapped_avg_ultimate_audit`: Average mapped virtual memory tracking.
+- `system_virtual_memory_dirty_avg_ultimate_audit`: Average dirty virtual memory tracking.
 
 - `system_net_if_addrs_mac_min_ultimate_audit`: Minimum unique MAC addresses found per network scan.
 - `system_net_if_addrs_broadcast_min_ultimate_audit`: Minimum unique broadcast addresses found per network scan.
 - `system_disk_io_counters_read_count_avg_ultimate_audit`: Average disk read count across multiple samples.
 - `system_disk_io_counters_write_count_avg_ultimate_audit`: Average disk write count across multiple samples.
-
-## 5. Metadata
-- **APP_VERSION**: 2.10.68
-- **BUILD_TIMESTAMP**: 2026-02-01T23:30:00Z
-- **GIT_COMMIT**: v742-supreme-apex-adele-verification
-- **OPERATIONAL_APEX**: v742 SUPREME APEX VERIFICATION ADELE- `system_pids_count_ultimate_audit`: System-wide PID count tracking.
+- `system_pids_count_ultimate_audit`: System-wide PID count tracking.
 - `system_boot_time_ultimate_audit`: System boot time tracking.
 - `system_users_count_ultimate_audit`: System-wide logged-in users count tracking.
 - `system_disk_partitions_count_ultimate_audit`: System-wide disk partitions count tracking. 
 - `system_net_if_addrs_count_ultimate_audit`: System-wide network interface addresses count tracking. 
-- `system_net_if_stats_count_ultimate_audit`: System-wide network interface stats count tracking.- `system_net_if_stats_isup_total_ultimate_audit`: System-wide network interface isup total tracking. 
+- `system_net_if_stats_count_ultimate_audit`: System-wide network interface stats count tracking.
+- `system_net_if_stats_isup_total_ultimate_audit`: System-wide network interface isup total tracking. 
 - `system_net_if_stats_speed_total_ultimate_audit`: System-wide network interface speed total tracking. 
 - `system_net_if_stats_mtu_avg_ultimate_audit`: System-wide network interface MTU average tracking. 
-- `system_net_if_addrs_family_count_ultimate_audit`: System-wide network interface family count tracking.- `system_net_if_addrs_ipv4_total_ultimate_audit`: System-wide network interface IPv4 total tracking. 
+- `system_net_if_addrs_family_count_ultimate_audit`: System-wide network interface family count tracking.
 - `system_net_if_addrs_ipv4_total_ultimate_audit`: System-wide network interface IPv4 total tracking. 
 - `system_net_if_addrs_ipv6_total_ultimate_audit`: System-wide network interface IPv6 total tracking. 
 - `system_net_if_addrs_mac_total_ultimate_audit`: System-wide network interface MAC total tracking. 
-- `system_net_if_addrs_broadcast_total_ultimate_audit`: System-wide network interface broadcast total tracking.- `system_net_if_addrs_ipv6_total_ultimate_audit`: System-wide network interface IPv6 total tracking. 
-- `system_net_if_addrs_mac_total_ultimate_audit`: System-wide network interface MAC total tracking. 
-- `system_net_if_addrs_broadcast_total_ultimate_audit`: System-wide network interface broadcast total tracking.- `system_net_if_addrs_netmask_total_ultimate_audit`: System-wide network interface netmask total count tracking.
+- `system_net_if_addrs_broadcast_total_ultimate_audit`: System-wide network interface broadcast total tracking.
+- `system_net_if_addrs_netmask_total_ultimate_audit`: System-wide network interface netmask total count tracking.
 - `system_net_if_addrs_ptp_total_ultimate_audit`: System-wide network interface PTP total count tracking.
 - `system_disk_partitions_fstype_count_ultimate_audit`: System-wide disk partitions filesystem types count tracking.
 - `system_disk_partitions_mountpoint_count_ultimate_audit`: System-wide disk partitions mountpoint count tracking.
@@ -238,7 +241,6 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - `system_net_if_stats_speed_avg_ultimate_audit`: Average network interface speed tracking.
 - `system_net_if_stats_duplex_total_ultimate_audit`: Total count of network interfaces with duplex capabilities.
 - `system_net_if_stats_isup_avg_ultimate_audit`: Average network interface availability tracking.
-
 - `system_net_if_stats_mtu_total_ultimate_audit`: System-wide network interface MTU total.
 - `system_net_if_stats_flags_total_ultimate_audit`: System-wide network interface flags total.
 - `system_disk_partitions_device_count_ultimate_audit`: System-wide disk partition device count.
@@ -247,31 +249,67 @@ The ADK Progress Bridge is a high-performance middleware designed to connect bac
 - `system_net_if_stats_speed_max_ultimate_audit`: System-wide network interface speed max.
 - `system_net_if_addrs_ipv4_avg_ultimate_audit`: Average network interface IPv4 count.
 - `system_net_if_addrs_ipv6_avg_ultimate_audit`: Average network interface IPv6 count.
-- system_net_if_stats_flags_max_ultimate_audit: System-wide network interface flags max.
-- system_net_if_stats_isup_max_ultimate_audit: System-wide network interface isup max.
-- system_net_if_addrs_mac_avg_ultimate_audit: Average network interface MAC count.
-- system_net_if_addrs_broadcast_avg_ultimate_audit: Average network interface broadcast count.
-- system_net_if_stats_mtu_min_ultimate_audit: System-wide network interface MTU min.
-- system_net_if_stats_speed_min_ultimate_audit: System-wide network interface speed min.
-- system_net_if_addrs_mac_max_ultimate_audit: System-wide network interface MAC max.
-- system_net_if_addrs_broadcast_max_ultimate_audit: System-wide network interface broadcast max.- system_net_if_stats_isup_min_ultimate_audit: System-wide network interface isup min.
-- system_net_if_stats_duplex_min_ultimate_audit: System-wide network interface duplex min.
-- system_net_if_addrs_ipv4_max_ultimate_audit: System-wide network interface IPv4 max.
-- system_net_if_addrs_ipv6_max_ultimate_audit: System-wide network interface IPv6 max.- system_net_if_stats_duplex_max_ultimate_audit: System-wide network interface duplex max.
-- system_net_if_stats_duplex_avg_ultimate_audit: System-wide network interface duplex average.
-- system_net_if_stats_flags_avg_ultimate_audit: System-wide network interface flags average.
-- system_net_if_stats_flags_min_ultimate_audit: System-wide network interface flags min.- system_net_if_addrs_netmask_avg_ultimate_audit: System-wide network interface netmask average.
-- system_net_if_addrs_netmask_max_ultimate_audit: System-wide network interface netmask max.
-- system_net_if_addrs_ptp_avg_ultimate_audit: System-wide network interface PTP address average.
-- system_net_if_addrs_ptp_max_ultimate_audit: System-wide network interface PTP address max.- system_disk_partitions_fstype_avg_ultimate_audit: System-wide disk partition filesystem type average.
-- system_disk_partitions_fstype_max_ultimate_audit: System-wide disk partition filesystem type max.
-- system_disk_partitions_mountpoint_avg_ultimate_audit: System-wide disk partition mountpoint average.
-- system_disk_partitions_mountpoint_max_ultimate_audit: System-wide disk partition mountpoint max.
-- system_disk_partitions_fstype_min_ultimate_audit: System-wide disk partition filesystem type min.
-- system_disk_partitions_mountpoint_min_ultimate_audit: System-wide disk partition mountpoint min.
-- system_disk_partitions_opts_avg_ultimate_audit: System-wide disk partition options average.
-- system_disk_partitions_opts_max_ultimate_audit: System-wide disk partition options max.
-- system_disk_partitions_opts_min_ultimate_audit: System-wide disk partition options min.
-- system_disk_partitions_device_avg_ultimate_audit: System-wide disk partition device average.
-- system_disk_partitions_device_max_ultimate_audit: System-wide disk partition device max.
-- system_disk_partitions_device_min_ultimate_audit: System-wide disk partition device min.
+- `system_net_if_stats_flags_max_ultimate_audit`: System-wide network interface flags max.
+- `system_net_if_stats_isup_max_ultimate_audit`: System-wide network interface isup max.
+- `system_net_if_addrs_mac_avg_ultimate_audit`: Average network interface MAC count.
+- `system_net_if_addrs_broadcast_avg_ultimate_audit`: Average network interface broadcast count.
+- `system_net_if_stats_mtu_min_ultimate_audit`: System-wide network interface MTU min.
+- `system_net_if_stats_speed_min_ultimate_audit`: System-wide network interface speed min.
+- `system_net_if_addrs_mac_max_ultimate_audit`: System-wide network interface MAC max.
+- `system_net_if_addrs_broadcast_max_ultimate_audit`: System-wide network interface broadcast max.
+- `system_net_if_stats_isup_min_ultimate_audit`: System-wide network interface isup min.
+- `system_net_if_stats_duplex_min_ultimate_audit`: System-wide network interface duplex min.
+- `system_net_if_addrs_ipv4_max_ultimate_audit`: System-wide network interface IPv4 max.
+- `system_net_if_addrs_ipv6_max_ultimate_audit`: System-wide network interface IPv6 max.
+- `system_net_if_stats_duplex_max_ultimate_audit`: System-wide network interface duplex max.
+- `system_net_if_stats_duplex_avg_ultimate_audit`: System-wide network interface duplex average.
+- `system_net_if_stats_flags_avg_ultimate_audit`: System-wide network interface flags average.
+- `system_net_if_stats_flags_min_ultimate_audit`: System-wide network interface flags min.
+- `system_net_if_addrs_netmask_avg_ultimate_audit`: System-wide network interface netmask average.
+- `system_net_if_addrs_netmask_max_ultimate_audit`: System-wide network interface netmask max.
+- `system_net_if_addrs_ptp_avg_ultimate_audit`: System-wide network interface PTP address average.
+- `system_net_if_addrs_ptp_max_ultimate_audit`: System-wide network interface PTP address max.
+- `system_disk_partitions_fstype_avg_ultimate_audit`: System-wide disk partition filesystem type average.
+- `system_disk_partitions_fstype_max_ultimate_audit`: System-wide disk partition filesystem type max.
+- `system_disk_partitions_mountpoint_avg_ultimate_audit`: System-wide disk partition mountpoint average.
+- `system_disk_partitions_mountpoint_max_ultimate_audit`: System-wide disk partition mountpoint max.
+- `system_disk_partitions_fstype_min_ultimate_audit`: System-wide disk partition filesystem type min.
+- `system_disk_partitions_mountpoint_min_ultimate_audit`: System-wide disk partition mountpoint min.
+- `system_disk_partitions_opts_avg_ultimate_audit`: System-wide disk partition options average.
+- `system_disk_partitions_opts_max_ultimate_audit`: System-wide disk partition options max.
+- `system_disk_partitions_opts_min_ultimate_audit`: System-wide disk partition options min.
+- `system_disk_partitions_device_avg_ultimate_audit`: System-wide disk partition device average.
+- `system_disk_partitions_device_max_ultimate_audit`: System-wide disk partition device max.
+- `system_disk_partitions_device_min_ultimate_audit`: System-wide disk partition device min.
+- `system_disk_io_counters_read_bytes_avg_ultimate_audit`: Average disk read bytes tracking.
+- `system_disk_io_counters_write_bytes_avg_ultimate_audit`: Average disk write bytes tracking.
+- `system_disk_io_counters_read_time_avg_ultimate_audit`: Average disk read time tracking.
+- `system_disk_io_counters_write_time_avg_ultimate_audit`: Average disk write time tracking.
+- `system_disk_io_counters_busy_time_avg_ultimate_audit`: Average disk busy time tracking.
+- `system_cpu_stats_ctx_switches_avg_ultimate_audit`: Average CPU context switches tracking.
+- `system_cpu_stats_interrupts_avg_ultimate_audit`: Average CPU interrupts tracking.
+- `system_cpu_stats_syscalls_avg_ultimate_audit`: Average CPU syscalls tracking.
+- `system_cpu_stats_soft_interrupts_avg_ultimate_audit`: Average CPU soft interrupts tracking.
+- `system_cpu_times_percent_iowait_avg_ultimate_audit`: Average CPU iowait percentage tracking.
+- `system_cpu_times_percent_irq_avg_ultimate_audit`: Average CPU irq percentage tracking.
+- `system_cpu_times_percent_softirq_avg_ultimate_audit`: Average CPU softirq percentage tracking.
+
+- `system_net_io_bytes_sent_avg_ultimate_audit`: Average network bytes sent tracking.
+- `system_net_io_bytes_recv_avg_ultimate_audit`: Average network bytes received tracking.
+- `system_net_io_packets_sent_avg_ultimate_audit`: Average network packets sent tracking.
+- `system_net_io_packets_recv_avg_ultimate_audit`: Average network packets received tracking.
+- `system_net_io_errin_avg_ultimate_audit`: Average network input errors tracking.
+- `system_net_io_errout_avg_ultimate_audit`: Average network output errors tracking.
+- `system_net_io_dropin_avg_ultimate_audit`: Average network input drops tracking.
+- `system_net_io_dropout_avg_ultimate_audit`: Average network output drops tracking.
+- `system_cpu_times_user_avg_ultimate_audit`: Average CPU user time tracking.
+- `system_cpu_times_system_avg_ultimate_audit`: Average CPU system time tracking.
+
+## 5. Metadata
+- **APP_VERSION**: 2.10.73
+- **BUILD_TIMESTAMP**: 2026-02-01T23:59:59Z
+- **GIT_COMMIT**: v749-supreme-apex-adele-verification
+- **OPERATIONAL_APEX**: v749 SUPREME APEX VERIFICATION ADELE- `system_swap_memory_total_avg_ultimate_audit`: Average total swap memory tracking.
+- `system_swap_memory_used_avg_ultimate_audit`: Average used swap memory tracking.
+- `system_swap_memory_free_avg_ultimate_audit`: Average free swap memory tracking.
+- `system_swap_memory_percent_avg_ultimate_audit`: Average swap memory percentage tracking.
