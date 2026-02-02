@@ -8188,3 +8188,81 @@ async def system_disk_io_total_avg_audit(samples: int = 3):
     avg_val = sum(disk_samples) / len(disk_samples) if disk_samples else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk I/O total: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_disk_io_total": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_errors_avg_audit")
+async def system_net_io_errors_avg_audit(samples: int = 3):
+    """
+    Audits system-wide network I/O errors (total errin + errout) average.
+    """
+    logger.info("Starting system net I/O errors average audit")
+    yield ProgressPayload(step="Initializing Network probe", pct=0, log="Collecting system-wide network stats...")
+    net_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            io = psutil.net_io_counters()
+            current_val = io.errin + io.errout
+            net_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net I/O Errors {current_val}")
+            metadata = {"net_io_errors": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net I/O errors average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Network", pct=pct, log=f"Measured net I/O errors sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net I/O errors: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_net_io_errors": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_io_drops_avg_audit")
+async def system_net_io_drops_avg_audit(samples: int = 3):
+    """
+    Audits system-wide network I/O drops (total dropin + dropout) average.
+    """
+    logger.info("Starting system net I/O drops average audit")
+    yield ProgressPayload(step="Initializing Network probe", pct=0, log="Collecting system-wide network stats...")
+    net_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            io = psutil.net_io_counters()
+            current_val = io.dropin + io.dropout
+            net_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net I/O Drops {current_val}")
+            metadata = {"net_io_drops": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net I/O drops average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Network", pct=pct, log=f"Measured net I/O drops sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(net_samples) / len(net_samples) if net_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net I/O drops: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_net_io_drops": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_total_avg_audit")
+async def system_cpu_times_total_avg_audit(samples: int = 3):
+    """
+    Audits system-wide CPU times (sum of all fields) average.
+    """
+    logger.info("Starting system CPU times total average audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide CPU times...")
+    cpu_samples = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            current_val = sum(times)
+            cpu_samples.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU Times Total {current_val}")
+            metadata = {"cpu_times_total": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing CPU times total average: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU", pct=pct, log=f"Measured CPU times total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(cpu_samples) / len(cpu_samples) if cpu_samples else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average CPU times total: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_cpu_times_total": avg_val, "stability": "STABLE"}
