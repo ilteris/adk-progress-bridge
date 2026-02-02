@@ -34,10 +34,10 @@ STALE_TASK_MAX_AGE = 300.0
 WS_MESSAGE_SIZE_LIMIT = 1024 * 1024  # 1MB
 MAX_CONCURRENT_TASKS = 100
 MAX_QUEUE_SIZE = 1000
-APP_VERSION = "2.10.75"
-BUILD_TIMESTAMP = "2026-02-02T00:05:00Z"
-GIT_COMMIT = "v749-supreme-apex-adele-verification"
-OPERATIONAL_APEX = "v749 SUPREME APEX VERIFICATION ADELE"
+APP_VERSION = "2.10.76"
+BUILD_TIMESTAMP = "2026-02-02T00:15:00Z"
+GIT_COMMIT = "v750-supreme-apex-adele-verification"
+OPERATIONAL_APEX = "v750 SUPREME APEX VERIFICATION ADELE"
 
 BUILD_INFO.info({"version": APP_VERSION, "git_commit": GIT_COMMIT, "build_timestamp": BUILD_TIMESTAMP})
 ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
@@ -198,7 +198,7 @@ async def websocket_endpoint(websocket: WebSocket):
     if current_ws > getattr(websocket.app.state, "peak_ws_connections", 0):
         websocket.app.state.peak_ws_connections = current_ws
         PEAK_ACTIVE_WS_CONNECTIONS.set(current_ws)
-    active_tasks: Dict[str, asyncio.Task] = {}
+    active_tasks: Dict[str, asyncio.Task] = {}; metrics_task = None
     
     # Shared metrics pusher for this WS connection
     ws_conn_id = f"ws_conn_{uuid.uuid4()}"
@@ -327,7 +327,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 except: pass
     finally:
         ACTIVE_WS_CONNECTIONS.dec(); WS_CONNECTION_DURATION.observe(time.perf_counter() - conn_start_time)
-        metrics_task.cancel()
+        if metrics_task: metrics_task.cancel()
         for t in active_tasks.values():
             if not t.done(): t.cancel()
 
