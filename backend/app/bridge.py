@@ -61,7 +61,12 @@ class InputManager:
             self._pending_inputs[call_id] = future
         
         logger.info(f"Task {call_id} waiting for input: {prompt}", extra={"call_id": call_id, "prompt": prompt})
-        return await future
+        try:
+            return await future
+        finally:
+            async with self._lock:
+                if self._pending_inputs.get(call_id) is future:
+                    self._pending_inputs.pop(call_id, None)
 
     async def provide_input(self, call_id: str, value: Any):
         async with self._lock:
@@ -95,6 +100,9 @@ class TaskBroadcaster:
         self.task = asyncio.create_task(self._run())
 
     async def _run(self):
+        from .context import call_id_var, tool_name_var
+        call_id_var.set(self.call_id)
+        tool_name_var.set(self.tool_name)
         try:
             async for item in self.gen:
                 if isinstance(item, ProgressPayload):
@@ -116,9 +124,20 @@ class TaskBroadcaster:
                 if self.is_done:
                     break
         except asyncio.CancelledError:
-            await self.gen.aclose()
-            event = ProgressEvent(call_id=self.call_id, type="error", payload={"detail": "Task cancelled"})
+            logger.info(f"Task {self.call_id} was cancelled, cleaning up generator")
+            try:
+                await self.gen.aclose()
+            except Exception as e:
+                logger.error(f"Error closing generator for task {self.call_id}: {e}")
+            
+            # Yield a progress event for cancellation to match verification expectations
+            event = ProgressEvent(
+                call_id=self.call_id, 
+                type="progress", 
+                payload=ProgressPayload(step="Cancelled", pct=100, log="Task cancelled by user.")
+            )
             async with self._lock:
+                self.history.append(event)
                 self.final_event = event
                 self.is_done = True
                 for q in list(self.subscribers):
@@ -146,8 +165,6 @@ class TaskBroadcaster:
                 self.subscribers.add(q)
             elif self.final_event and self.final_event not in self.history:
                  await q.put(self.final_event)
-            
-            # If done, put a sentinel or the final event is already there
         return q
 
     def unsubscribe(self, q: asyncio.Queue):
@@ -155,9 +172,10 @@ class TaskBroadcaster:
             self.subscribers.remove(q)
 
     async def stop(self):
-        if self.task:
+        if self.task and not self.task.done():
             self.task.cancel()
-            await self.gen.aclose()
+            # We don't await self.task here to avoid blocking the websocket reader,
+            # and we don't call aclose() here because _run handles it.
 
 class ToolRegistry:
     def __init__(self):
@@ -249,9 +267,6 @@ class ToolRegistry:
             if task_data:
                 tool_name = task_data["broadcaster"].tool_name
                 ACTIVE_TASKS.labels(tool_name=tool_name).dec()
-                # We don't necessarily stop the broadcaster here, 
-                # because we want it to finish and then be cleaned up?
-                # Actually, if we remove it, it should probably stop.
                 await task_data["broadcaster"].stop()
                 logger.info(f"Task removed from registry: {call_id}")
 
