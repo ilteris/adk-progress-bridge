@@ -9515,3 +9515,81 @@ async def system_cpu_stats_interrupts_ultimate_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average cpu interrupts: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_interrupts": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_iowait_ultimate_audit")
+async def system_cpu_times_iowait_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide CPU times iowait ultimate.
+    """
+    logger.info("Starting system cpu times iowait ultimate audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide cpu times iowait stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            current_val = getattr(times, "iowait", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU IOWait {current_val}")
+            metadata = {"iowait": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times iowait ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU IOWait", pct=pct, log=f"Measured cpu times iowait sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average cpu iowait: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_iowait": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_irq_ultimate_audit")
+async def system_cpu_times_irq_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide CPU times irq ultimate.
+    """
+    logger.info("Starting system cpu times irq ultimate audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide cpu times irq stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            current_val = getattr(times, "irq", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU IRQ {current_val}")
+            metadata = {"irq": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times irq ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU IRQ", pct=pct, log=f"Measured cpu times irq sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average cpu irq: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_irq": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_cpu_times_softirq_ultimate_audit")
+async def system_cpu_times_softirq_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide CPU times softirq ultimate.
+    """
+    logger.info("Starting system cpu times softirq ultimate audit")
+    yield ProgressPayload(step="Initializing CPU probe", pct=0, log="Collecting system-wide cpu times softirq stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            times = psutil.cpu_times()
+            current_val = getattr(times, "softirq", 0.0)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: CPU SoftIRQ {current_val}")
+            metadata = {"softirq": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing cpu times softirq ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling CPU SoftIRQ", pct=pct, log=f"Measured cpu times softirq sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average cpu softirq: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_softirq": avg_val, "stability": "STABLE"}
