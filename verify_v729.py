@@ -1,4 +1,3 @@
-
 import asyncio
 import sys
 import os
@@ -7,20 +6,20 @@ import os
 sys.path.append(os.path.join(os.getcwd(), "backend"))
 
 from app.dummy_tool import (
-    system_net_if_addrs_ipv4_total_ultimate_audit,
-    system_net_if_addrs_ipv6_total_ultimate_audit,
-    system_net_if_addrs_mac_total_ultimate_audit,
-    system_net_if_addrs_broadcast_total_ultimate_audit
+    system_net_if_addrs_netmask_total_ultimate_audit,
+    system_net_if_addrs_ptp_total_ultimate_audit,
+    system_disk_partitions_fstype_count_ultimate_audit,
+    system_disk_partitions_mountpoint_count_ultimate_audit
 )
 
 async def verify():
-    print("Starting v728 verification...")
+    print("Starting v729 verification...")
     
     tools = [
-        (system_net_if_addrs_ipv4_total_ultimate_audit, "system_net_if_addrs_ipv4_total_ultimate_audit"),
-        (system_net_if_addrs_ipv6_total_ultimate_audit, "system_net_if_addrs_ipv6_total_ultimate_audit"),
-        (system_net_if_addrs_mac_total_ultimate_audit, "system_net_if_addrs_mac_total_ultimate_audit"),
-        (system_net_if_addrs_broadcast_total_ultimate_audit, "system_net_if_addrs_broadcast_total_ultimate_audit")
+        (system_net_if_addrs_netmask_total_ultimate_audit, "system_net_if_addrs_netmask_total_ultimate_audit"),
+        (system_net_if_addrs_ptp_total_ultimate_audit, "system_net_if_addrs_ptp_total_ultimate_audit"),
+        (system_disk_partitions_fstype_count_ultimate_audit, "system_disk_partitions_fstype_count_ultimate_audit"),
+        (system_disk_partitions_mountpoint_count_ultimate_audit, "system_disk_partitions_mountpoint_count_ultimate_audit")
     ]
     
     for tool_func, name in tools:
@@ -37,7 +36,7 @@ async def verify():
             print(f"FAILURE: {name} failed verification. Last item: {final_result}")
             sys.exit(1)
 
-    print("All v728 tools verified successfully.")
+    print("All v729 tools verified successfully.")
 
 if __name__ == "__main__":
     asyncio.run(verify())

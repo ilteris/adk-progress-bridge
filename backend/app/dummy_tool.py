@@ -9332,7 +9332,7 @@ async def system_swap_memory_sin_ultimate_audit(samples: int = 3):
     
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap sin: {avg_val:.2f}")
-    yield {"status": "audit_complete", "avg_sin": avg_val, "stability": "STABLE"}
+    yield {"status": "audit_complete", "avg_swap_sin": avg_val, "stability": "STABLE"}
 
 @progress_tool(name="system_swap_memory_sout_ultimate_audit")
 async def system_swap_memory_sout_ultimate_audit(samples: int = 3):
@@ -9358,7 +9358,7 @@ async def system_swap_memory_sout_ultimate_audit(samples: int = 3):
     
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average swap sout: {avg_val:.2f}")
-    yield {"status": "audit_complete", "avg_sout": avg_val, "stability": "STABLE"}
+    yield {"status": "audit_complete", "avg_swap_sout": avg_val, "stability": "STABLE"}
 
 @progress_tool(name="system_cpu_times_user_ultimate_audit")
 async def system_cpu_times_user_ultimate_audit(samples: int = 3):
@@ -10272,3 +10272,119 @@ async def system_net_if_addrs_broadcast_total_ultimate_audit(samples: int = 3):
     avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
     yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if addrs broadcast total: {avg_val:.2f}")
     yield {"status": "audit_complete", "avg_broadcast_total": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_netmask_total_ultimate_audit")
+async def system_net_if_addrs_netmask_total_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network interface netmask total count ultimate.
+    """
+    logger.info("Starting system net if addrs netmask total ultimate audit")
+    yield ProgressPayload(step="Initializing Net If Netmask probe", pct=0, log="Collecting system-wide network interface netmask stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            count = 0
+            for interface_addrs in addrs.values():
+                for addr in interface_addrs:
+                    if addr.netmask:
+                        count += 1
+            current_val = count
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If Netmask Total {current_val}")
+            metadata = {"netmask_total": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs netmask total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If Netmask Total", pct=pct, log=f"Measured net if addrs netmask total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if addrs netmask total: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_netmask_total": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_net_if_addrs_ptp_total_ultimate_audit")
+async def system_net_if_addrs_ptp_total_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide network interface PTP total count ultimate.
+    """
+    logger.info("Starting system net if addrs ptp total ultimate audit")
+    yield ProgressPayload(step="Initializing Net If PTP probe", pct=0, log="Collecting system-wide network interface PTP stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            addrs = psutil.net_if_addrs()
+            count = 0
+            for interface_addrs in addrs.values():
+                for addr in interface_addrs:
+                    if hasattr(addr, "ptp") and addr.ptp:
+                        count += 1
+            current_val = count
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Net If PTP Total {current_val}")
+            metadata = {"ptp_total": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing net if addrs ptp total ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Net If PTP Total", pct=pct, log=f"Measured net if addrs ptp total sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average net if addrs ptp total: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_ptp_total": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_fstype_count_ultimate_audit")
+async def system_disk_partitions_fstype_count_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide disk partitions filesystem types count ultimate.
+    """
+    logger.info("Starting system disk partitions fstype count ultimate audit")
+    yield ProgressPayload(step="Initializing Partition FSType probe", pct=0, log="Collecting system-wide disk partition filesystem types stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions(all=True)
+            fstypes = set(p.fstype for p in partitions if p.fstype)
+            current_val = len(fstypes)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Partition FSTypes {current_val}")
+            metadata = {"fstype_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions fstype count ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Partition FSType Count", pct=pct, log=f"Measured disk partition fstype count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk partition fstype count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_fstype_count": avg_val, "stability": "STABLE"}
+
+@progress_tool(name="system_disk_partitions_mountpoint_count_ultimate_audit")
+async def system_disk_partitions_mountpoint_count_ultimate_audit(samples: int = 3):
+    """
+    Audits system-wide disk partitions mountpoint count ultimate.
+    """
+    logger.info("Starting system disk partitions mountpoint count ultimate audit")
+    yield ProgressPayload(step="Initializing Partition Mountpoint probe", pct=0, log="Collecting system-wide disk partition mountpoints stats...")
+    samples_list = []
+    for i in range(samples):
+        pct = int(((i + 1) / samples) * 100)
+        try:
+            partitions = psutil.disk_partitions(all=True)
+            mountpoints = set(p.mountpoint for p in partitions if p.mountpoint)
+            current_val = len(mountpoints)
+            samples_list.append(current_val)
+            logger.info(f"Sample {i+1}/{samples}: Disk Partition Mountpoints {current_val}")
+            metadata = {"mountpoint_count": current_val}
+        except Exception as e:
+            logger.error(f"Error auditing disk partitions mountpoint count ultimate: {e}")
+            metadata = {"error": str(e)}
+        yield ProgressPayload(step="Sampling Partition Mountpoint Count", pct=pct, log=f"Measured disk partition mountpoint count sample {i+1}/{samples}.", metadata=metadata)
+        await asyncio.sleep(0.1)
+    
+    avg_val = sum(samples_list) / len(samples_list) if samples_list else 0
+    yield ProgressPayload(step="Finalizing", pct=100, log=f"Audit complete. Average disk partition mountpoint count: {avg_val:.2f}")
+    yield {"status": "audit_complete", "avg_mountpoint_count": avg_val, "stability": "STABLE"}
